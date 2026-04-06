@@ -1,0 +1,252 @@
+# Business Plan - Pelora
+## Detailed Expansion of Business Model Canvas
+
+**Document Status:** ☐ Not Started | ☐ In Progress | ☑ Template Ready
+
+---
+
+## Executive Overview
+
+Provide a detailed written plan covering:
+- Company vision and mission
+- Problem being solved
+- Solution overview
+- Market opportunity
+- Business model summary
+- Go-to-market strategy
+- Financial overview
+- Success metrics
+
+---
+
+## 1. Company Description
+- [ ] Company name: Pelora
+- [ ] Legal structure (LLC, SAE, etc.)
+- [ ] Location (Egypt-based, expanding globally)
+- [ ] Mission statement
+- [ ] Core values
+- [ ] Company history and founding story
+
+---
+
+## 2. Market Analysis
+### Market Size & Growth
+- [ ] Total Addressable Market (TAM) for boat charters in Egypt and region
+- [ ] Market size for fishing gear e-commerce
+- [ ] Market size for online competitions/events
+- [ ] Market growth projections (3-5 years)
+- [ ] Regional expansion potential (UAE, KSA, other MENA countries)
+
+### Target Market Segments
+- [ ] Fishing enthusiasts (demographics, interests, behavior)
+- [ ] Tourists and families (average spending, seasonality)
+- [ ] Boat and yacht owners (number in Egypt, pain points)
+- [ ] Fishing gear vendors (size of potential vendor base)
+
+### Customer Needs & Pain Points
+- [ ] Customers: difficulty finding reliable boat charter services
+- [ ] Customers: limited access to quality fishing gear
+- [ ] Boat owners: challenge reaching customers
+- [ ] Vendors: difficulty finding buyers for fishing equipment
+- [ ] All: lack of centralized platform for competitions
+
+---
+
+## 3. Competitive Analysis
+### Direct Competitors
+- [ ] Boat charter platforms (local and international)
+- [ ] Fishing marketplace competitors
+- [ ] Event/competition platforms
+- [ ] Competitive positioning and differentiation
+
+### Indirect Competitors
+- [ ] Traditional travel agencies
+- [ ] Local fishing shops
+- [ ] Social media-based selling
+- [ ] Manual competition organization
+
+### Competitive Advantage
+- [ ] Unique features: Integrated platform (charters + marketplace + competitions)
+- [ ] Network effects: Three-sided platform benefits
+- [ ] Technology advantages
+- [ ] Regulatory advantages (early mover in Egypt)
+- [ ] Pricing advantages
+
+---
+
+## 4. Revenue Model Details
+
+### Revenue Stream 1: Boat Charter Commissions
+- [ ] Commission percentage per booking: ____%
+- [ ] Average booking value: _____ EGP
+- [ ] Projected monthly bookings: _____
+- [ ] Revenue projection: _____ EGP/month
+
+### Revenue Stream 2: Marketplace Sales Commission
+- [ ] Commission percentage per sale: ____%
+- [ ] Average order value: _____ EGP
+- [ ] Projected monthly orders: _____
+- [ ] Revenue projection: _____ EGP/month
+
+### Revenue Stream 3: Vendor Subscriptions/Listings
+- [ ] Subscription tier pricing: _____ EGP/month
+- [ ] Premium listing fee: _____ EGP/listing
+- [ ] Projected subscribers: _____
+- [ ] Revenue projection: _____ EGP/month
+
+### Revenue Stream 4: Featured Ads & Premium Placements
+- [ ] Premium listing rates: _____ EGP/day or EGP/month
+- [ ] Featured boat listing rates: _____ EGP
+- [ ] Projected premium users: _____%
+- [ ] Revenue projection: _____ EGP/month
+
+### Revenue Stream 5: Competition Sponsorships & Entry Fees
+- [ ] Competition entry fee per participant: _____ EGP
+- [ ] Platform revenue share from entry fees: ____%
+- [ ] Sponsorship fee per competition: _____ EGP
+- [ ] Projected annual competitions: _____
+- [ ] Revenue projection: _____ EGP/month
+
+---
+
+## 5. Marketing & Sales Strategy
+
+### Customer Acquisition Strategy - Boat Owners
+- [ ] Initial launch incentives (discounted commissions, promotion)
+- [ ] Boat owner recruitment channels (social media, boat associations, marinas)
+- [ ] Partnerships with marina operators
+- [ ] Influencer and ambassador programs
+- [ ] Projected acquisition cost per boat owner: _____ EGP
+- [ ] Projected boat owners Year 1: _____
+
+### Customer Acquisition Strategy - Vendors
+- [ ] Vendor recruitment strategy and channels
+- [ ] Commission incentives and bonuses
+- [ ] Partnerships with fishing gear suppliers
+- [ ] Vendor support programs
+- [ ] Projected acquisition cost per vendor: _____ EGP
+- [ ] Projected vendors Year 1: _____
+
+### Customer Acquisition Strategy - Users (Customers)
+- [ ] Organic search strategy (SEO)
+- [ ] Paid advertising (social media, Google Ads)
+- [ ] Partnership marketing
+- [ ] Referral program
+- [ ] Content marketing (blog, videos)
+- [ ] Projected acquisition cost per customer: _____ EGP
+- [ ] Projected customers Year 1: _____
+
+### Retention & Engagement
+- [ ] Loyalty program details
+- [ ] Notification strategy
+- [ ] Community building initiatives
+- [ ] Customer support excellence programs
+- [ ] Projected retention rate: _____%
+
+---
+
+## 6. Operations Plan
+
+### Technology Development
+- [ ] App development timeline (MVP vs full features)
+- [ ] Technology partners and contractors
+- [ ] Infrastructure and hosting
+- [ ] Maintenance and support procedures
+
+### Partnership Development
+- [ ] Boat owner associations
+- [ ] Marina operators
+- [ ] Fishing gear suppliers
+- [ ] Payment processors
+- [ ] Tourism boards
+
+### Operations Team
+- [ ] Org structure and key roles
+- [ ] Hiring timeline
+- [ ] Team skill requirements
+
+---
+
+## 7. Financial Projections (3-5 Years)
+
+### Year 1 Projections
+- [ ] Projected revenue: _____ EGP
+- [ ] Projected expenses: _____ EGP
+- [ ] Projected net income/loss: _____ EGP
+
+### Year 2 Projections
+- [ ] Projected revenue: _____ EGP
+- [ ] Projected expenses: _____ EGP
+- [ ] Projected net income: _____ EGP
+
+### Year 3-5 Projections
+- [ ] Revenue growth rate: _____%
+- [ ] Break-even timeline: _____
+- [ ] Profitability timeline: _____
+
+### Key Financial Metrics
+- [ ] CAC (Customer Acquisition Cost): _____ EGP
+- [ ] LTV (Lifetime Value): _____ EGP
+- [ ] LTV:CAC ratio: _____
+- [ ] Burn rate (if applicable): _____ EGP/month
+- [ ] Runway: _____ months
+
+---
+
+## 8. Funding Requirements
+
+- [ ] Total funding needed: _____ EGP
+- [ ] Use of funds breakdown:
+  - [ ] Technology development: _____%
+  - [ ] Marketing & customer acquisition: _____%
+  - [ ] Operations & team: _____%
+  - [ ] Legal & compliance: _____%
+  - [ ] Other: _____%
+- [ ] Funding timeline and milestones
+- [ ] Exit strategy (if applicable)
+
+---
+
+## 9. Risk Analysis & Mitigation
+
+### Market Risk
+- [ ] Low market adoption
+- [ ] Mitigation strategy: _____________________
+
+### Competition Risk
+- [ ] New competitors entering market
+- [ ] Mitigation strategy: _____________________
+
+### Regulatory Risk
+- [ ] Changes in Egyptian maritime or e-commerce laws
+- [ ] Mitigation strategy: _____________________
+
+### Operational Risk
+- [ ] Platform downtime or technical failures
+- [ ] Mitigation strategy: _____________________
+
+### Financial Risk
+- [ ] Lower than expected revenue
+- [ ] Mitigation strategy: _____________________
+
+---
+
+## 10. Success Metrics & KPIs
+
+### User Metrics
+- [ ] Monthly active users (MAU): Target _____
+- [ ] Daily active users (DAU): Target _____
+- [ ] User growth rate: Target _____%
+
+### Business Metrics
+- [ ] Total transaction volume: Target _____ transactions/month
+- [ ] Gross transaction value (GTV): Target _____ EGP/month
+- [ ] Revenue: Target _____ EGP/month
+- [ ] Retention rate: Target _____%
+
+### Operational Metrics
+- [ ] Platform uptime: Target _____%
+- [ ] Average response time: Target _____ seconds
+- [ ] Customer satisfaction: Target ______ NPS score
+
+---
