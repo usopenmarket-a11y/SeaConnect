@@ -15,26 +15,30 @@ Run migrations in this order to respect foreign key dependencies:
 2.  users
 3.  boat_owner_profiles
 4.  vendor_profiles
-5.  yachts
-6.  availability
-7.  match_requests
-8.  match_results
-9.  bookings
-10. payments
-11. transactions
-12. product_categories
-13. products
-14. carts + cart_items
-15. orders + order_items + shipments
-16. competitions
-17. competition_entries
-18. catch_logs
-19. reviews
-20. notifications
-21. notification_preferences
-22. audit_logs
-23. promo_codes
-24. indexes
+5.  departure_ports          ← NEW
+6.  fish_species             ← NEW
+7.  fishing_seasons          ← NEW
+8.  yachts                   (now references departure_ports)
+9.  availability
+10. weather_cache            ← NEW
+11. match_requests
+12. match_results
+13. bookings
+14. payments
+15. transactions
+16. product_categories
+17. products
+18. carts + cart_items
+19. orders + order_items + shipments
+20. competitions
+21. competition_entries
+22. catch_logs
+23. reviews
+24. notifications
+25. notification_preferences
+26. audit_logs
+27. promo_codes
+28. indexes
 25. materialized views
 ```
 

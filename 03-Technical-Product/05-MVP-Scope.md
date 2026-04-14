@@ -111,6 +111,28 @@ The competition module, AI matching, and all advanced features ship in Phase 2.
 | Arabic/English language switcher | P0 | 9 |
 | Arabic date/currency/number formatting | P0 | 9 |
 
+#### Weather Advisory
+| Feature | Priority | Sprint |
+|---------|----------|--------|
+| Departure port dropdown on listing creation (12 Egyptian ports) | P0 | 3 |
+| Weather advisory card on yacht detail (updates with selected date) | P0 | 3 |
+| Weather advisory on booking creation screen | P0 | 4 |
+| Weather advisory on booking confirmation + booking detail | P1 | 5 |
+| Pre-seeded departure ports table (all 12 ports with coordinates) | P0 | 1 |
+| Weather cache table + Redis cache (6h TTL) | P0 | 3 |
+| Celery Beat: prefetch weather for upcoming bookings (daily 06:00 EGT) | P1 | 5 |
+
+#### Fishing Seasons
+| Feature | Priority | Sprint |
+|---------|----------|--------|
+| Fish species database (pre-seeded, 25+ species, AR+EN) | P0 | 1 |
+| Fishing seasons table (species × port × month × rating) | P0 | 1 |
+| Target species tags on yacht listing creation | P1 | 3 |
+| "What's biting now" section on Explore home | P0 | 3 |
+| Season rating chips on yacht detail screen | P0 | 3 |
+| Fishing Guide screen (full interactive calendar) | P1 | 10 |
+| Admin: manage fish species + season ratings | P1 | 7 |
+
 ---
 
 ### ❌ NOT IN MVP (Phase 2+)
@@ -129,6 +151,11 @@ The competition module, AI matching, and all advanced features ship in Phase 2.
 | Vendor analytics dashboard | 2 | Basic order view sufficient initially |
 | Group payment splitting | 2 | Nice-to-have for group bookings |
 | Dynamic pricing suggestions | 2 | Needs booking history data |
+| Filter search results by target fish species | 2 | Needs enough tagged listings first |
+| Weather-triggered owner notification (rough seas forecast) | 2 | Needs push notification expansion |
+| Tidal information (high/low tide times) | 2 | Useful but not critical for MVP |
+| Fishing regulations by area (protected zones) | 2 | Needs legal research per location |
+| ML-powered season predictions from catch logs | 3 | Needs competition module data |
 | UAE / KSA expansion | 3 | After Egypt profitability proved |
 | B2B API (white-label) | 3 | Requires established platform |
 | Sponsorship / advertising system | 3 | Needs traffic volume first |

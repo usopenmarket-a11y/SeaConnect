@@ -1,7 +1,16 @@
 # SeaConnect — Document Overview
-**Version:** 2.0
-**Last Updated:** April 6, 2026
+**Version:** 2.1
+**Last Updated:** April 8, 2026
 **Status:** ✅ Planning Phase Complete — Ready to Begin Development
+
+---
+
+## Start Here
+
+**New to the project?** Read this first:
+- Non-technical founder or operations lead → [AI Agent Startup Guide](00-AI-AGENT-STARTUP-GUIDE.md)
+- Technical lead starting Sprint 1 → [Environments & Pipelines](03-Technical-Product/14-Environments-Pipelines.md) → [ADR Log](03-Technical-Product/10-ADR-Log.md)
+- AI Agent starting a session → [CLAUDE.md](../CLAUDE.md) → [Agent Protocol](03-Technical-Product/13-Agent-Protocol.md)
 
 ---
 
@@ -48,6 +57,13 @@ All planning documents are complete. The project is ready to begin Sprint 1 (dev
 | 06 | [Brand & Design System](03-Technical-Product/06-Brand-Design-System.md) | ✅ Complete | Colors, typography, components, RTL rules, Flutter theme |
 | 07 | [UX Flows & Screen Map](03-Technical-Product/07-UX-Flows.md) | ✅ Complete | All ~71 app screens + 22 web pages, flows, empty/error states |
 | 08 | [AI Agents](03-Technical-Product/08-AI-Agents.md) | ✅ Complete | 15 Claude Code agents — triggers, outputs, standards, sprint schedule |
+| 09 | [Weather & Fishing Seasons](03-Technical-Product/09-Weather-FishingSeasons.md) | ✅ Complete | Open-Meteo integration, go/no-go logic, Egypt fishing calendar, DB schema, API endpoints |
+| 10 | [ADR Log](03-Technical-Product/10-ADR-Log.md) | ✅ Complete | 20 Architecture Decision Records — agents must read before any architectural change |
+| 11 | [Expansion Architecture](03-Technical-Product/11-Expansion-Architecture.md) | ✅ Complete | Multi-region infra, payment abstraction, i18n pipeline, data residency, 7-phase global roadmap |
+| 12 | [Data Strategy](03-Technical-Product/12-Data-Strategy.md) | ✅ Complete | Event sourcing tables, Mixpanel event catalog, BigQuery warehouse schema, ML pipeline, data monetization |
+| 13 | [Agent Protocol](03-Technical-Product/13-Agent-Protocol.md) | ✅ Complete | Mandatory agent rules, handoff format, conflict resolution, validation gates, cost budget, CLAUDE.md template |
+| 14 | [Environments & Pipelines](03-Technical-Product/14-Environments-Pipelines.md) | ✅ Complete | Dev + UAT only (free tools), 4 GitHub Actions pipelines, Docker Compose full stack, Render + Vercel + Supabase |
+| 15 | [Modules & Agents](03-Technical-Product/15-Modules-and-Agents.md) | ✅ Complete | All 13 backend modules + 4 frontend surfaces + 20 AI agents with triggers, outputs, and sprint activation |
 
 ### 04 — Operations & Management
 | # | Document | Status | Description |
@@ -70,6 +86,11 @@ All planning documents are complete. The project is ready to begin Sprint 1 (dev
 |---|---------|--------|-------------|
 | 01 | [KPI Tracking](07-Analytics-Reporting/01-KPI-Tracking.md) | ✅ Complete | North Star metric, KPI hierarchy, funnel analytics, dashboards |
 
+### 08 — Growth Strategy
+| # | Document | Status | Description |
+|---|---------|--------|-------------|
+| 01 | [Expansion Playbook](08-Growth-Strategy/01-Expansion-Playbook.md) | ✅ Complete | Country-by-country entry plan: UAE, KSA, Morocco, Turkey — gates, timelines, legal, payment, ops |
+
 ### 09 — Safety & Security
 | # | Document | Status | Description |
 |---|---------|--------|-------------|
@@ -80,13 +101,19 @@ All planning documents are complete. The project is ready to begin Sprint 1 (dev
 ## Start Here — By Role
 
 ### If you're the Technical Lead starting Sprint 1:
-1. Read [MVP Scope](03-Technical-Product/05-MVP-Scope.md) — Sprint 1 deliverables
-2. Read [System Architecture](03-Technical-Product/01-System-Architecture.md) — deployment topology
-3. Read [Tech Stack](03-Technical-Product/03-Tech-Stack.md) — all dependencies and folder structure
-4. Read [Database Schema](03-Technical-Product/04-Database-Schema.md) — 28 tables, migration order
-5. Read [API Specification](03-Technical-Product/02-API-Specification.md) — all endpoints
-6. Read [Brand & Design System](03-Technical-Product/06-Brand-Design-System.md) — colors, fonts, Flutter theme code
-7. Read [UX Flows & Screen Map](03-Technical-Product/07-UX-Flows.md) — all screens and navigation structure
+1. Read [ADR Log](03-Technical-Product/10-ADR-Log.md) — **read first**, binding architectural decisions
+2. Read [Expansion Architecture](03-Technical-Product/11-Expansion-Architecture.md) — multi-region design, Sprint 1 checklist
+3. Read [MVP Scope](03-Technical-Product/05-MVP-Scope.md) — Sprint 1 deliverables
+4. Read [System Architecture](03-Technical-Product/01-System-Architecture.md) — deployment topology
+5. Read [Tech Stack](03-Technical-Product/03-Tech-Stack.md) — all dependencies and folder structure
+6. Read [Database Schema](03-Technical-Product/04-Database-Schema.md) — 28 tables, migration order
+7. Read [API Specification](03-Technical-Product/02-API-Specification.md) — all endpoints
+8. Read [Brand & Design System](03-Technical-Product/06-Brand-Design-System.md) — colors, fonts, Flutter theme code
+9. Read [UX Flows & Screen Map](03-Technical-Product/07-UX-Flows.md) — all screens and navigation structure
+
+### If you're an AI Agent:
+1. Read [ADR Log](03-Technical-Product/10-ADR-Log.md) — **mandatory before any code** — contains binding rules
+2. Read [Expansion Architecture](03-Technical-Product/11-Expansion-Architecture.md) — Sprint 1 checklist, agent handoff protocol, cost budget
 
 ### If you're the Operations Lead preparing pre-launch supply:
 1. Read [Onboarding Guides](04-Operations-Management/01-Onboarding-Guides.md) — acquisition strategy + flows

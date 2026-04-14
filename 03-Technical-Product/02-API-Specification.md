@@ -62,6 +62,121 @@ Response includes: { "next_cursor": "...", "has_more": true }
 
 ---
 
+## Module 11: Weather (`/weather`)
+
+### GET `/weather/`
+Get weather advisory for a departure port on a specific date. Public endpoint.
+```
+Query params:
+  port_slug   string   required   e.g. "hurghada"
+  date        string   required   YYYY-MM-DD (max 14 days ahead)
+```
+```json
+// Response
+{
+  "status": "success",
+  "data": {
+    "port": { "slug": "hurghada", "name_ar": "الغردقة", "name_en": "Hurghada" },
+    "date": "2026-07-15",
+    "wave_height_m": 0.8,
+    "wind_speed_kmh": 18.0,
+    "precipitation_mm": 0.0,
+    "weathercode": 1,
+    "advisory": {
+      "status": "good",
+      "color": "#2E7D32",
+      "label_ar": "مناخ مثالي للإبحار",
+      "label_en": "Great conditions for a trip",
+      "detail_ar": "ارتفاع الأمواج 0.8م، رياح 18 كم/س",
+      "detail_en": "Wave height 0.8m, Wind 18 km/h"
+    },
+    "cached_at": "2026-07-14T06:00:00Z"
+  }
+}
+```
+
+### GET `/weather/ports/`
+List all active departure ports. Public endpoint.
+```json
+// Response
+{
+  "status": "success",
+  "data": [
+    { "slug": "hurghada", "name_ar": "الغردقة", "name_en": "Hurghada",
+      "latitude": 27.2574, "longitude": 33.8116, "sea_region": "red_sea" },
+    ...
+  ]
+}
+```
+
+---
+
+## Module 12: Fishing Seasons (`/fishing`)
+
+### GET `/fishing/whats-biting/`
+Top species currently in peak or good season at a port. Public endpoint.
+```
+Query params:
+  port_slug   string   required
+```
+```json
+// Response
+{
+  "status": "success",
+  "data": {
+    "port": "hurghada",
+    "month": 11,
+    "month_name_ar": "نوفمبر",
+    "month_name_en": "November",
+    "species": [
+      {
+        "slug": "dorado",
+        "name_ar": "دورادو",
+        "name_en": "Dorado (Mahi-Mahi)",
+        "photo_url": "https://...",
+        "rating": "peak",
+        "notes_ar": "أفضل موسم للدورادو في المياه المفتوحة"
+      }
+    ]
+  }
+}
+```
+
+### GET `/fishing/seasons/`
+Full season data for a port and month. Public endpoint.
+```
+Query params:
+  port_slug   string   optional   (all ports if omitted)
+  month       integer  optional   1–12 (current month if omitted)
+```
+
+### GET `/fishing/species/`
+All fish species with descriptions. Public endpoint.
+
+### GET `/fishing/species/:slug/`
+Species detail + full 12-month calendar across all ports. Public endpoint.
+```json
+// Response includes:
+{
+  "slug": "dorado",
+  "name_ar": "دورادو",
+  "name_en": "Dorado (Mahi-Mahi)",
+  "description_ar": "...",
+  "difficulty": "intermediate",
+  "typical_weight_kg": "5–25 kg",
+  "calendar": {
+    "hurghada": {
+      "jan": "good", "feb": "possible", "mar": "good",
+      "apr": "peak", "may": "peak", "jun": "peak",
+      "jul": "possible", "aug": "possible", "sep": "peak",
+      "oct": "peak", "nov": "peak", "dec": "good"
+    }
+  }
+}
+```
+
+---
+
 ## Module 1: Authentication (`/auth`)
 
 ### POST `/auth/register`

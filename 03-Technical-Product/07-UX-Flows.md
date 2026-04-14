@@ -71,11 +71,12 @@ All roles share the same Alerts and Profile tabs. The first three tabs differ by
 #### Explore Tab
 | Screen | Route | Description |
 |--------|-------|-------------|
-| Home / Search | `/explore` | Search bar (location + date + party size), Featured boats carousel, Categories row (Fishing / Yacht / Speedboat / Sunset), Recent nearby listings |
+| Home / Search | `/explore` | Search bar (location + date + party size), Featured boats carousel, Categories row (Fishing / Yacht / Speedboat / Sunset), **"What's Biting Now" species row** (top peak/good species for selected location), Recent nearby listings |
 | Search Results — List | `/explore/results` | Yacht cards in vertical list. Sort: Price / Rating / Distance. Filter FAB |
 | Search Results — Map | `/explore/results/map` | Leaflet-style map with boat pins. Tap pin → mini card. Toggle between list/map |
 | Filter Sheet | (bottom sheet) | Capacity slider, Price range slider, Trip type checkboxes, Boat type chips, Category chips. "Apply Filters" button |
-| Yacht Detail | `/explore/yacht/:id` | Hero photo carousel, Title + price + rating + review count, Capacity + trip types chips, Description (expandable), Amenities grid, Owner card (avatar + name + response rate), Reviews section (last 5 + "See all"), Availability calendar preview, Sticky bottom bar: "Check Availability" → "Book Now" |
+| Yacht Detail | `/explore/yacht/:id` | Hero photo carousel, Title + price + rating + review count, Capacity + trip types chips, Description (expandable), Amenities grid, **Weather advisory card (updates on date pick: green/amber/red)**, **"What you might catch" species chips with season ratings**, Owner card (avatar + name + response rate), Reviews section (last 5 + "See all"), Availability calendar preview, Sticky bottom bar: "Check Availability" → "Book Now" |
+| Fishing Guide | `/explore/fishing-guide` | Location picker (port dropdown), Month strip (horizontal scroll), "Biting Now" species cards (peak/good), Full species list filterable by rating, Species detail sheet: 12-month calendar, difficulty, techniques, "Find boats for this fish" button |
 | Availability Calendar | `/explore/yacht/:id/availability` | Full-month calendar. Green = available, Red = booked, Grey = blocked. Date range selection |
 | All Reviews | `/explore/yacht/:id/reviews` | Paginated list of reviews with star breakdown |
 | Owner Public Profile | `/explore/owner/:id` | Owner avatar, bio, response rate, response time, all their active listings |

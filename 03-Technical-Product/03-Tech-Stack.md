@@ -1,518 +1,761 @@
 # Technology Stack — SeaConnect
-**Version:** 1.0 (Final Decisions)
-**Date:** April 6, 2026
-**Document Status:** ✅ Complete — These are binding decisions.
+**Version:** 2.0 (Free-First for Dev + UAT)
+**Date:** April 14, 2026
+**Document Status:** ✅ Updated — No production environment yet. Dev + UAT only, 100% free tools.
+
+---
+
+## Philosophy
+
+> **Zero spend until production is justified.**
+> Every tool in Dev and UAT must have a free tier that covers our needs.
+> Production stack is planned but not active — switch when first real users pay.
 
 ---
 
 ## Decision Summary
 
-| Layer | Technology | Version | Status |
-|-------|-----------|---------|--------|
-| Backend API | Django + Django REST Framework | Python 3.12 / Django 5.x / DRF 3.15 | **FINAL** |
-| Mobile App | Flutter | 3.x (latest stable) | **FINAL** |
-| Web App | Next.js (TypeScript) | 14.x | **FINAL** |
-| Database | PostgreSQL | 16 (via Supabase) | **FINAL** |
-| Cache | Redis | 7.x (via Upstash) | **FINAL** |
-| Task Queue | Celery + Celery Beat | 5.x | **FINAL** |
-| File Storage | Cloudflare R2 | — | **FINAL** |
-| Primary Payment | Fawry | API v2 | **FINAL** |
-| Secondary Payment | Stripe | API v2024 | **FINAL** |
-| Push Notifications | Firebase Cloud Messaging | v1 API | **FINAL** |
-| Email | SendGrid | v3 API | **FINAL** |
-| SMS / OTP | Twilio | — | **FINAL** |
-| AI / Matching | OpenAI GPT-4o + LangChain | — | **FINAL** |
-| Embeddings / Search | pgvector (PostgreSQL extension) | 0.7 | **FINAL** |
-| Workflow Automation | n8n (self-hosted) | latest | **FINAL** |
-| API Backend Hosting | Railway | — | **FINAL** |
-| Web Hosting | Vercel | — | **FINAL** |
-| CI/CD | GitHub Actions | — | **FINAL** |
-| Monitoring — Errors | Sentry | — | **FINAL** |
-| Monitoring — Metrics | Grafana Cloud | — | **FINAL** |
-| Uptime Monitoring | UptimeRobot | — | **FINAL** |
-| CDN / WAF / DNS | Cloudflare | — | **FINAL** |
-| Containers | Docker + Docker Compose | — | **FINAL** |
+| Layer | Dev / Test | UAT | Production (planned, inactive) |
+|-------|-----------|-----|-------------------------------|
+| **Backend API** | Django 5.x + DRF 3.15 | Django 5.x + DRF 3.15 | same |
+| **Mobile App** | Flutter 3.x | Flutter 3.x | same |
+| **Web App** | Next.js 14 (TypeScript) | Next.js 14 | same |
+| **Database** | PostgreSQL 16 (Docker local) | Supabase Free Tier | Supabase Pro |
+| **Cache / Broker** | Redis 7 (Docker local) | Redis Cloud Free (30MB) | Upstash Pay-per-use |
+| **Task Queue** | Celery + Beat (Docker local) | Celery on Render Free | Celery on Railway |
+| **File Storage** | MinIO (Docker local, S3-compat) | Cloudflare R2 Free (10GB/mo) | Cloudflare R2 |
+| **Payment** | Fawry Sandbox (free) | Fawry Sandbox (free) | Fawry Production |
+| **Email** | Mailpit (Docker local) | Brevo Free (300/day) | Brevo or SendGrid |
+| **SMS / OTP** | Twilio test magic numbers (free) | Twilio trial ($15 credit) | Twilio paid |
+| **Push Notifications** | FCM (free, always) | FCM (free, always) | FCM (free, always) |
+| **AI / Matching** | Ollama local (free) | OpenAI free credits | OpenAI paid |
+| **Embeddings** | pgvector + Ollama local | pgvector + OpenAI free tier | pgvector + OpenAI |
+| **Backend Hosting** | Docker Compose (local machine) | Render Free Tier | Railway or Fly.io |
+| **Web Hosting** | localhost:3000 | Vercel Hobby (free) | Vercel Pro |
+| **Admin Hosting** | localhost:3001 | Vercel Hobby (free) | Vercel Pro |
+| **CI/CD** | GitHub Actions (free for public repos) | GitHub Actions | GitHub Actions |
+| **Error Monitoring** | Django debug + console logs | Sentry Free (5K errors/mo) | Sentry Team |
+| **Uptime Monitoring** | n/a (local) | UptimeRobot Free (50 monitors) | UptimeRobot paid |
+| **Database Admin UI** | pgAdmin (Docker) | Supabase dashboard (free) | Supabase dashboard |
+| **API Testing** | Bruno (free, local) | Bruno | Bruno |
+| **Workflow Automation** | n8n (Docker local, free) | n8n (Docker on Render free) | n8n Cloud or self-hosted |
+| **Project Management** | GitHub Projects (free) | GitHub Projects | GitHub Projects |
+| **Docs / Wiki** | This repo (Markdown) | This repo | This repo |
 
 ---
 
-## 1. Backend — Django + Django REST Framework
+## Free Tier Limits — What We Get
 
-### Why Django
-| Criterion | Django | Node.js | Laravel |
-|-----------|--------|---------|---------|
-| Built-in admin panel | ✅ Excellent | ❌ None | ⚠️ Basic |
-| ORM quality | ✅ Best-in-class | ❌ N/A (choose your own) | ✅ Eloquent |
-| Auth & permissions | ✅ Built-in | ⚠️ Requires libs | ✅ Built-in |
-| Marketplace pattern support | ✅ Battle-tested | ⚠️ Manual | ✅ Good |
-| Egyptian dev availability | ✅ Common | ✅ Very common | ⚠️ Limited |
-| Python AI ecosystem | ✅ Best (OpenAI, LangChain, pgvector) | ❌ Secondary | ❌ Poor |
-| Decision | **CHOSEN** | Rejected | Rejected |
+| Service | Free Tier | Enough for Dev+UAT? |
+|---------|-----------|-------------------|
+| **Supabase Free** | 500MB DB, 1GB storage, 50K monthly active users | ✅ Yes — UAT has <50 users |
+| **Render Free** | 750 hrs/month (1 service), 512MB RAM, sleeps after 15min inactivity | ✅ Yes — UAT is not 24/7 critical |
+| **Vercel Hobby** | Unlimited deploys, 100GB bandwidth, serverless functions | ✅ Yes |
+| **Cloudflare R2 Free** | 10GB storage, 1M Class A ops/month, 10M Class B ops/month | ✅ Yes — UAT photos only |
+| **Redis Cloud Free** | 30MB, 1 database | ✅ Yes — UAT cache is small |
+| **Brevo Free** | 300 emails/day, unlimited contacts | ✅ Yes — UAT sends <300/day |
+| **FCM (Firebase)** | Unlimited push notifications, always free | ✅ Yes |
+| **Sentry Free** | 5,000 errors/month, 1 team member | ✅ Yes |
+| **GitHub Actions Free** | 2,000 min/month (public repos: unlimited) | ✅ Yes — use public repos |
+| **UptimeRobot Free** | 50 monitors, 5-min intervals | ✅ Yes |
+| **Twilio Trial** | $15.50 credit, ~150 SMS | ✅ Yes for testing OTP |
+| **Fawry Sandbox** | Full sandbox, free, no time limit | ✅ Yes |
+| **Ollama (local)** | Run LLMs locally, completely free | ✅ Yes for dev AI features |
+| **OpenAI Free Credits** | $5 new account credit | ✅ Yes for UAT AI testing |
 
-### Key Libraries
+**Total monthly cost for Dev + UAT: $0**
+
+---
+
+## 1. Backend — Django + DRF (unchanged)
+
+No change to the framework decision. Django + DRF remains the final choice.
+
 ```
 django==5.1
 djangorestframework==3.15
 djangorestframework-simplejwt==5.3
 django-cors-headers==4.3
 django-filter==24.1
-django-storages[cloudflare-r2]==1.14
+django-storages[s3]==1.14        # works with MinIO (dev) and R2 (UAT/prod)
 celery==5.3
 redis==5.0
 psycopg[binary]==3.1
 pgvector==0.2
 dj-database-url==2.1
 gunicorn==22.0
-openai==1.35
-langchain==0.2
-sentry-sdk==2.5
+python-decouple==3.8             # env var management
+sentry-sdk[django]==2.5
+```
+
+**Dev-only additions:**
+```
+django-debug-toolbar==4.4        # query inspection in browser
+factory-boy==3.3                 # test data factories
+pytest-django==4.8
+pytest-cov==5.0
 ```
 
 ### Project Structure
 ```
-seaconnect_api/
+seaconnect-api/
 ├── manage.py
 ├── requirements/
 │   ├── base.txt
-│   ├── development.txt
-│   └── production.txt
+│   ├── dev.txt          ← includes debug-toolbar, factory-boy, pytest
+│   └── prod.txt         ← includes gunicorn, sentry (no debug tools)
 ├── config/
 │   ├── settings/
 │   │   ├── base.py
-│   │   ├── development.py
-│   │   └── production.py
+│   │   ├── dev.py       ← DEBUG=True, local DBs, Mailpit, Ollama
+│   │   ├── uat.py       ← DEBUG=False, Supabase, Brevo, Render
+│   │   └── prod.py      ← DEBUG=False, all paid services (future)
 │   ├── urls.py
 │   └── celery.py
 ├── apps/
-│   ├── auth/
-│   ├── users/
-│   ├── yachts/
+│   ├── accounts/
+│   ├── core/
+│   ├── listings/
 │   ├── bookings/
 │   ├── payments/
 │   ├── marketplace/
 │   ├── competitions/
+│   ├── weather/
+│   ├── reviews/
 │   ├── notifications/
+│   ├── search/
+│   ├── analytics/
 │   └── admin_portal/
-├── services/
-├── tasks/
 └── tests/
-    ├── unit/
-    ├── integration/
-    └── fixtures/
 ```
 
-### Environment Variables (Required)
+---
+
+## 2. Database — PostgreSQL 16 + pgvector
+
+### Dev: Docker (local)
+```yaml
+# docker-compose.yml
+db:
+  image: pgvector/pgvector:pg16    # official image, has pgvector pre-installed
+  ports: ["5432:5432"]
+  environment:
+    POSTGRES_DB: seaconnect_dev
+    POSTGRES_USER: sc_user
+    POSTGRES_PASSWORD: localdev
+  volumes: ["postgres_data:/var/lib/postgresql/data"]
+```
+
+### UAT: Supabase Free Tier
+- Project name: `seaconnect-uat`
+- Region: eu-west-1 (Paris — closest to Egypt)
+- pgvector: pre-installed on all Supabase projects
+- Connection: use Supabase connection pooler (port 6543) for Celery workers
+- Backups: daily automatic (Supabase free includes 1-day PITR)
+
+```bash
+# UAT connection string format
+DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
+```
+
+### DB Admin UI
+
+| Env | Tool | Access |
+|-----|------|--------|
+| Dev | pgAdmin 4 (Docker, free) | http://localhost:5050 |
+| UAT | Supabase Dashboard | https://supabase.com/dashboard |
+
+```yaml
+# docker-compose.yml — pgAdmin for dev
+pgadmin:
+  image: dpage/pgadmin4
+  ports: ["5050:80"]
+  environment:
+    PGADMIN_DEFAULT_EMAIL: admin@local.dev
+    PGADMIN_DEFAULT_PASSWORD: admin
+```
+
+---
+
+## 3. Cache & Celery Broker — Redis
+
+### Dev: Docker (local)
+```yaml
+redis:
+  image: redis:7-alpine
+  ports: ["6379:6379"]
+  command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+```
+
+### UAT: Redis Cloud Free Tier
+- Provider: Redis Cloud (redis.com) — free plan
+- 30MB — enough for UAT cache (weather, sessions, feature flags)
+- 1 database, shared infrastructure
+- URL format: `redis://default:[password]@[host]:[port]`
+
+**Alternative if Redis Cloud sign-up is blocked:** Use Upstash free tier (10K commands/day free).
+
+---
+
+## 4. File Storage — MinIO (Dev) / Cloudflare R2 (UAT)
+
+### Dev: MinIO (Docker, S3-compatible)
+
+MinIO is an open-source S3-compatible object store. Django can't tell the difference between MinIO and real S3.
+
+```yaml
+minio:
+  image: minio/minio:latest
+  ports: ["9000:9000", "9001:9001"]
+  environment:
+    MINIO_ROOT_USER: minioadmin
+    MINIO_ROOT_PASSWORD: minioadmin
+  command: server /data --console-address ":9001"
+  volumes: ["minio_data:/data"]
+```
+
+```bash
+# Dev env vars (MinIO looks like S3)
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_STORAGE_BUCKET_NAME=seaconnect-dev
+AWS_S3_ENDPOINT_URL=http://minio:9000
+AWS_S3_CUSTOM_DOMAIN=localhost:9000/seaconnect-dev
+```
+
+MinIO console: http://localhost:9001 (admin UI to browse files)
+
+### UAT: Cloudflare R2 Free Tier
+- 10GB storage, 1M write ops, 10M read ops/month — free
+- S3-compatible API — same django-storages config, just different endpoint
+- Zero egress fees (unlike AWS S3)
+
+```bash
+# UAT env vars (R2)
+AWS_ACCESS_KEY_ID=[R2 Access Key]
+AWS_SECRET_ACCESS_KEY=[R2 Secret Key]
+AWS_STORAGE_BUCKET_NAME=seaconnect-uat
+AWS_S3_ENDPOINT_URL=https://[account_id].r2.cloudflarestorage.com
+```
+
+No code changes between dev and UAT — only env vars change.
+
+---
+
+## 5. Backend Hosting
+
+### Dev: Docker Compose (local machine)
+
+Full stack runs locally. One command:
+```bash
+docker compose up --build
+```
+
+### UAT: Render Free Tier
+
+Render offers a free web service tier:
+- 512MB RAM, 0.1 CPU
+- **Sleeps after 15 minutes of inactivity** (wakes in ~30 seconds on next request)
+- This is fine for UAT — it's not a production system
+
+```yaml
+# render.yaml (Render blueprint file)
+services:
+  - type: web
+    name: seaconnect-uat-api
+    env: python
+    buildCommand: pip install -r requirements/prod.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.uat
+      - key: DATABASE_URL
+        fromDatabase:
+          name: seaconnect-uat-db
+          property: connectionString
+    plan: free
+
+  - type: worker
+    name: seaconnect-uat-celery
+    env: python
+    buildCommand: pip install -r requirements/prod.txt
+    startCommand: celery -A config worker -l info -c 1
+    plan: free
+```
+
+**Important:** Render free services share infrastructure. For UAT this is acceptable.
+
+---
+
+## 6. Web Hosting — Vercel Hobby (Free)
+
+Both Next.js apps (customer web + admin portal) deploy to Vercel free tier.
+
+- Unlimited personal projects
+- 100GB bandwidth/month
+- Automatic preview deployments on every PR
+- Custom domains (connect seaconnect.eg subdomain for UAT)
+
+```bash
+# One-time setup per project
+vercel link        # link local folder to Vercel project
+vercel env add     # add environment variables
+
+# Deploy (also runs automatically via GitHub Actions)
+vercel deploy --prebuilt
+```
+
+UAT URLs:
+- Web: `https://seaconnect-uat.vercel.app` (or custom: `uat.seaconnect.eg`)
+- Admin: `https://seaconnect-uat-admin.vercel.app`
+
+---
+
+## 7. Email — Mailpit (Dev) / Brevo (UAT)
+
+### Dev: Mailpit (Docker)
+
+Mailpit catches ALL outgoing email — nothing actually sends. View emails in browser.
+
+```yaml
+mailpit:
+  image: axllent/mailpit:latest
+  ports:
+    - "1025:1025"    # SMTP port (Django sends here)
+    - "8025:8025"    # Web UI
+```
+
+```bash
+# Dev email settings
+EMAIL_HOST=mailpit
+EMAIL_PORT=1025
+EMAIL_USE_TLS=False
+DEFAULT_FROM_EMAIL=noreply@seaconnect.local
+```
+
+Mailpit UI: http://localhost:8025 — see every email the app sends
+
+### UAT: Brevo Free Tier (formerly Sendinblue)
+
+- 300 emails/day free, unlimited contacts
+- Transactional email API (works like SendGrid)
+- No credit card required for free tier
+
+```bash
+# UAT email settings
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp-relay.brevo.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=[brevo login email]
+EMAIL_HOST_PASSWORD=[brevo SMTP key]
+DEFAULT_FROM_EMAIL=noreply@seaconnect.eg
+```
+
+---
+
+## 8. SMS / OTP — Twilio (Dev + UAT)
+
+### Dev: Twilio Magic Test Numbers (Free)
+
+Twilio provides test credentials that work without sending real SMS:
+
+```bash
+TWILIO_ACCOUNT_SID=ACtest...          # test account SID
+TWILIO_AUTH_TOKEN=test_token
+TWILIO_PHONE_NUMBER=+15005550006      # Twilio magic test "from" number
+
+# Test "to" numbers (always succeed/fail predictably):
+# +15005550001 → Invalid "To" number
+# +15005550006 → Valid number, succeeds
+# +15005550007 → Blacklisted number
+# +15005550008 → Invalid number for SMS
+```
+
+No money needed. OTP codes appear in Twilio console logs.
+
+### UAT: Twilio Trial Account ($15.50 free credit)
+
+- Sign up for Twilio → get $15.50 credit automatically
+- At ~$0.04/SMS in Egypt → ~380 test SMS messages
+- More than enough for full UAT testing
+
+---
+
+## 9. Push Notifications — Firebase Cloud Messaging (Always Free)
+
+FCM is completely free with no limits for push notifications. No tier change from dev to UAT to production.
+
+```bash
+# Setup (one time):
+# 1. Create Firebase project at console.firebase.google.com
+# 2. Add Android + iOS apps
+# 3. Download google-services.json (Android) and GoogleService-Info.plist (iOS)
+# 4. Download service account JSON for backend
+
+FIREBASE_CREDENTIALS_PATH=/app/secrets/firebase-adminsdk.json
+```
+
+```python
+# notifications/fcm.py
+import firebase_admin
+from firebase_admin import credentials, messaging
+
+cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
+firebase_admin.initialize_app(cred)
+
+def send_push(token: str, title_ar: str, title_en: str, body_ar: str, body_en: str, data: dict):
+    message = messaging.Message(
+        notification=messaging.Notification(title=title_ar, body=body_ar),
+        data=data,
+        token=token,
+    )
+    messaging.send(message)
+```
+
+---
+
+## 10. AI / Embeddings
+
+### Dev: Ollama (Local, Completely Free)
+
+Ollama runs open-source LLMs locally. No API costs.
+
+```bash
+# Install Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull models
+ollama pull llama3.2        # general purpose (3.2B — fast on CPU)
+ollama pull nomic-embed-text # embeddings (replaces OpenAI text-embedding)
+
+# Add to docker-compose (optional — or run natively)
+ollama:
+  image: ollama/ollama
+  ports: ["11434:11434"]
+  volumes: ["ollama_data:/root/.ollama"]
+```
+
+```python
+# dev settings — use Ollama
+AI_PROVIDER = 'ollama'
+OLLAMA_BASE_URL = 'http://ollama:11434'
+EMBEDDING_MODEL = 'nomic-embed-text'    # 768 dims (vs OpenAI 1536)
+LLM_MODEL = 'llama3.2'
+```
+
+**Note on embeddings:** Ollama `nomic-embed-text` uses 768 dimensions, not 1536. The pgvector column in dev uses `VectorField(dimensions=768)`. In UAT/prod it switches to OpenAI `text-embedding-3-small` (1536 dims). Use an env var to control the dimension:
+
+```python
+EMBEDDING_DIMENSIONS = int(env('EMBEDDING_DIMENSIONS', default='768'))
+```
+
+### UAT: OpenAI Free Credits
+
+- New OpenAI accounts get $5 free credit
+- `text-embedding-3-small`: $0.02/1M tokens — $5 covers ~2.5B tokens of embeddings
+- More than enough for UAT
+
+```bash
+# UAT settings
+AI_PROVIDER=openai
+OPENAI_API_KEY=[key]
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSIONS=1536
+```
+
+---
+
+## 11. CI/CD — GitHub Actions (Free for Public Repos)
+
+GitHub Actions is free with unlimited minutes on public repositories.
+
+**Decision:** Keep repos public during development. No sensitive production secrets are in the code — all via environment variables. Switch to private repos when production is active.
+
+```bash
+# Free limits:
+# Public repos:  Unlimited minutes
+# Private repos: 2,000 min/month (500MB storage)
+```
+
+Pipelines defined in `14-Environments-Pipelines.md` remain unchanged.
+
+---
+
+## 12. Error Monitoring — Sentry Free
+
+- 5,000 errors/month
+- 1 team member
+- 30-day data retention
+- Covers Django backend + Flutter + Next.js
+
+```bash
+# One project per surface
+SENTRY_DSN_BACKEND=[dsn]
+SENTRY_DSN_WEB=[dsn]
+# Flutter: add sentry_flutter package, DSN in dart-define
+```
+
+Active in UAT only (not dev — too noisy during development).
+
+---
+
+## 13. API Testing — Bruno (Free, Local)
+
+Bruno is a free, offline API client (like Postman but no account needed, files stored in git).
+
+```bash
+# Install
+npm install -g @usebruno/cli
+
+# Or use the desktop app: https://www.usebruno.com/
+
+# Collections stored in repo:
+api-tests/
+  auth/
+    register.bru
+    login.bru
+    otp-verify.bru
+  bookings/
+    create-booking.bru
+    confirm-booking.bru
+  payments/
+    initiate-payment.bru
+```
+
+Every API endpoint gets a Bruno test file. Agents write these alongside the endpoint code.
+
+---
+
+## 14. Local Development — Complete Stack
+
+Running `docker compose up` starts everything:
+
+| Service | Port | Purpose | URL |
+|---------|------|---------|-----|
+| Django API | 8000 | Backend | http://localhost:8000 |
+| Next.js Web | 3000 | Customer web | http://localhost:3000 |
+| Next.js Admin | 3001 | Admin portal | http://localhost:3001 |
+| PostgreSQL | 5432 | Database | via psql or pgAdmin |
+| pgAdmin | 5050 | DB admin UI | http://localhost:5050 |
+| Redis | 6379 | Cache + broker | internal |
+| Celery | — | Background tasks | (logs only) |
+| Celery Beat | — | Scheduled tasks | (logs only) |
+| MinIO | 9000/9001 | File storage | http://localhost:9001 |
+| Mailpit | 1025/8025 | Email catcher | http://localhost:8025 |
+| Ollama | 11434 | Local AI | http://localhost:11434 |
+
+**Total RAM needed:** ~3GB for full stack. Minimum recommended: 8GB machine.
+
+---
+
+## 15. Environment Variables — Full Reference
+
+### `.env.dev` (local development)
+
 ```bash
 # Django
-SECRET_KEY=
-DEBUG=False
-ALLOWED_HOSTS=api.seaconnect.app
-DATABASE_URL=postgresql://...  # Supabase connection string
+DJANGO_SETTINGS_MODULE=config.settings.dev
+DJANGO_SECRET_KEY=dev-only-secret-key-change-in-uat
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,api
+
+# Database
+DATABASE_URL=postgresql://sc_user:localdev@db:5432/seaconnect_dev
 
 # Redis
-REDIS_URL=rediss://...  # Upstash Redis URL
+REDIS_URL=redis://redis:6379/0
 
-# Cloudflare R2
-R2_ACCOUNT_ID=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_BUCKET_NAME=seaconnect-media
+# Storage (MinIO)
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_STORAGE_BUCKET_NAME=seaconnect-dev
+AWS_S3_ENDPOINT_URL=http://minio:9000
 
-# Fawry
-FAWRY_MERCHANT_CODE=
-FAWRY_SECURITY_KEY=
-FAWRY_API_URL=https://www.atfawry.com/ECommerceWeb/Fawry/payments/
+# Email (Mailpit)
+EMAIL_HOST=mailpit
+EMAIL_PORT=1025
+EMAIL_USE_TLS=False
+DEFAULT_FROM_EMAIL=noreply@seaconnect.local
 
-# Stripe
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+# SMS (Twilio test)
+TWILIO_ACCOUNT_SID=ACtest_placeholder
+TWILIO_AUTH_TOKEN=test_placeholder
+TWILIO_PHONE_NUMBER=+15005550006
 
-# Firebase (FCM)
-FIREBASE_PROJECT_ID=
-FIREBASE_PRIVATE_KEY=
-FIREBASE_CLIENT_EMAIL=
+# Payments (Fawry sandbox)
+FAWRY_MERCHANT_CODE=sandbox_merchant_code
+FAWRY_SECURITY_KEY=sandbox_security_key
+FAWRY_BASE_URL=https://atfawry.fawrystaging.com/ECommerceWeb
 
-# SendGrid
-SENDGRID_API_KEY=
+# Firebase
+FIREBASE_CREDENTIALS_PATH=/app/secrets/firebase-dev-adminsdk.json
 
-# Twilio
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-TWILIO_FROM_NUMBER=+20...
+# AI (Ollama local)
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://ollama:11434
+EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_DIMENSIONS=768
+LLM_MODEL=llama3.2
 
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# Sentry
-SENTRY_DSN=
-
-# JWT
-JWT_ACCESS_TOKEN_LIFETIME_MINUTES=15
-JWT_REFRESH_TOKEN_LIFETIME_DAYS=30
+# App
+APP_VERSION=0.1.0-dev
 ```
 
----
+### `.env.uat` (Render + Supabase + free services)
 
-## 2. Mobile — Flutter
-
-### Why Flutter
-| Criterion | Flutter | React Native |
-|-----------|---------|-------------|
-| Arabic RTL support | ✅ Native, reliable | ⚠️ Known issues with some components |
-| Single codebase (iOS + Android) | ✅ Yes | ✅ Yes |
-| Performance | ✅ Compiled to native | ⚠️ JS bridge overhead |
-| UI consistency | ✅ Own rendering engine | ⚠️ Platform differences |
-| Egyptian dev availability | ✅ Growing fast | ✅ Common |
-| Offline capability | ✅ Excellent | ✅ Good |
-| Decision | **CHOSEN** | Rejected |
-
-### Key Packages
-```yaml
-dependencies:
-  flutter_localizations: sdk: flutter
-  intl: ^0.19.0              # Date/number formatting (Arabic)
-  dio: ^5.4.0                # HTTP client
-  flutter_secure_storage: ^9.0.0  # JWT storage
-  firebase_core: ^2.27.0
-  firebase_messaging: ^14.7.0    # Push notifications
-  google_sign_in: ^6.2.0
-  sign_in_with_apple: ^5.0.0
-  image_picker: ^1.0.7
-  cached_network_image: ^3.3.1
-  flutter_map: ^6.1.0        # Maps (OpenStreetMap, free)
-  geolocator: ^11.0.0
-  go_router: ^13.2.0         # Navigation
-  riverpod: ^2.5.1           # State management
-  freezed: ^2.5.2            # Immutable models
-  json_annotation: ^4.9.0
-  hive: ^2.2.3               # Local cache
-  flutter_stripe: ^10.1.0    # Stripe SDK
-```
-
-### Folder Structure
-```
-seaconnect_app/
-├── lib/
-│   ├── main.dart
-│   ├── app.dart              # MaterialApp, routing, locale
-│   ├── core/
-│   │   ├── api/              # Dio client, interceptors
-│   │   ├── auth/             # JWT storage, refresh logic
-│   │   ├── theme/            # Colors, typography, RTL
-│   │   └── localization/     # AR/EN strings
-│   ├── features/
-│   │   ├── auth/             # Login, register, OTP
-│   │   ├── home/             # Dashboard
-│   │   ├── yachts/           # Browse, detail, book
-│   │   ├── bookings/         # My bookings, history
-│   │   ├── marketplace/      # Products, cart, checkout
-│   │   ├── competitions/     # Browse, register, leaderboard
-│   │   ├── profile/          # User + owner/vendor profile
-│   │   └── notifications/    # Notification center
-│   └── shared/
-│       ├── widgets/          # Reusable UI components
-│       └── utils/            # Date formatting, validators
-├── assets/
-│   ├── images/
-│   ├── icons/
-│   └── translations/
-│       ├── ar.json
-│       └── en.json
-└── test/
-```
-
-### Build & Release
 ```bash
-# Android release APK
-flutter build apk --release
+# Django
+DJANGO_SETTINGS_MODULE=config.settings.uat
+DJANGO_SECRET_KEY=[generate: python -c "import secrets; print(secrets.token_urlsafe(50))"]
+DEBUG=False
+ALLOWED_HOSTS=seaconnect-uat-api.onrender.com,uat-api.seaconnect.eg
 
-# Android App Bundle (Play Store)
-flutter build appbundle --release
+# Database (Supabase free)
+DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
 
-# iOS (requires Mac + Xcode)
-flutter build ios --release
+# Redis (Redis Cloud free)
+REDIS_URL=redis://default:[password]@[host]:[port]
 
-# Run tests
-flutter test
+# Storage (Cloudflare R2 free)
+AWS_ACCESS_KEY_ID=[R2 access key]
+AWS_SECRET_ACCESS_KEY=[R2 secret key]
+AWS_STORAGE_BUCKET_NAME=seaconnect-uat
+AWS_S3_ENDPOINT_URL=https://[account_id].r2.cloudflarestorage.com
 
-# Analyze
-flutter analyze
+# Email (Brevo free)
+EMAIL_HOST=smtp-relay.brevo.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=[brevo account email]
+EMAIL_HOST_PASSWORD=[brevo SMTP key]
+DEFAULT_FROM_EMAIL=noreply@seaconnect.eg
+
+# SMS (Twilio trial)
+TWILIO_ACCOUNT_SID=[real account SID]
+TWILIO_AUTH_TOKEN=[real auth token]
+TWILIO_PHONE_NUMBER=[verified trial number]
+
+# Payments (Fawry sandbox — same as dev)
+FAWRY_MERCHANT_CODE=sandbox_merchant_code
+FAWRY_SECURITY_KEY=sandbox_security_key
+FAWRY_BASE_URL=https://atfawry.fawrystaging.com/ECommerceWeb
+
+# Firebase
+FIREBASE_CREDENTIALS_PATH=/etc/secrets/firebase-adminsdk.json
+
+# AI (OpenAI free credits)
+AI_PROVIDER=openai
+OPENAI_API_KEY=[key]
+EMBEDDING_MODEL=text-embedding-3-small
+EMBEDDING_DIMENSIONS=1536
+
+# Monitoring
+SENTRY_DSN=[sentry project DSN]
+
+# App
+APP_VERSION=0.1.0-uat
 ```
 
 ---
 
-## 3. Web App — Next.js 14 (TypeScript)
+## 16. Free Service Sign-Up Checklist
 
-### Why Next.js
-- Server-side rendering critical for SEO — boat listings must appear in Google search
-- App Router (Next.js 14) supports server components → faster initial load
-- Vercel deployment is zero-config → reduced DevOps burden
-- TypeScript enforces type safety at build time
+Do these once, in order:
 
-### Key Packages
-```json
-{
-  "dependencies": {
-    "next": "14.2",
-    "react": "18.3",
-    "typescript": "5.4",
-    "next-intl": "3.12",
-    "@tanstack/react-query": "5.40",
-    "axios": "1.7",
-    "zustand": "4.5",
-    "react-hook-form": "7.51",
-    "zod": "3.23",
-    "tailwindcss": "3.4",
-    "@stripe/stripe-js": "3.4",
-    "next-auth": "4.24",
-    "sentry/nextjs": "8.6",
-    "leaflet": "1.9",
-    "react-leaflet": "4.2",
-    "date-fns": "3.6",
-    "date-fns/locale/ar": "3.6"
-  }
-}
 ```
+GitHub
+  [ ] Create GitHub account / organization
+  [ ] Create 3 repos: seaconnect-api, seaconnect-web, seaconnect-mobile
+  [ ] Keep repos PUBLIC (unlimited Actions minutes)
 
-### Folder Structure
-```
-seaconnect_web/
-├── app/                      # Next.js 14 App Router
-│   ├── [locale]/             # Language routing (/ar/, /en/)
-│   │   ├── page.tsx          # Homepage
-│   │   ├── yachts/
-│   │   │   ├── page.tsx      # Yacht listing (SSR + SEO)
-│   │   │   └── [id]/page.tsx # Yacht detail (SSR)
-│   │   ├── marketplace/
-│   │   ├── competitions/
-│   │   ├── bookings/
-│   │   ├── account/
-│   │   └── admin/            # Admin portal (role-gated)
-│   └── api/                  # Next.js API routes (webhooks, OAuth callbacks)
-├── components/
-│   ├── ui/                   # Base components (Button, Input, Modal)
-│   ├── yacht/                # YachtCard, YachtMap, AvailabilityCalendar
-│   ├── marketplace/          # ProductCard, Cart, OrderStatus
-│   └── competition/          # CompetitionCard, Leaderboard
-├── lib/
-│   ├── api.ts                # Axios client to Django API
-│   ├── auth.ts               # next-auth configuration
-│   └── utils.ts
-├── messages/                 # i18n strings
-│   ├── ar.json
-│   └── en.json
-└── middleware.ts             # Locale detection + auth middleware
-```
+Supabase (database)
+  [ ] Sign up at supabase.com (GitHub login)
+  [ ] Create project: seaconnect-uat, region: eu-west-1
+  [ ] Enable pgvector: Extensions → enable vector
+  [ ] Copy connection string to .env.uat
 
----
+Render (backend hosting)
+  [ ] Sign up at render.com (GitHub login)
+  [ ] Connect GitHub repo: seaconnect-api
+  [ ] Create web service: seaconnect-uat-api
+  [ ] Create background worker: seaconnect-uat-celery
+  [ ] Set environment variables from .env.uat
 
-## 4. Database — PostgreSQL 16 (Supabase)
+Vercel (web hosting)
+  [ ] Sign up at vercel.com (GitHub login)
+  [ ] Import seaconnect-web → project: seaconnect-uat-web
+  [ ] Import seaconnect-web (admin app) → project: seaconnect-uat-admin
+  [ ] Set environment variables for each
 
-### Why Supabase
-- Managed PostgreSQL with automatic backups (point-in-time recovery)
-- Built-in connection pooling (PgBouncer) — handles Django's connection model
-- pgvector extension enabled by default — required for AI semantic search
-- Built-in dashboard for admin queries
-- Row-level security (RLS) available if needed
-- Free tier sufficient for development; Pro ($25/month) for production
+Cloudflare (storage + DNS)
+  [ ] Sign up at cloudflare.com (free)
+  [ ] Create R2 bucket: seaconnect-uat
+  [ ] Generate R2 API token (read+write)
+  [ ] (Optional) Add domain seaconnect.eg to Cloudflare DNS
 
-### Extensions Required
-```sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";    -- UUID generation
-CREATE EXTENSION IF NOT EXISTS "pgvector";      -- AI embeddings
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";       -- Fuzzy text search
-CREATE EXTENSION IF NOT EXISTS "unaccent";      -- Arabic text search normalization
-```
+Redis Cloud (cache)
+  [ ] Sign up at redis.com (free)
+  [ ] Create free database (30MB)
+  [ ] Copy connection URL to .env.uat
 
-### Connection Configuration
-```python
-# Django settings
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'OPTIONS': {
-            'pool': True,         # Use connection pooling
-            'connect_timeout': 10,
-            'options': '-c default_transaction_isolation=read\ committed'
-        }
-    }
-}
-# Or use dj-database-url:
-DATABASES = {'default': dj_database_url.parse(env('DATABASE_URL'))}
+Brevo (email)
+  [ ] Sign up at brevo.com (free, no credit card)
+  [ ] Verify sender domain or email
+  [ ] Go to SMTP & API → SMTP tab → copy host + credentials
+
+Twilio (SMS)
+  [ ] Sign up at twilio.com
+  [ ] Auto-gets $15.50 trial credit
+  [ ] Verify your own phone number (required for trial)
+  [ ] Get a trial phone number
+  [ ] Copy Account SID + Auth Token + phone number
+
+Firebase (push notifications)
+  [ ] Go to console.firebase.google.com
+  [ ] Create project: seaconnect-uat
+  [ ] Add Android app (package: com.seaconnect.app)
+  [ ] Add iOS app (bundle: com.seaconnect.app)
+  [ ] Download credentials files
+  [ ] Project Settings → Service Accounts → Generate new private key
+  [ ] Save as firebase-adminsdk.json
+
+Sentry (error monitoring)
+  [ ] Sign up at sentry.io (free)
+  [ ] Create 3 projects: seaconnect-api, seaconnect-web, seaconnect-mobile
+  [ ] Copy DSN for each to .env.uat
+
+Fawry Sandbox (payments)
+  [ ] Register at atfawry.com for sandbox merchant account
+  [ ] Get sandbox merchant code + security key
+  [ ] Test with Fawry sandbox card numbers (in Payment Gateway Plan doc)
+
+UptimeRobot (uptime)
+  [ ] Sign up at uptimerobot.com (free)
+  [ ] Add monitor: https://seaconnect-uat-api.onrender.com/health/
+  [ ] Set alert email
+
+Total accounts to create: 12
+Total cost: $0
 ```
 
 ---
 
-## 5. Cache & Queue — Redis (Upstash) + Celery
+## 17. When to Switch to Production Stack
 
-### Upstash Redis
-- Serverless Redis — pay per request, no idle cost
-- Persistent (AOF) — data survives restarts
-- TLS encrypted by default
-- Global edge network — low latency from Egypt
+Switch each service to paid when:
 
-### Celery Configuration
-```python
-# config/celery.py
-app = Celery('seaconnect')
-app.config_from_object('django.conf:settings', namespace='CELERY')
-app.conf.update(
-    broker_url=env('REDIS_URL'),
-    result_backend=env('REDIS_URL'),
-    task_serializer='json',
-    result_serializer='json',
-    accept_content=['json'],
-    timezone='Africa/Cairo',
-    task_routes={
-        'tasks.booking_tasks.*': {'queue': 'bookings'},
-        'tasks.payment_tasks.*': {'queue': 'payments'},
-        'tasks.notification_tasks.*': {'queue': 'notifications'},
-        'tasks.matching_tasks.*': {'queue': 'ai_matching'},
-    }
-)
-```
+| Service | Switch When |
+|---------|------------|
+| Render → Railway | First paying user OR Render sleep is causing issues for demos |
+| Supabase Free → Pro ($25/mo) | Database > 400MB OR need >50K MAU |
+| Redis Cloud → Upstash | Cache > 25MB or need persistence |
+| Brevo Free → Paid | Sending > 300 emails/day |
+| Twilio Trial → Paid | Trial credit runs out |
+| Vercel Hobby → Pro | Need team members or commercial use policy requires it |
+| Cloudflare R2 → (already free at scale) | R2 stays free very long |
+| OpenAI Free → Paid | $5 credit runs out |
+| Sentry Free → Team | >5K errors/month |
 
-### Celery Beat Schedule (Cron Jobs)
-```python
-app.conf.beat_schedule = {
-    'check-stuck-payments': {
-        'task': 'tasks.payment_tasks.check_stuck_payments',
-        'schedule': crontab(minute='*/15'),  # Every 15 min
-    },
-    'check-unanswered-bookings': {
-        'task': 'tasks.booking_tasks.check_unanswered_bookings',
-        'schedule': crontab(minute='*/15'),  # Every 15 min
-    },
-    'refresh-leaderboard': {
-        'task': 'tasks.competition_tasks.refresh_leaderboard',
-        'schedule': crontab(minute=0),       # Every hour
-    },
-    'daily-admin-digest': {
-        'task': 'tasks.notification_tasks.send_admin_digest',
-        'schedule': crontab(hour=8, minute=0),  # 8 AM Cairo
-    },
-    'process-pending-payouts': {
-        'task': 'tasks.payment_tasks.process_pending_payouts',
-        'schedule': crontab(hour=2, minute=0),  # 2 AM daily
-    },
-    'vendor-subscription-renewals': {
-        'task': 'tasks.subscription_tasks.check_renewals',
-        'schedule': crontab(hour=9, minute=0),  # 9 AM daily
-    },
-    'reindex-search-embeddings': {
-        'task': 'tasks.search_tasks.reindex_new_listings',
-        'schedule': crontab(minute=0, hour='*/6'),  # Every 6 hours
-    },
-}
-```
-
----
-
-## 6. CI/CD — GitHub Actions
-
-### Pipeline Definition
-```yaml
-# .github/workflows/ci.yml
-name: CI/CD Pipeline
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  # ── Backend ──────────────────────────────────────
-  backend-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install ruff
-      - run: ruff check .
-
-  backend-test:
-    needs: backend-lint
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: pgvector/pgvector:pg16
-        env: { POSTGRES_PASSWORD: test }
-      redis:
-        image: redis:7
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: pip install -r requirements/development.txt
-      - run: python manage.py test --parallel
-      - run: coverage report --fail-under=80
-
-  backend-security:
-    needs: backend-lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: pip install bandit safety
-      - run: bandit -r apps/ services/
-      - run: safety check -r requirements/production.txt
-
-  backend-deploy:
-    needs: [backend-test, backend-security]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy to Railway
-        run: railway up --service django_api
-        env: { RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }} }
-
-  # ── Frontend ─────────────────────────────────────
-  frontend-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci
-        working-directory: seaconnect_web
-      - run: npm run lint && npm run type-check && npm run build
-        working-directory: seaconnect_web
-
-  # ── Mobile ───────────────────────────────────────
-  flutter-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.x' }
-      - run: flutter pub get && flutter analyze && flutter test
-        working-directory: seaconnect_app
-```
-
----
-
-## 7. Infrastructure Accounts to Set Up (Week 1 Checklist)
-
-| Service | URL | Priority | Notes |
-|---------|-----|----------|-------|
-| GitHub Organization | github.com | P0 | Create `seaconnect` org, private repo |
-| Supabase | supabase.com | P0 | Create project, note DB URL |
-| Railway | railway.app | P0 | Create project, add PostgreSQL service |
-| Vercel | vercel.com | P0 | Connect GitHub repo |
-| Upstash Redis | upstash.com | P0 | Create Redis database |
-| Cloudflare | cloudflare.com | P0 | Add domain, enable R2 |
-| Fawry Merchant Portal | fawry.com/merchant | P0 | Apply immediately — 4-6 week wait |
-| Firebase Console | firebase.google.com | P1 | Create project, enable FCM |
-| SendGrid | sendgrid.com | P1 | Verify domain, create API key |
-| Twilio | twilio.com | P1 | Get Egyptian phone number |
-| Stripe | stripe.com | P1 | Create account, pending bank verification |
-| OpenAI | platform.openai.com | P1 | Set monthly spend cap ($100 to start) |
-| Sentry | sentry.io | P1 | Create Django + Flutter + Next.js projects |
-| Grafana Cloud | grafana.com | P2 | Free tier sufficient for Year 1 |
-| UptimeRobot | uptimerobot.com | P2 | Monitor `api.seaconnect.app` and `seaconnect.app` |
-
----
-
-**Last Updated:** April 6, 2026
-**Owner:** CTO / Tech Lead
+**Expected switch point:** When first 10 paying users onboarded.  
+**Expected first paid infrastructure bill:** ~$50–80/month.
