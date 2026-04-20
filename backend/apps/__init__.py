@@ -1,0 +1,1 @@
+"""SeaConnect Django apps package."""
