@@ -1,0 +1,32 @@
+name: Deploy UAT — API (Render)
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "backend/**"
+      - "render.yaml"
+
+jobs:
+  deploy-api:
+    name: Deploy API to Render
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Render deploy
+        run: |
+          curl -X POST \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_UAT_API_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}'
+
+      - name: Wait for deploy to complete
+        run: sleep 90
+
+      - name: Smoke test health endpoint
+        run: |
+          curl --fail --retry 5 --retry-delay 10 \
+            https://seaconnect-uat-api.onrender.com/health/

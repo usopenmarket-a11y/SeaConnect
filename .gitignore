@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.env
+.venv
+venv/
+ENV/
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+.env.dev.local
+.env.uat.local
+.env.prod
+
+# JWT keys (NEVER commit real keys)
+backend/keys/*.pem
+*.pem
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+.npm
+
+# Testing
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+postgres_dev_data/
+minio_data/
+
+# Vercel
+.vercel/

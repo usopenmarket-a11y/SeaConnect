@@ -1,0 +1,99 @@
+name: CI — Lint & Test
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: seaconnect_test
+          POSTGRES_USER: sc_user
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      DJANGO_ENV: test
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SECRET_KEY: ci-test-secret-key
+      DEBUG: "False"
+      DATABASE_URL: postgresql://sc_user:testpassword@localhost:5432/seaconnect_test
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/0
+      JWT_PRIVATE_KEY_PATH: /tmp/jwt_private.pem
+      JWT_PUBLIC_KEY_PATH: /tmp/jwt_public.pem
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_STORAGE_BUCKET_NAME: test-bucket
+      AWS_S3_ENDPOINT_URL: http://localhost:9000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate JWT test keys
+        run: |
+          openssl genrsa -out /tmp/jwt_private.pem 2048
+          openssl rsa -in /tmp/jwt_private.pem -pubout -out /tmp/jwt_public.pem
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements/dev.txt
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements/dev.txt
+
+      - name: Django system check
+        run: python manage.py check
+        working-directory: backend/
+
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+        working-directory: backend/
+
+      - name: Run tests
+        run: pytest tests/ apps/ -v --tb=short
+        working-directory: backend/
+
+  web:
+    name: Web checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: web/
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+        working-directory: web/
+
+      - name: ESLint
+        run: npx eslint . --ext .ts,.tsx
+        working-directory: web/

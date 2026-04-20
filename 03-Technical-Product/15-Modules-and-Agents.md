@@ -433,29 +433,15 @@ GET    /admin/stats/
 
 ---
 
-#### Frontend 1 — Flutter Mobile App
+#### Frontend 1 — Flutter Mobile App *(DEFERRED — Year 2+)*
 
-**Screens:** ~71 screens across 4 roles  
-**State management:** Riverpod  
-**Navigation:** GoRouter  
-**Localizations:** `app_ar.arb` + `app_en.arb`
+> **Decision (April 2026):** Mobile apps are deferred until the web platform achieves product-market fit. Flutter development begins after the web app is live and growing. All `flutter-screen-agent` tasks are inactive until this phase starts.
 
-| Feature Set | Screens | Backend Module |
-|------------|---------|----------------|
-| Auth | 10 | `accounts` |
-| Explore & Search | 6 | `search`, `listings`, `weather` |
-| Yacht Detail | 3 | `listings`, `weather`, `reviews` |
-| Booking Flow | 5 | `bookings`, `payments` |
-| My Bookings | 4 | `bookings` |
-| Reviews | 2 | `reviews` |
-| Marketplace | 8 | `marketplace` |
-| Cart & Checkout | 3 | `marketplace`, `payments` |
-| Owner Dashboard | 6 | `listings`, `bookings`, `analytics` |
-| Vendor Dashboard | 5 | `marketplace`, `analytics` |
-| Fishing Guide | 3 | `weather` |
-| Notifications | 2 | `notifications` |
-| Profile & Settings | 4 | `accounts` |
-| Admin Mobile | 5 (Phase 2) | `admin_portal` |
+**When activated (Year 2):**
+- ~71 screens across 4 roles
+- State management: Riverpod
+- Navigation: GoRouter
+- Localizations: `app_ar.arb` + `app_en.arb`
 
 ---
 
@@ -836,18 +822,22 @@ Which agents touch which modules:
 
 ## Part 4: Sprint-by-Sprint Agent Activation
 
+> **Web-First Strategy (decided April 2026):** All Flutter mobile sprints are deferred to Year 2. Sprints 1–20 focus on the Next.js web app + Django backend only.
+
 | Sprint | Goal | Active Agents |
 |--------|------|--------------|
-| 1 | Infrastructure + core setup | `django-model-agent`, `sprint-kickoff-agent`, `devops-agent` (infra) |
+| 1 | Infrastructure + core setup | `django-model-agent`, `sprint-kickoff-agent` |
 | 2 | Auth module complete | `django-model-agent`, `api-endpoint-agent`, `test-writer-agent`, `security-audit-agent` |
-| 3 | Listings module + Flutter explore | `django-model-agent`, `api-endpoint-agent`, `flutter-screen-agent`, `test-writer-agent` |
-| 4 | Bookings module + Flutter booking flow | All above + `rtl-audit-agent` |
+| 3 | Listings module + web explore page | `django-model-agent`, `api-endpoint-agent`, `nextjs-page-agent`, `test-writer-agent` |
+| 4 | Bookings module + web booking flow | All above + `rtl-audit-agent` |
 | 5 | Payments (Fawry) integration | `payment-integration-agent`, `security-audit-agent`, `test-writer-agent` |
-| 6 | Marketplace module + Flutter marketplace | `api-endpoint-agent`, `flutter-screen-agent`, `rtl-audit-agent` |
+| 6 | Marketplace module + web marketplace pages | `api-endpoint-agent`, `nextjs-page-agent`, `rtl-audit-agent` |
 | 7 | Admin portal + approval workflows | `admin-portal-agent`, `nextjs-page-agent`, `security-audit-agent` |
-| 8 | Reviews + notifications | `api-endpoint-agent`, `notification-agent`, `flutter-screen-agent` |
-| 9 | Weather + fishing guide | `weather-fishing-agent`, `flutter-screen-agent`, `celery-task-agent` |
+| 8 | Reviews + notifications | `api-endpoint-agent`, `notification-agent`, `nextjs-page-agent` |
+| 9 | Weather + fishing guide web pages | `weather-fishing-agent`, `nextjs-page-agent`, `celery-task-agent` |
 | 10 | Search + semantic matching | `api-endpoint-agent`, `db-query-agent` |
 | 11–14 | Polish, RTL QA, performance | `rtl-audit-agent`, `db-query-agent`, `test-writer-agent` |
 | 15–17 | Load testing + security hardening | `security-audit-agent`, `migration-safety-agent` |
 | 18–20 | Soft launch + production release | `release-agent`, `technical-orchestrator-agent` |
+
+**Year 2+ (Mobile Phase):** Activate `flutter-screen-agent`, `rtl-audit-agent` (Flutter), add mobile sprints after web PMF confirmed.
