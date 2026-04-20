@@ -1,0 +1,99 @@
+/* SeaConnect Design System — CSS Custom Properties */
+/* Arabic-first RTL design. Logical CSS properties are used throughout. */
+
+:root {
+  /* Brand colour tokens (oklch for wide-gamut support) */
+  --ink: oklch(0.20 0.045 235);      /* primary text */
+  --sea: oklch(0.38 0.08 220);       /* brand primary */
+  --pearl: oklch(0.97 0.008 210);    /* page background */
+  --sand: oklch(0.955 0.015 85);     /* card background */
+
+  /* Semantic aliases */
+  --color-text-base: var(--ink);
+  --color-text-brand: var(--sea);
+  --color-bg-page: var(--pearl);
+  --color-bg-card: var(--sand);
+  --color-bg-brand: var(--sea);
+
+  /* Typography scale */
+  --font-display: 'Amiri', serif;
+  --font-sans: 'Cairo', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* Base reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background-color: var(--pearl);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100dvh;
+  line-height: 1.6;
+}
+
+/* Logical-property focus ring — works in both LTR and RTL */
+:focus-visible {
+  outline: 2px solid var(--sea);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Arabic heading font for display elements */
+[lang="ar"] h1,
+[lang="ar"] h2,
+[lang="ar"] h3 {
+  font-family: var(--font-display);
+  line-height: 1.4;
+}
+
+/* Smooth scrolling */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Number display — monospace for prices and counts */
+.tabular-nums {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

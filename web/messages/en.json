@@ -1,0 +1,58 @@
+{
+  "common": {
+    "appName": "SeaConnect",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search"
+  },
+  "nav": {
+    "home": "Home",
+    "bookings": "Bookings",
+    "profile": "Profile",
+    "login": "Log In",
+    "logout": "Log Out"
+  },
+  "home": {
+    "hero": {
+      "title": "Explore the sea in a new way",
+      "subtitle": "Book your boat, find your gear, join tournaments",
+      "cta": "Get Started"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Log In",
+      "email": "Email address",
+      "password": "Password",
+      "submit": "Log In",
+      "noAccount": "Don't have an account?",
+      "register": "Register now"
+    },
+    "register": {
+      "title": "Create an account",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email address",
+      "password": "Password",
+      "submit": "Create account",
+      "hasAccount": "Already have an account?",
+      "login": "Log in"
+    }
+  },
+  "bookings": {
+    "title": "My Bookings",
+    "empty": "No bookings yet",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
+  }
+}
