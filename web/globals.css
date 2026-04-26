@@ -1,53 +1,39 @@
-/* SeaConnect Design System — CSS Custom Properties */
-/* Arabic-first RTL design. Logical CSS properties are used throughout. */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;500;600;700;900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&display=swap');
 
 :root {
-  /* Brand colour tokens (oklch for wide-gamut support) */
-  --ink: oklch(0.20 0.045 235);      /* primary text */
-  --sea: oklch(0.38 0.08 220);       /* brand primary */
-  --pearl: oklch(0.97 0.008 210);    /* page background */
-  --sand: oklch(0.955 0.015 85);     /* card background */
+  --ink: oklch(0.20 0.045 235);
+  --ink-2: oklch(0.28 0.055 230);
+  --abyss: oklch(0.14 0.04 240);
+  --tide: oklch(0.46 0.09 215);
+  --sea: oklch(0.38 0.08 220);
+  --sea-glow: oklch(0.62 0.10 200);
+  --foam: oklch(0.99 0.004 200);
+  --pearl: oklch(0.97 0.008 210);
+  --sand: oklch(0.955 0.015 85);
+  --sand-2: oklch(0.93 0.022 80);
+  --sand-3: oklch(0.87 0.028 75);
+  --clay: oklch(0.58 0.12 40);
+  --clay-soft: oklch(0.86 0.05 55);
+  --brass: oklch(0.72 0.09 75);
+  --rule: oklch(0.84 0.015 215);
+  --rule-strong: oklch(0.68 0.025 215);
+  --muted: oklch(0.46 0.02 230);
+  --muted-2: oklch(0.60 0.015 230);
 
-  /* Semantic aliases */
-  --color-text-base: var(--ink);
-  --color-text-brand: var(--sea);
-  --color-bg-page: var(--pearl);
-  --color-bg-card: var(--sand);
-  --color-bg-brand: var(--sea);
+  --ff-display: 'Amiri', 'Instrument Serif', serif;
+  --ff-sans: 'Cairo', 'Inter', system-ui, sans-serif;
+  --ff-serif-en: 'Instrument Serif', 'Amiri', serif;
+  --ff-mono: 'Geist Mono', ui-monospace, monospace;
 
-  /* Typography scale */
-  --font-display: 'Amiri', serif;
-  --font-sans: 'Cairo', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
-
-  /* Spacing */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-
-  /* Border radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-full: 9999px;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-  /* Transitions */
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
+  --pad: 20px;
+  --pad-sm: 14px;
+  --pad-lg: 32px;
+  --row-h: 56px;
+  --card-pad: 24px;
+  --gap: 16px;
+  --radius: 4px;
 }
 
-/* Base reset */
 *,
 *::before,
 *::after {
@@ -56,44 +42,36 @@
   padding: 0;
 }
 
-html {
-  font-family: var(--font-sans);
+html,
+body {
+  background: var(--pearl);
   color: var(--ink);
-  background-color: var(--pearl);
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-body {
-  min-height: 100dvh;
-  line-height: 1.6;
-}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 
-/* Logical-property focus ring — works in both LTR and RTL */
 :focus-visible {
   outline: 2px solid var(--sea);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
-/* Arabic heading font for display elements */
-[lang="ar"] h1,
-[lang="ar"] h2,
-[lang="ar"] h3 {
-  font-family: var(--font-display);
-  line-height: 1.4;
-}
+.mono { font-family: var(--ff-mono); letter-spacing: 0.01em; }
+.display { font-family: var(--ff-display); font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; }
+.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.num { font-family: var(--ff-mono); direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+.hairline { border: 0; border-top: 1px solid var(--rule); }
 
-/* Smooth scrolling */
 @media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 }
 
-/* Number display — monospace for prices and counts */
-.tabular-nums {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--sand); }
+::-webkit-scrollbar-thumb { background: var(--rule-strong); }

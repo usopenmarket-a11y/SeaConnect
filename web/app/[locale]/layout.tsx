@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getMessages, getTranslations } from 'next-intl/server'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { AuthProvider } from '@/lib/auth'
 
 /** Supported locales — mirrors middleware.ts */
 const SUPPORTED_LOCALES = ['ar', 'en'] as const
@@ -58,11 +59,13 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir}>
       <body className="flex min-h-dvh flex-col bg-pearl font-sans text-ink">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Header locale={locale} />
-          <main className="flex-1" id="main-content">
-            {children}
-          </main>
-          <Footer />
+          <AuthProvider>
+            <Header locale={locale} />
+            <main className="flex-1" id="main-content">
+              {children}
+            </main>
+            <Footer />
+          </AuthProvider>
         </NextIntlClientProvider>
       </body>
     </html>

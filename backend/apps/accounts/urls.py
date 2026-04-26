@@ -1,27 +1,15 @@
-"""URL routes for the accounts app.
-
-JWT obtain/refresh/verify endpoints use djangorestframework-simplejwt views.
-Custom endpoints (register, /me, OTP) will be added in Sprint 2.
-"""
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenBlacklistView,
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-)
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
-from . import views
+from .views import LoginView, LogoutView, RegisterView, UserMeView
 
 app_name = "accounts"
 
 urlpatterns = [
-    # JWT token lifecycle
-    path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain"),
-    path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-    path("auth/token/verify/", TokenVerifyView.as_view(), name="token-verify"),
-    path("auth/token/blacklist/", TokenBlacklistView.as_view(), name="token-blacklist"),
-
-    # Profile
-    path("me/", views.MeView.as_view(), name="me"),
+    path("auth/register/", RegisterView.as_view(), name="auth-register"),
+    path("auth/login/", LoginView.as_view(), name="auth-login"),
+    path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
+    path("auth/verify/", TokenVerifyView.as_view(), name="auth-verify"),
+    path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
+    path("users/me/", UserMeView.as_view(), name="users-me"),
 ]

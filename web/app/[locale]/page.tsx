@@ -11,6 +11,7 @@ interface HomePageProps {
  *
  * Renders the marketing hero section. All copy is served via i18n keys
  * (ADR-015). Visual design matches Design/SeaConnect.html hero section.
+ * Primary CTA links to the yacht listing page (/yachts).
  */
 export default function HomePage({
   params: { locale },
@@ -42,13 +43,23 @@ export default function HomePage({
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <Link href={`/${locale}/register`}>
+          {/* Primary CTA: explore the yacht catalogue */}
+          <Link href={`/${locale}/yachts`}>
             <Button variant="primary" size="lg">
+              {t('exploreYachts')}
+            </Button>
+          </Link>
+
+          {/* Secondary CTA: sign up */}
+          <Link href={`/${locale}/register`}>
+            <Button variant="secondary" size="lg">
               {t('cta')}
             </Button>
           </Link>
+
+          {/* Tertiary: login */}
           <Link href={`/${locale}/login`}>
-            <Button variant="secondary" size="lg">
+            <Button variant="ghost" size="lg">
               {tNav('login')}
             </Button>
           </Link>

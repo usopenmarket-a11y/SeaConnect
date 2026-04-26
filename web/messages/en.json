@@ -16,13 +16,15 @@
     "bookings": "Bookings",
     "profile": "Profile",
     "login": "Log In",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "yachts": "Yachts"
   },
   "home": {
     "hero": {
       "title": "Explore the sea in a new way",
       "subtitle": "Book your boat, find your gear, join tournaments",
-      "cta": "Get Started"
+      "cta": "Get Started",
+      "exploreYachts": "Browse Yachts"
     }
   },
   "auth": {
@@ -40,6 +42,9 @@
       "lastName": "Last name",
       "email": "Email address",
       "password": "Password",
+      "role": "Account type",
+      "roleCustomer": "Customer",
+      "roleOwner": "Boat owner",
       "submit": "Create account",
       "hasAccount": "Already have an account?",
       "login": "Log in"
@@ -54,5 +59,29 @@
       "cancelled": "Cancelled",
       "completed": "Completed"
     }
+  },
+  "yachts": {
+    "title": "Available Yachts",
+    "filters": {
+      "label": "Filter Results",
+      "type": "Boat Type",
+      "capacity": "Capacity",
+      "region": "Region"
+    },
+    "card": {
+      "capacity": "passenger(s)",
+      "perDay": "/day",
+      "viewDetails": "View Details"
+    },
+    "detail": {
+      "description": "Description",
+      "specs": "Specs",
+      "location": "Location",
+      "bookNow": "Book Now",
+      "type": "Type",
+      "capacity": "Capacity"
+    },
+    "empty": "No yachts available at the moment",
+    "loading": "Loading yachts..."
   }
 }
