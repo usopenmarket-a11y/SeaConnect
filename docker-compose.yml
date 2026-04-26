@@ -1,36 +1,6 @@
 services:
 
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    env_file: .env.dev
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./backend:/app
-    command: python manage.py runserver 0.0.0.0:8000
-    restart: unless-stopped
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    env_file: .env.dev
-    volumes:
-      - ./web:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
-    restart: unless-stopped
-
+  # ── PostgreSQL 16 with pgvector ───────────────────────────────────────────
   db:
     image: pgvector/pgvector:pg16
     ports:
@@ -43,17 +13,47 @@ services:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sc_user -d seaconnect_dev"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+    restart: unless-stopped
 
+  # ── Redis 7 ───────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     restart: unless-stopped
 
+  # ── Django API ────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file: .env.dev
+    environment:
+      - DJANGO_SUPERUSER_EMAIL=admin@seaconnect.local
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - jwt_keys:/app/keys
+    command: python manage.py runserver 0.0.0.0:8000
+    restart: unless-stopped
+
+  # ── Celery worker ─────────────────────────────────────────────────────────
   celery:
     build:
       context: ./backend
@@ -64,11 +64,13 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./backend:/app
+      - jwt_keys:/app/keys
     restart: unless-stopped
 
+  # ── Celery Beat scheduler ─────────────────────────────────────────────────
   celery-beat:
     build:
       context: ./backend
@@ -79,11 +81,32 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./backend:/app
+      - jwt_keys:/app/keys
     restart: unless-stopped
 
+  # ── Next.js web app ───────────────────────────────────────────────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - api
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    restart: unless-stopped
+
+  # ── MinIO (S3-compatible local storage) ───────────────────────────────────
   minio:
     image: minio/minio:latest
     ports:
@@ -95,15 +118,22 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
+  # ── Mailpit (email catcher) ───────────────────────────────────────────────
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
     restart: unless-stopped
 
+  # ── pgAdmin ───────────────────────────────────────────────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
     ports:
@@ -117,6 +147,7 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     restart: unless-stopped
 
+  # ── Ollama (local LLM) ────────────────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
     ports:
@@ -130,3 +161,4 @@ volumes:
   minio_data:
   pgadmin_data:
   ollama_data:
+  jwt_keys:        # Persists generated JWT keys across container restarts

@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements/ requirements/
@@ -17,4 +18,9 @@ COPY . .
 
 RUN mkdir -p /app/keys
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8000
+
+ENTRYPOINT ["/entrypoint.sh"]

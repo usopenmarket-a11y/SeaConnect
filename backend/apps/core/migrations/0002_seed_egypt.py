@@ -10,7 +10,7 @@ from django.db import migrations
 
 
 EGYPT_REGION = {
-    "code": "sa-egy",
+    "code": "EG",
     "name_ar": "مصر",
     "name_en": "Egypt",
     "currency": "EGP",
@@ -104,7 +104,7 @@ def unseed_egypt(apps, schema_editor):  # type: ignore[no-untyped-def]
     migrations will not be affected.
     """
     Region = apps.get_model("core", "Region")
-    Region.objects.filter(code=EGYPT_REGION["code"]).delete()
+    Region.objects.filter(code="EG").delete()
 
 
 class Migration(migrations.Migration):
