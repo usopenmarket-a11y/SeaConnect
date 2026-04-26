@@ -11,15 +11,17 @@ class YachtMediaSerializer(serializers.ModelSerializer):  # type: ignore[type-ar
 
 class DeparturePortNestedSerializer(serializers.Serializer):  # type: ignore[type-arg]
     id = serializers.UUIDField()
-    name = serializers.CharField()
+    name_en = serializers.CharField()
     name_ar = serializers.CharField()
-    city = serializers.CharField()
+    city_en = serializers.CharField()
+    city_ar = serializers.CharField()
 
 
 class RegionNestedSerializer(serializers.Serializer):  # type: ignore[type-arg]
     id = serializers.UUIDField()
     code = serializers.CharField()
-    name = serializers.CharField()
+    name_en = serializers.CharField()
+    name_ar = serializers.CharField()
     currency = serializers.CharField()
 
 
