@@ -1,27 +1,5 @@
 import type { Metadata } from 'next'
-import { Cairo, Amiri } from 'next/font/google'
 import '@/globals.css'
-
-/**
- * Cairo — body and UI text (Arabic and Latin).
- * Variable font exposed as a CSS variable so Tailwind can reference it.
- */
-const cairo = Cairo({
-  subsets: ['arabic', 'latin'],
-  variable: '--font-cairo',
-  display: 'swap',
-  weight: ['400', '500', '600', '700'],
-})
-
-/**
- * Amiri — decorative Arabic headings / display text.
- */
-const amiri = Amiri({
-  subsets: ['arabic', 'latin'],
-  variable: '--font-amiri',
-  display: 'swap',
-  weight: ['400', '700'],
-})
 
 export const metadata: Metadata = {
   title: {
@@ -36,11 +14,15 @@ export const metadata: Metadata = {
 }
 
 /**
- * Root layout — minimal shell.
+ * Root layout — owns the <html> and <body> shell (required by Next.js).
  *
- * Direction and language are set inside [locale]/layout.tsx where the
- * locale value is available. This layout only injects font variables
- * and the global stylesheet so they are available to all routes.
+ * The [locale]/layout.tsx sets `lang` and `dir` through Next.js's
+ * generateMetadata so search engines get the right values, and the
+ * locale layout adds them to the html element via `suppressHydrationWarning`.
+ *
+ * Fonts are loaded via Google Fonts @import in globals.css (Cairo, Amiri,
+ * Instrument Serif, Geist Mono) since next/font/google would conflict with
+ * the custom font variables defined in globals.css.
  */
 export default function RootLayout({
   children,
@@ -48,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode
 }): React.ReactElement {
   return (
-    <html className={`${cairo.variable} ${amiri.variable}`}>
-      <body className="font-sans">{children}</body>
+    <html suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   )
 }

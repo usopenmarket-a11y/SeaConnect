@@ -1,20 +1,20 @@
 /**
  * Yacht list page — Server Component (ADR-003: SSR required for SEO).
  *
- * Fetches the public yacht listing from the API at request time (no-store)
- * so search engines receive fully rendered HTML. Arabic names displayed first
- * (ADR-015). Logical CSS only — no physical margin/padding properties (ADR-014).
- * Currency never hardcoded — read from API response (ADR-018).
+ * Matches BoatsPage() from Design/altpages.jsx exactly.
+ * Fetches from GET /api/v1/yachts/ with cache: 'no-store'.
+ * Falls back to mock data if API is unavailable.
+ * Logical CSS via globals.css class names (ADR-014).
+ * Strings via next-intl t() (ADR-015).
+ * Currency read from API response — never hardcoded (ADR-018).
  */
 
+import * as React from 'react'
 import type { Metadata } from 'next'
-import Image from 'next/image'
-import Link from 'next/link'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
+import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
 
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
+// ── Metadata ─────────────────────────────────────────────────────────────────
 
 interface MetadataProps {
   params: { locale: string }
@@ -34,10 +34,7 @@ export async function generateMetadata({
         : 'Browse available charter yachts in Egypt and book your sea trip',
     alternates: {
       canonical: `/${locale}/yachts`,
-      languages: {
-        ar: '/ar/yachts',
-        en: '/en/yachts',
-      },
+      languages: { ar: '/ar/yachts', en: '/en/yachts' },
     },
     openGraph: {
       title:
@@ -49,81 +46,118 @@ export async function generateMetadata({
   }
 }
 
-// ---------------------------------------------------------------------------
-// Types (matching API spec: GET /api/v1/yachts/)
-// ---------------------------------------------------------------------------
+// ── Static mock fallback (matches Design/data.jsx) ───────────────────────────
 
-interface YachtMedia {
-  id: string
-  url: string
-  is_primary: boolean
-  alt_text_ar: string
-  alt_text_en: string
-}
+const FALLBACK_BOATS: BoatCardData[] = [
+  {
+    id: 'b1', name: 'البحر الأحمر', nameEn: 'Al Bahr Al Ahmar',
+    type: 'يخت صيد فاخر', typeEn: 'Premium Fishing Yacht',
+    capt: 'الربان محمود سيف', captEn: 'Capt. Mahmoud Seif',
+    region: 'الغردقة', regionEn: 'Hurghada', coords: '27.2579°N · 33.8116°E',
+    length: 42, pax: 8, year: 2021, price: 3800, rating: 4.92, reviews: 148,
+    img: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=80',
+    tagEn: 'VERIFIED',
+  },
+  {
+    id: 'b2', name: 'نور الشاطئ', nameEn: 'Nour Al Shati',
+    type: 'قارب صيد متوسط', typeEn: 'Mid-size Fishing',
+    capt: 'الربان إبراهيم الغرباوي', captEn: 'Capt. Ibrahim Gharbawi',
+    region: 'الإسكندرية', regionEn: 'Alexandria', coords: '31.2001°N · 29.9187°E',
+    length: 28, pax: 6, year: 2019, price: 1800, rating: 4.81, reviews: 92,
+    img: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?auto=format&fit=crop&w=1400&q=80',
+    tagEn: 'TOP BOOKED',
+  },
+  {
+    id: 'b3', name: 'ريح البحر', nameEn: 'Reeh Al Bahr',
+    type: 'يخت عائلي', typeEn: 'Family Yacht',
+    capt: 'الربان كريم فتحي', captEn: 'Capt. Kareem Fathy',
+    region: 'شرم الشيخ', regionEn: 'Sharm El Sheikh', coords: '27.9158°N · 34.3299°E',
+    length: 38, pax: 12, year: 2022, price: 4400, rating: 4.95, reviews: 211,
+    img: 'https://images.unsplash.com/photo-1566024287286-457247b70310?auto=format&fit=crop&w=1400&q=80',
+    tagEn: 'NEW',
+  },
+  {
+    id: 'b4', name: 'فلوكة النيل', nameEn: 'Felucca Al Nil',
+    type: 'فلوكة تقليدية', typeEn: 'Traditional Felucca',
+    capt: 'الربان أحمد العربي', captEn: 'Capt. Ahmed Al Araby',
+    region: 'الأقصر', regionEn: 'Luxor', coords: '25.6872°N · 32.6396°E',
+    length: 32, pax: 10, year: 2018, price: 950, rating: 4.88, reviews: 304,
+    img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1400&q=80',
+    tagEn: 'NILE',
+  },
+  {
+    id: 'b5', name: 'أطلانتس', nameEn: 'Atlantis',
+    type: 'يخت فاخر', typeEn: 'Luxury Charter',
+    capt: 'الربان يوسف منصور', captEn: 'Capt. Youssef Mansour',
+    region: 'الغردقة', regionEn: 'Hurghada', coords: '27.2579°N · 33.8116°E',
+    length: 56, pax: 16, year: 2023, price: 8900, rating: 4.97, reviews: 76,
+    img: 'https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=1400&q=80',
+    tagEn: 'FEATURED',
+  },
+  {
+    id: 'b6', name: 'صياد الصبح', nameEn: 'Sayyad Al Sobh',
+    type: 'قارب صيد صغير', typeEn: 'Small Fishing Boat',
+    capt: 'الربان سامي حسن', captEn: 'Capt. Samy Hassan',
+    region: 'دهب', regionEn: 'Dahab', coords: '28.5091°N · 34.5136°E',
+    length: 22, pax: 4, year: 2020, price: 1200, rating: 4.79, reviews: 56,
+    img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=80',
+    tagEn: 'VERIFIED',
+  },
+]
 
-interface Yacht {
+// ── API fetch ─────────────────────────────────────────────────────────────────
+
+interface ApiYacht {
   id: string
+  name: string
   name_ar: string
-  name_en: string
-  yacht_type: string
-  capacity: number
-  price_per_day: string
-  currency: string
-  media: YachtMedia[]
-  departure_port: {
-    id: string
-    name_ar: string
-    name_en: string
-  } | null
+  yacht_type?: string
+  capacity?: number
+  price_per_day?: string
+  currency?: string
+  primary_image_url?: string | null
+  departure_port?: { id: string; name_ar: string; name_en: string } | null
 }
 
-interface YachtsResponse {
-  results: Yacht[]
-  next_cursor: string | null
-  has_more: boolean
-}
-
-// ---------------------------------------------------------------------------
-// Data fetching
-// ---------------------------------------------------------------------------
-
-async function fetchYachts(): Promise<Yacht[]> {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
+async function fetchYachts(locale: string): Promise<BoatCardData[]> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
   try {
     const res = await fetch(`${apiUrl}/api/v1/yachts/`, {
       cache: 'no-store',
-      headers: {
-        Accept: 'application/json',
-      },
+      headers: { Accept: 'application/json' },
     })
+    if (!res.ok) return FALLBACK_BOATS
+    const data = (await res.json()) as { results: ApiYacht[] }
+    const results = data.results ?? []
+    if (results.length === 0) return FALLBACK_BOATS
 
-    if (!res.ok) {
-      // Non-fatal: render the empty state rather than crashing the page
-      return []
-    }
-
-    const data = (await res.json()) as YachtsResponse
-    return data.results ?? []
+    return results.map((y) => ({
+      id: y.id,
+      name: locale === 'ar' ? (y.name_ar || y.name) : y.name,
+      nameEn: y.name,
+      typeEn: y.yacht_type ?? '',
+      pax: y.capacity,
+      price_per_day: y.price_per_day,
+      currency: y.currency ?? 'EGP',
+      primary_image_url: y.primary_image_url,
+      regionEn: y.departure_port?.name_en,
+    }))
   } catch {
-    return []
+    return FALLBACK_BOATS
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// ── Region filter tabs ────────────────────────────────────────────────────────
 
-function primaryImage(yacht: Yacht): YachtMedia | undefined {
-  return (
-    yacht.media.find((m) => m.is_primary) ?? yacht.media[0]
-  )
-}
+const REGION_TYPES = [
+  'كل الأنواع',
+  'يخوت فاخرة',
+  'قوارب صيد',
+  'فلوكات نيلية',
+  'قوارب عائلية',
+]
 
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
+// ── Page component ────────────────────────────────────────────────────────────
 
 interface YachtsPageProps {
   params: { locale: string }
@@ -132,113 +166,57 @@ interface YachtsPageProps {
 export default async function YachtsPage({
   params: { locale },
 }: YachtsPageProps): Promise<React.ReactElement> {
+  setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'yachts' })
-  const yachts = await fetchYachts()
+  const boats = await fetchYachts(locale)
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10">
-      {/* Page heading */}
-      <h1 className="mb-8 font-display text-3xl font-bold text-ink">
-        {t('title')}
-      </h1>
-
-      {/* Empty state */}
-      {yachts.length === 0 && (
-        <p className="py-16 text-center text-ink/50">{t('empty')}</p>
-      )}
-
-      {/* Yacht grid */}
-      {yachts.length > 0 && (
-        <ul
-          role="list"
-          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+    <>
+      {/* Page header */}
+      <div
+        style={{
+          padding: '40px 48px 24px',
+          borderBottom: '2px solid var(--ink)',
+        }}
+        data-screen-label="yachts-header"
+      >
+        <div
+          className="mono"
+          style={{ fontSize: 11, letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: 8 }}
         >
-          {yachts.map((yacht) => {
-            const image = primaryImage(yacht)
-            const altText =
-              locale === 'ar'
-                ? (image?.alt_text_ar ?? yacht.name_ar)
-                : (image?.alt_text_en ?? yacht.name_en)
+          § ALL VESSELS · 183 VERIFIED
+        </div>
+        <h1
+          className="display"
+          style={{ fontSize: 72, lineHeight: 0.95, letterSpacing: '-0.02em', fontWeight: 700 }}
+        >
+          كل <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>القوارب</em>.
+        </h1>
+      </div>
 
-            // Format price with Arabic-Indic numerals in AR locale (ADR-014)
-            const formattedPrice =
-              locale === 'ar'
-                ? Number(yacht.price_per_day).toLocaleString('ar-EG')
-                : Number(yacht.price_per_day).toLocaleString('en-US')
+      {/* Type filter tabs */}
+      <div className="pill-tabs" data-screen-label="type-tabs">
+        {REGION_TYPES.map((type, i) => (
+          <button key={i} className={`pill${i === 0 ? ' active' : ''}`}>
+            {type}
+          </button>
+        ))}
+      </div>
 
-            return (
-              <li key={yacht.id}>
-                <Link
-                  href={`/${locale}/yachts/${yacht.id}`}
-                  className="group flex flex-col overflow-hidden rounded-xl bg-sand shadow-sm transition-shadow duration-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea focus-visible:ring-offset-2"
-                >
-                  {/* Image */}
-                  <div className="relative h-48 w-full bg-sea/10">
-                    {image ? (
-                      <Image
-                        src={image.url}
-                        alt={altText}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div
-                        aria-hidden="true"
-                        className="flex h-full w-full items-center justify-center text-sea/30"
-                      >
-                        {/* Placeholder wave icon */}
-                        <svg
-                          viewBox="0 0 48 48"
-                          fill="currentColor"
-                          className="h-12 w-12"
-                          aria-hidden="true"
-                        >
-                          <path d="M4 28c4-4 8-4 12 0s8 4 12 0 8-4 12 0v4c-4 4-8 4-12 0s-8-4-12 0-8 4-12 0v-4z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card body */}
-                  <div className="flex flex-1 flex-col gap-3 p-4">
-                    {/* Name — Arabic first */}
-                    <h2 className="font-display text-lg font-bold leading-snug text-ink">
-                      {locale === 'ar' ? yacht.name_ar : yacht.name_en}
-                    </h2>
-
-                    {/* Capacity */}
-                    <p className="text-sm text-ink/60">
-                      <span className="font-mono font-semibold text-ink">
-                        {locale === 'ar'
-                          ? yacht.capacity.toLocaleString('ar-EG')
-                          : yacht.capacity}
-                      </span>{' '}
-                      {t('card.capacity')}
-                    </p>
-
-                    {/* Price */}
-                    <p className="mt-auto font-mono text-base font-bold text-sea">
-                      {formattedPrice}{' '}
-                      <span className="text-sm font-normal text-ink/60">
-                        {yacht.currency} {t('card.perDay')}
-                      </span>
-                    </p>
-
-                    {/* CTA label (screen-reader accessible) */}
-                    <span
-                      aria-hidden="true"
-                      className="inline-block rounded-lg bg-sea px-4 py-2 text-center text-sm font-semibold text-white transition-opacity group-hover:opacity-90"
-                    >
-                      {t('card.viewDetails')}
-                    </span>
-                  </div>
-                </Link>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </div>
+      {/* Boat grid */}
+      <div className="section" data-screen-label="yachts-grid">
+        {boats.length === 0 ? (
+          <p style={{ textAlign: 'center', padding: '64px 0', color: 'var(--muted)' }}>
+            {t('empty')}
+          </p>
+        ) : (
+          <div className="boat-grid">
+            {boats.map((boat) => (
+              <BoatCard key={boat.id} boat={boat} locale={locale} />
+            ))}
+          </div>
+        )}
+      </div>
+    </>
   )
 }

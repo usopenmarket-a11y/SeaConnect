@@ -194,3 +194,78 @@ def owner_client(api_client: APIClient, owner_user: User) -> APIClient:
     refresh = RefreshToken.for_user(owner_user)
     api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {str(refresh.access_token)}")
     return api_client
+
+
+# ---------------------------------------------------------------------------
+# Sprint 4 — Booking + Payment fixtures
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def confirmed_booking(
+    db,
+    active_yacht,
+    customer_user,
+    egypt_region,
+    departure_port,
+):
+    """A booking already in `confirmed` status — eligible for payment initiate."""
+    import datetime
+
+    from apps.bookings.models import Booking, BookingStatus
+
+    return Booking.objects.create(
+        yacht=active_yacht,
+        customer=customer_user,
+        region=egypt_region,
+        departure_port=departure_port,
+        start_date=datetime.date(2026, 6, 1),
+        end_date=datetime.date(2026, 6, 3),
+        num_passengers=4,
+        total_amount="3000.00",
+        currency="EGP",
+        status=BookingStatus.CONFIRMED,
+    )
+
+
+@pytest.fixture
+def pending_booking(
+    db,
+    active_yacht,
+    customer_user,
+    egypt_region,
+    departure_port,
+):
+    """A booking still in `pending_owner` — payment initiate must reject."""
+    import datetime
+
+    from apps.bookings.models import Booking, BookingStatus
+
+    return Booking.objects.create(
+        yacht=active_yacht,
+        customer=customer_user,
+        region=egypt_region,
+        departure_port=departure_port,
+        start_date=datetime.date(2026, 6, 1),
+        end_date=datetime.date(2026, 6, 3),
+        num_passengers=4,
+        total_amount="3000.00",
+        currency="EGP",
+        status=BookingStatus.PENDING_OWNER,
+    )
+
+
+@pytest.fixture
+def pending_payment(db, confirmed_booking):
+    """A pending Payment row attached to a confirmed booking."""
+    from apps.payments.models import Payment, PaymentProviderChoices, PaymentStatus
+
+    return Payment.objects.create(
+        booking=confirmed_booking,
+        provider=PaymentProviderChoices.FAWRY,
+        provider_ref="FAW-PYTEST-001",
+        amount=confirmed_booking.total_amount,
+        currency=confirmed_booking.currency,
+        status=PaymentStatus.PENDING,
+        checkout_url="https://atfawry.fawrystaging.com/pay/FAW-PYTEST-001",
+    )

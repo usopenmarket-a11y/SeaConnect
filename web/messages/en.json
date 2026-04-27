@@ -13,18 +13,78 @@
   },
   "nav": {
     "home": "Home",
+    "boats": "Boats & Yachts",
+    "marketplace": "Gear Store",
+    "competitions": "Tournaments",
+    "account": "My Account",
     "bookings": "Bookings",
     "profile": "Profile",
     "login": "Log In",
     "logout": "Log Out",
-    "yachts": "Yachts"
+    "yachts": "Yachts",
+    "listYourBoat": "List Your Boat"
   },
   "home": {
     "hero": {
       "title": "Explore the sea in a new way",
       "subtitle": "Book your boat, find your gear, join tournaments",
       "cta": "Get Started",
-      "exploreYachts": "Browse Yachts"
+      "exploreYachts": "Browse Yachts",
+      "kicker": "EGYPT'S MARITIME LEISURE PLATFORM",
+      "line1": "The sea is closer",
+      "line2em": "than you think",
+      "sub": "Book a fishing boat or luxury yacht along Egypt's coastline, source gear from certified vendors, and register for tournaments — all in one trusted place."
+    },
+    "search": {
+      "destination": "Destination",
+      "date": "Date",
+      "duration": "Duration",
+      "passengers": "Passengers",
+      "btn": "Search"
+    },
+    "featured": {
+      "heading1": "Featured",
+      "heading2em": "boats",
+      "heading3": "this week",
+      "viewAll": "View all"
+    },
+    "trust": {
+      "step1": {
+        "line1": "Every boat",
+        "line2em": "personally inspected",
+        "line3": "",
+        "body": "Our team boards every vessel before approval. We verify the coast guard licence, safety equipment, engine condition, and life jacket count. We approve no boat that doesn't meet our 27-point checklist."
+      },
+      "step2": {
+        "line1": "Your payment in",
+        "line2em": "escrow",
+        "line3": "until departure",
+        "body": "Your payment is held in a trusted escrow account. It only goes to the captain 24 hours after the trip ends. If anything goes wrong — cancellation, breakdown, mismatch — you get a full refund, no questions asked."
+      },
+      "step3": {
+        "line1": "Comprehensive insurance",
+        "line2em": "on every trip",
+        "body": "Every booking comes with travel insurance worth up to 100,000 EGP per passenger. Injuries, lost gear, or delayed return — all covered. Because trust alone isn't enough."
+      }
+    },
+    "gear": {
+      "heading1": "Fishing gear —",
+      "heading2em": "from experts",
+      "heading3": "to experts",
+      "viewAll": "Full store"
+    },
+    "comps": {
+      "heading1": "Upcoming",
+      "heading2em": "tournaments",
+      "viewAll": "Full calendar"
+    },
+    "cta": {
+      "line1": "Your boat",
+      "line2em": "works",
+      "line3": "for you",
+      "body": "List your boat for free. 0% commission for the first 3 months. Manage bookings, schedules, and payments — from one dashboard.",
+      "primaryBtn": "Start listing for free",
+      "secondaryBtn": "How does the platform work?"
     }
   },
   "auth": {
@@ -83,5 +143,135 @@
     },
     "empty": "No yachts available at the moment",
     "loading": "Loading yachts..."
+  },
+  "booking": {
+    "title": "Book your sea trip",
+    "yachtNotFound": "Yacht not found",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "passengers": "Passengers",
+    "totalAmount": "Total amount",
+    "perDay": "/day",
+    "nights": "night(s)",
+    "submit": "Confirm booking",
+    "submitting": "Submitting...",
+    "success": "Booking request sent",
+    "error": {
+      "generic": "Could not create booking. Please try again.",
+      "dateRange": "End date must be after start date",
+      "capacity": "Passenger count exceeds yacht capacity"
+    }
+  },
+  "bookingList": {
+    "title": "My bookings",
+    "empty": "You have no bookings yet",
+    "loadError": "Could not load bookings",
+    "dates": "Dates",
+    "passengers": "Passengers",
+    "total": "Total",
+    "viewDetails": "View details",
+    "status": {
+      "pending_owner": "Awaiting owner approval",
+      "confirmed": "Confirmed",
+      "declined": "Declined",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
+  },
+  "bookingDetail": {
+    "title": "Booking details",
+    "timeline": "Booking timeline",
+    "cancelBooking": "Cancel booking",
+    "cancelling": "Cancelling...",
+    "confirmCancel": "Are you sure you want to cancel this booking?",
+    "declineReason": "Decline reason",
+    "loadError": "Could not load booking details",
+    "cancelError": "Could not cancel the booking",
+    "yacht": "Yacht",
+    "passengers": "Passengers",
+    "totalAmount": "Total amount",
+    "departurePort": "Departure port",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "event": {
+      "created": "Booking created",
+      "confirmed": "Owner confirmed booking",
+      "declined": "Booking declined",
+      "cancelled": "Booking cancelled",
+      "completed": "Trip completed",
+      "payment_received": "Payment received"
+    }
+  },
+  "owner": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "bookings": "Bookings",
+      "myYachts": "My yachts"
+    },
+    "guard": {
+      "checking": "Checking permissions...",
+      "notOwner": "This page is for boat owners only"
+    },
+    "dashboard": {
+      "title": "Owner dashboard",
+      "pendingBookings": "Bookings awaiting your approval",
+      "activeBookings": "Confirmed bookings",
+      "totalEarnings": "Total earnings (completed)",
+      "loadError": "Could not load dashboard data"
+    },
+    "bookings": {
+      "title": "Bookings on my yachts",
+      "empty": "No bookings yet",
+      "loadError": "Could not load bookings",
+      "actionError": "Could not complete the action",
+      "confirm": "Confirm",
+      "decline": "Decline",
+      "declineReason": "Decline reason (optional)",
+      "declineSubmit": "Submit decline",
+      "customer": "Customer",
+      "yacht": "Yacht",
+      "dates": "Dates",
+      "passengers": "Passengers",
+      "total": "Total",
+      "actions": "Actions",
+      "filter": {
+        "all": "All",
+        "pending": "Pending approval",
+        "confirmed": "Confirmed",
+        "completed": "Completed"
+      }
+    },
+    "yachts": {
+      "title": "My yachts",
+      "empty": "No yachts yet",
+      "newListing": "Add new yacht",
+      "edit": "Edit",
+      "loadError": "Could not load yachts",
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "price": "Price per day",
+      "actions": "Actions",
+      "statusLabel": {
+        "active": "Active",
+        "draft": "Draft",
+        "inactive": "Inactive"
+      },
+      "form": {
+        "title": "New yacht",
+        "nameEn": "Name (English)",
+        "nameAr": "Name (Arabic)",
+        "descriptionEn": "Description (English)",
+        "descriptionAr": "Description (Arabic)",
+        "capacity": "Capacity (passengers)",
+        "pricePerDay": "Price per day",
+        "type": "Yacht type",
+        "departurePort": "Departure port",
+        "submit": "Create yacht",
+        "submitting": "Creating...",
+        "successMessage": "Yacht created successfully",
+        "comingSoon": "Yacht creation API is coming soon"
+      }
+    }
   }
 }

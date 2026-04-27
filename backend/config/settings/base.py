@@ -408,3 +408,16 @@ BOOKING_OWNER_RESPONSE_HOURS = 2
 
 # Payout hold period after trip completion
 PAYOUT_HOLD_HOURS = 24
+
+# ---------------------------------------------------------------------------
+# Payment gateways — Sprint 4
+# ---------------------------------------------------------------------------
+# ADR-007: views never import concrete providers; they call get_provider().
+# Real merchant credentials must be supplied via environment variables in
+# UAT/prod — the defaults below are sandbox placeholders only.
+
+FAWRY_MERCHANT_CODE: str = config("FAWRY_MERCHANT_CODE", default="sandbox-merchant")
+FAWRY_SECURITY_KEY: str = config("FAWRY_SECURITY_KEY", default="sandbox-key")
+FAWRY_BASE_URL: str = config(
+    "FAWRY_BASE_URL", default="https://atfawry.fawrystaging.com",
+)

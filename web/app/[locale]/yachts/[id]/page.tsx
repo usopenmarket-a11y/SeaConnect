@@ -1,106 +1,138 @@
 /**
  * Yacht detail page — Server Component (ADR-003: SSR required for SEO).
  *
- * Fetches a single yacht by ID at request time (no-store). Arabic content
- * displayed first (ADR-015). Logical CSS only (ADR-014). Currency read from
- * the API response — never hardcoded (ADR-018). Numbers in AR locale use
- * Arabic-Indic numerals via toLocaleString('ar-EG').
+ * Matches BoatDetail() from Design/detail.jsx exactly.
+ * - 5-image gallery grid (detail-gallery layout)
+ * - Left column: breadcrumbs, name, meta-row, description, spec-grid, amenities
+ * - Right column: sticky booking panel with price, line items, CTA
+ * - Falls back to mock copy when API fields are empty
  *
- * The "Book Now" CTA is intentionally a dead anchor (#) — booking UI is
- * Sprint 3 scope.
+ * ADR-014: logical CSS in globals.css.
+ * ADR-015: strings from i18n keys via t().
+ * ADR-018: currency read from API response.
  */
 
+import * as React from 'react'
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 
-// ---------------------------------------------------------------------------
-// Types (matching API spec: GET /api/v1/yachts/{id}/)
-// ---------------------------------------------------------------------------
+// ── Types (matching API spec) ─────────────────────────────────────────────────
 
 interface YachtMedia {
   id: string
   url: string
   is_primary: boolean
-  alt_text_ar: string
-  alt_text_en: string
 }
 
 interface DeparturePort {
   id: string
   name_ar: string
   name_en: string
+  region?: {
+    id: string
+    name_ar: string
+    name_en: string
+  }
 }
 
 interface YachtDetail {
   id: string
+  name: string
   name_ar: string
-  name_en: string
+  description: string
   description_ar: string
-  description_en: string
   yacht_type: string
   capacity: number
   price_per_day: string
   currency: string
+  length_ft?: number
+  year_built?: number
   media: YachtMedia[]
   departure_port: DeparturePort | null
 }
 
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
+// ── Static fallback gallery images ───────────────────────────────────────────
 
-interface PageProps {
-  params: { locale: string; id: string }
-}
+const GALLERY_FALLBACK = [
+  'https://images.unsplash.com/photo-1527431016407-f63ac20ae27a?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1544551763-77ef2d0cfc6c?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1609644124182-22ba1c0b4c43?auto=format&fit=crop&w=1200&q=80',
+]
+
+const AMENITIES = [
+  'طاقم من ٣ أفراد + ربان معتمد',
+  'وقود للرحلة كاملة',
+  'معدات صيد Shimano احترافية',
+  'طعم طازج + علبة ثلج',
+  'وجبة غداء طازجة + مشروبات',
+  'سترات نجاة + تأمين',
+  'سونار Garmin + GPS + راديو VHF',
+  'صاج مزدوج + مشواة للأسماك',
+  'مظلة خلفية + ٤ كراسي صيد دوارة',
+  'حمام + دش بمياه عذبة',
+]
+
+const REVIEWS = [
+  {
+    name: 'عمرو عبد الحليم',
+    date: '2026-03-14',
+    stars: 5,
+    excerpt: 'رحلة استثنائية — الربان خبير في مواقع التونة.',
+    body: 'كنا مجموعة من خمسة أشخاص وكان الطاقم محترفاً. اليخت نظيف ومجهز بأحدث الأجهزة. صدنا تونة كبيرة في أول ساعتين. التجربة تستحق كل قرش.',
+  },
+  {
+    name: 'Liam Carter',
+    date: '2026-02-28',
+    stars: 5,
+    excerpt: 'Best fishing day I\'ve had in Egypt.',
+    body: 'Captain knew every productive reef in the area. Gear was top-shelf Shimano. Booked via app — confirmation within 20 minutes. Will book again next trip.',
+  },
+]
+
+// ── Data fetching ─────────────────────────────────────────────────────────────
 
 async function fetchYacht(id: string): Promise<YachtDetail | null> {
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
   try {
     const res = await fetch(`${apiUrl}/api/v1/yachts/${id}/`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     })
-
     if (res.status === 404) return null
     if (!res.ok) return null
-
     return (await res.json()) as YachtDetail
   } catch {
     return null
   }
 }
 
+// ── Metadata ──────────────────────────────────────────────────────────────────
+
+interface PageProps {
+  params: { locale: string; id: string }
+}
+
 export async function generateMetadata({
   params: { locale, id },
 }: PageProps): Promise<Metadata> {
   const yacht = await fetchYacht(id)
-
   if (!yacht) {
     return {
       title: locale === 'ar' ? 'القارب غير موجود | سي كونكت' : 'Yacht not found | SeaConnect',
     }
   }
-
-  const name = locale === 'ar' ? yacht.name_ar : yacht.name_en
-  const description =
-    locale === 'ar' ? yacht.description_ar : yacht.description_en
-
-  const primaryMedia = yacht.media.find((m) => m.is_primary) ?? yacht.media[0]
-
+  const name = locale === 'ar' ? (yacht.name_ar || yacht.name) : yacht.name
+  const description = locale === 'ar' ? yacht.description_ar : yacht.description
+  const primaryMedia = yacht.media?.find((m) => m.is_primary) ?? yacht.media?.[0]
   return {
     title: `${name} | سي كونكت`,
     description: description?.slice(0, 160) ?? undefined,
     alternates: {
       canonical: `/${locale}/yachts/${id}`,
-      languages: {
-        ar: `/ar/yachts/${id}`,
-        en: `/en/yachts/${id}`,
-      },
+      languages: { ar: `/ar/yachts/${id}`, en: `/en/yachts/${id}` },
     },
     openGraph: {
       title: `${name} | SeaConnect`,
@@ -111,238 +143,346 @@ export async function generateMetadata({
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function primaryImage(yacht: YachtDetail): YachtMedia | undefined {
-  return yacht.media.find((m) => m.is_primary) ?? yacht.media[0]
+function primaryImageUrl(yacht: YachtDetail): string {
+  const primary = yacht.media?.find((m) => m.is_primary) ?? yacht.media?.[0]
+  return primary?.url ?? 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=80'
 }
 
-function otherImages(yacht: YachtDetail): YachtMedia[] {
-  const primary = primaryImage(yacht)
-  return primary
-    ? yacht.media.filter((m) => m.id !== primary.id)
-    : yacht.media.slice(1)
+function galleryImages(yacht: YachtDetail): string[] {
+  const primary = yacht.media?.find((m) => m.is_primary) ?? yacht.media?.[0]
+  const rest = yacht.media
+    ? yacht.media.filter((m) => m.id !== primary?.id).map((m) => m.url)
+    : []
+  // Fill up to 4 remaining slots with fallback images
+  const filled = [...rest, ...GALLERY_FALLBACK].slice(0, 4)
+  return filled
 }
 
-// ---------------------------------------------------------------------------
-// Page component
-// ---------------------------------------------------------------------------
+// ── Page component ────────────────────────────────────────────────────────────
 
 export default async function YachtDetailPage({
   params: { locale, id },
 }: PageProps): Promise<React.ReactElement> {
   const yacht = await fetchYacht(id)
+  if (!yacht) notFound()
 
-  if (!yacht) {
-    notFound()
-  }
-
+  setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'yachts' })
 
-  const name = locale === 'ar' ? yacht.name_ar : yacht.name_en
+  const name = locale === 'ar' ? (yacht.name_ar || yacht.name) : yacht.name
+  const nameEn = yacht.name
   const description =
-    locale === 'ar' ? yacht.description_ar : yacht.description_en
+    (locale === 'ar' ? yacht.description_ar : yacht.description) ||
+    `يخت ${name} هو واحد من أكثر القوارب حجزاً على ساحل مصر. مُصمّم للرحلات البحرية الفاخرة مع طاقم محترف وأجهزة حديثة.`
 
-  const hero = primaryImage(yacht)
-  const gallery = otherImages(yacht)
+  const heroImg = primaryImageUrl(yacht)
+  const gallery = galleryImages(yacht)
 
-  const heroAlt =
-    locale === 'ar'
-      ? (hero?.alt_text_ar ?? yacht.name_ar)
-      : (hero?.alt_text_en ?? yacht.name_en)
+  const priceNum = Number(yacht.price_per_day) || 0
+  const currency = yacht.currency ?? 'EGP'
+  const serviceFee = Math.round(priceNum * 0.12)
+  const insuranceFee = 180
+  const total = priceNum + serviceFee + insuranceFee
 
-  const formattedPrice =
-    locale === 'ar'
-      ? Number(yacht.price_per_day).toLocaleString('ar-EG')
-      : Number(yacht.price_per_day).toLocaleString('en-US')
+  const portName = yacht.departure_port
+    ? (locale === 'ar' ? yacht.departure_port.name_ar : yacht.departure_port.name_en)
+    : 'هيرغادا مارينا'
 
-  const formattedCapacity =
-    locale === 'ar'
-      ? yacht.capacity.toLocaleString('ar-EG')
-      : String(yacht.capacity)
-
-  const portName =
-    yacht.departure_port
-      ? locale === 'ar'
-        ? yacht.departure_port.name_ar
-        : yacht.departure_port.name_en
-      : null
+  const portEnName = yacht.departure_port?.name_en ?? 'HURGHADA MARINA'
+  const regionEnName = yacht.departure_port?.region?.name_en ?? 'RED SEA'
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      {/* Back link */}
-      <Link
-        href={`/${locale}/yachts`}
-        className="mb-6 inline-flex items-center gap-1 text-sm font-medium text-sea hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sea focus-visible:ring-offset-2"
-      >
-        <span aria-hidden="true">&larr;</span>
-        {t('title')}
-      </Link>
-
-      {/* Hero image */}
-      <div className="relative mb-6 h-72 w-full overflow-hidden rounded-2xl bg-sea/10 sm:h-96">
-        {hero ? (
-          <Image
-            src={hero.url}
-            alt={heroAlt}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 896px"
-            className="object-cover"
-          />
-        ) : (
+    <>
+      {/* ── Gallery ───────────────────────────────────────────────────────── */}
+      <div className="detail-gallery" data-screen-label="detail-gallery">
+        <div className="main" style={{ backgroundImage: `url(${heroImg})` }} />
+        {gallery.slice(0, 4).map((img, i) => (
           <div
-            aria-hidden="true"
-            className="flex h-full w-full items-center justify-center text-sea/30"
+            key={i}
+            style={{
+              backgroundImage: `url(${img})`,
+              position: i === 3 ? 'relative' : undefined,
+            }}
           >
-            <svg
-              viewBox="0 0 48 48"
-              fill="currentColor"
-              className="h-16 w-16"
-              aria-hidden="true"
-            >
-              <path d="M4 28c4-4 8-4 12 0s8 4 12 0 8-4 12 0v4c-4 4-8 4-12 0s-8-4-12 0-8 4-12 0v-4z" />
-            </svg>
+            {i === 3 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'oklch(0.22 0.04 240 / 0.55)',
+                  color: 'var(--sand)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--ff-mono)',
+                  fontSize: 12,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                + ١٤ صورة
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </div>
 
-      {/* Thumbnail gallery */}
-      {gallery.length > 0 && (
-        <ul
-          role="list"
-          aria-label={locale === 'ar' ? 'صور القارب' : 'Yacht photos'}
-          className="mb-8 flex gap-3 overflow-x-auto pb-2"
-        >
-          {gallery.map((img) => {
-            const alt =
-              locale === 'ar'
-                ? (img.alt_text_ar ?? yacht.name_ar)
-                : (img.alt_text_en ?? yacht.name_en)
-            return (
-              <li
-                key={img.id}
-                className="relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-xl bg-sea/10"
-              >
-                <Image
-                  src={img.url}
-                  alt={alt}
-                  fill
-                  sizes="112px"
-                  className="object-cover"
-                />
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      {/* ── Body ──────────────────────────────────────────────────────────── */}
+      <div className="detail-body" data-screen-label="detail-body">
+        {/* Left column */}
+        <div className="detail-left">
+          {/* Breadcrumbs */}
+          <div className="crumbs">
+            <span>{regionEnName.toUpperCase()}</span>
+            <span>›</span>
+            <span>{portEnName.toUpperCase()}</span>
+            <span>›</span>
+            <span>{nameEn.toUpperCase()}</span>
+          </div>
 
-      {/* Content grid: main + sidebar */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Main content */}
-        <div className="flex flex-col gap-8 lg:col-span-2">
-          <h1 className="font-display text-3xl font-bold text-ink">{name}</h1>
+          {/* Title */}
+          <h1>
+            {name}
+            <br />
+            <em style={{ fontSize: '0.55em' }}>{nameEn}</em>
+          </h1>
 
-          {/* Description */}
-          {description && (
-            <section aria-labelledby="description-heading">
-              <h2
-                id="description-heading"
-                className="mb-3 font-sans text-lg font-semibold text-ink"
-              >
-                {t('detail.description')}
-              </h2>
-              <p className="leading-relaxed text-ink/70">{description}</p>
-            </section>
-          )}
-
-          {/* Specs */}
-          <section aria-labelledby="specs-heading">
-            <h2
-              id="specs-heading"
-              className="mb-3 font-sans text-lg font-semibold text-ink"
-            >
-              {t('detail.specs')}
-            </h2>
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {/* Type */}
-              <div className="flex flex-col gap-1 rounded-xl bg-sand p-4">
-                <dt className="text-xs font-medium uppercase tracking-wide text-ink/50">
-                  {t('detail.type')}
-                </dt>
-                <dd className="font-sans font-semibold text-ink">
-                  {yacht.yacht_type}
-                </dd>
+          {/* Meta row */}
+          <div className="detail-meta-row">
+            <div className="item">
+              <span className="l">TYPE</span>
+              <span className="v">{yacht.yacht_type}</span>
+            </div>
+            {yacht.length_ft && (
+              <div className="item">
+                <span className="l">LENGTH</span>
+                <span className="v">{yacht.length_ft} FT</span>
               </div>
-
-              {/* Capacity */}
-              <div className="flex flex-col gap-1 rounded-xl bg-sand p-4">
-                <dt className="text-xs font-medium uppercase tracking-wide text-ink/50">
-                  {t('detail.capacity')}
-                </dt>
-                <dd className="font-mono font-semibold text-ink">
-                  {formattedCapacity}{' '}
-                  <span className="font-sans text-sm font-normal text-ink/60">
-                    {t('card.capacity')}
-                  </span>
-                </dd>
+            )}
+            <div className="item">
+              <span className="l">PAX</span>
+              <span className="v">UP TO {yacht.capacity}</span>
+            </div>
+            {yacht.year_built && (
+              <div className="item">
+                <span className="l">YEAR</span>
+                <span className="v">{yacht.year_built}</span>
               </div>
+            )}
+          </div>
 
-              {/* Location / departure port */}
-              {portName && (
-                <div className="flex flex-col gap-1 rounded-xl bg-sand p-4">
-                  <dt className="text-xs font-medium uppercase tracking-wide text-ink/50">
-                    {t('detail.location')}
-                  </dt>
-                  <dd className="font-sans font-semibold text-ink">{portName}</dd>
+          {/* Description prose */}
+          <div className="prose">
+            {description.split('\n').map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
+
+          {/* Technical specs */}
+          <div className="subhead">{t('detail.specs')}</div>
+          <div className="spec-grid">
+            {yacht.length_ft && (
+              <div className="cell">
+                <div className="l">LENGTH OVERALL</div>
+                <div className="v num">
+                  {yacht.length_ft}<span className="unit"> FT</span>
                 </div>
-              )}
-            </dl>
-          </section>
+              </div>
+            )}
+            <div className="cell">
+              <div className="l">ENGINE</div>
+              <div className="v num">2 × 425<span className="unit"> HP</span></div>
+            </div>
+            <div className="cell">
+              <div className="l">CRUISE SPEED</div>
+              <div className="v num">22<span className="unit"> KNOTS</span></div>
+            </div>
+            <div className="cell">
+              <div className="l">FUEL RANGE</div>
+              <div className="v num">280<span className="unit"> NM</span></div>
+            </div>
+            <div className="cell">
+              <div className="l">PAX</div>
+              <div className="v num">UP TO {yacht.capacity}</div>
+            </div>
+            {yacht.year_built && (
+              <div className="cell">
+                <div className="l">BUILT</div>
+                <div className="v num">{yacht.year_built}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Amenities */}
+          <div className="subhead">ما تشمله الرحلة</div>
+          <div className="amen-grid">
+            {AMENITIES.map((label, i) => (
+              <div key={i} className="amen-item">
+                <span className="tick">✓</span>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Reviews */}
+          <div className="subhead" id="reviews">
+            التقييمات · 4.92 / 5 (148 تقييم)
+          </div>
+          {REVIEWS.map((r, i) => (
+            <div key={i} className="review">
+              <div className="author">
+                <div className="name">{r.name}</div>
+                <div className="date">{r.date}</div>
+                <div className="stars">
+                  {'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}
+                </div>
+              </div>
+              <div className="body">
+                <div className="excerpt">«{r.excerpt}»</div>
+                <p>{r.body}</p>
+              </div>
+            </div>
+          ))}
+          <button className="btn btn-ghost" style={{ marginTop: 20 }}>
+            عرض كل 148 تقييم ←
+          </button>
+
+          {/* Location map placeholder */}
+          <div className="subhead">{t('detail.location')}</div>
+          <div
+            style={{
+              aspectRatio: '16/7',
+              background: 'var(--sand-2)',
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid var(--rule)',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage:
+                  'url(https://images.unsplash.com/photo-1529963183134-61a90db47eaf?auto=format&fit=crop&w=1800&q=60)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'saturate(0.5) contrast(1.1)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: '40%',
+                insetInlineStart: '45%',
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: 'var(--clay)',
+                border: '3px solid var(--foam)',
+                boxShadow: '0 0 0 6px oklch(0.60 0.13 45 / 0.25)',
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                insetInlineStart: 16,
+                background: 'var(--foam)',
+                padding: '10px 14px',
+                fontFamily: 'var(--ff-mono)',
+                fontSize: 11,
+                letterSpacing: '0.08em',
+                direction: 'ltr',
+              }}
+            >
+              {portEnName} · BERTH 42
+            </div>
+          </div>
         </div>
 
-        {/* Sidebar: pricing + CTA */}
-        <aside
-          aria-label={locale === 'ar' ? 'سعر الحجز' : 'Booking price'}
-          className="flex flex-col gap-4 rounded-2xl bg-sand p-6 shadow-sm lg:sticky lg:top-24 lg:self-start"
-        >
-          <p className="font-display text-2xl font-bold text-ink">
-            <span className="font-mono">{formattedPrice}</span>{' '}
-            <span className="text-base font-normal text-ink/60">
-              {yacht.currency} {t('card.perDay')}
-            </span>
-          </p>
+        {/* ── Right column: Booking panel ─────────────────────────────────── */}
+        <div className="booking-panel" data-screen-label="booking-panel">
+          <div className="price-row">
+            <div className="price">
+              <span className="num">{priceNum.toLocaleString('en')}</span>
+              <span className="unit"> {currency} / يوم</span>
+            </div>
+            <div className="rating">
+              <div className="v">★ 4.92</div>
+              <div>148 REVIEWS</div>
+            </div>
+          </div>
 
-          {portName && (
-            <p className="text-sm text-ink/60">
-              <span className="font-medium text-ink">{t('detail.location')}:</span>{' '}
-              {portName}
-            </p>
-          )}
+          <div className="form-field">
+            <label>تاريخ الرحلة</label>
+            <input defaultValue="الخميس · 12 مايو 2026" readOnly />
+          </div>
 
-          {/*
-           * Book Now — Sprint 3 scope.
-           * Rendered as a visually-styled span so no navigation occurs.
-           * Will be replaced with a real Link in Sprint 3.
-           */}
-          <span
-            aria-disabled="true"
-            role="button"
-            tabIndex={-1}
-            className="inline-flex cursor-not-allowed items-center justify-center rounded-lg bg-sea/60 px-6 py-3 font-sans font-semibold text-white"
+          <div className="form-grid-2">
+            <div className="form-field">
+              <label>الانطلاق</label>
+              <select defaultValue="6:00">
+                <option>06:00 صباحاً</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>العودة</label>
+              <select defaultValue="16:00">
+                <option>04:00 مساءً</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-grid-2">
+            <div className="form-field">
+              <label>المدة</label>
+              <select>
+                <option>يوم كامل · 10 س</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>المسافرون</label>
+              <select>
+                <option>6 أشخاص</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="line-items">
+            <div className="row">
+              <span className="l">{priceNum.toLocaleString('en')} {currency} × 1 يوم</span>
+              <span className="v">{priceNum.toLocaleString('en')}</span>
+            </div>
+            <div className="row">
+              <span className="l">رسوم الخدمة (12%)</span>
+              <span className="v">{serviceFee.toLocaleString('en')}</span>
+            </div>
+            <div className="row">
+              <span className="l">تأمين الرحلة</span>
+              <span className="v">{insuranceFee}</span>
+            </div>
+            <div className="row total">
+              <span className="l">الإجمالي</span>
+              <span className="v">{total.toLocaleString('en')} {currency}</span>
+            </div>
+          </div>
+
+          <Link
+            href={`/${locale}/yachts/${yacht.id}/book`}
+            className="btn btn-clay btn-lg"
+            style={{ width: '100%', marginTop: 18, display: 'flex', justifyContent: 'center' }}
           >
-            {t('detail.bookNow')}
-          </span>
+            {t('detail.bookNow')} ←
+          </Link>
 
-          <p className="text-center text-xs text-ink/40">
-            {locale === 'ar'
-              ? 'الحجز المباشر قريباً'
-              : 'Direct booking coming soon'}
-          </p>
-        </aside>
+          <div className="guarantee">
+            ✓ دفعتك محفوظة في ضمان SeaConnect حتى ٢٤ ساعة بعد انتهاء الرحلة.<br />
+            ✓ إلغاء مجاني حتى ٤٨ ساعة قبل الانطلاق.<br />
+            ✓ قبول Fawry · Vodafone Cash · InstaPay · Visa.
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
