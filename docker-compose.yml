@@ -4,7 +4,7 @@ services:
   db:
     image: pgvector/pgvector:pg16
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: seaconnect_dev
       POSTGRES_USER: sc_user
@@ -22,7 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -37,11 +37,13 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8010:8000"
     env_file: .env.dev
     environment:
-      - DJANGO_SUPERUSER_EMAIL=admin@seaconnect.local
-      - DJANGO_SUPERUSER_PASSWORD=admin123
+      DJANGO_SUPERUSER_EMAIL: admin@seaconnect.local
+      DJANGO_SUPERUSER_PASSWORD: admin123
+      # Override CORS to allow the new host port
+      CORS_ALLOWED_ORIGINS: "http://localhost:3010,http://localhost:3011"
     depends_on:
       db:
         condition: service_healthy
@@ -65,6 +67,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api:
+        condition: service_started
     volumes:
       - ./backend:/app
       - jwt_keys:/app/keys
@@ -82,36 +86,70 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api:
+        condition: service_started
     volumes:
       - ./backend:/app
       - jwt_keys:/app/keys
     restart: unless-stopped
 
-  # ── Next.js web app ───────────────────────────────────────────────────────
+  # ── Next.js web (customer-facing) ────────────────────────────────────────
+  # NEXT_PUBLIC_API_URL points to the host-side port so the browser can reach
+  # the API directly. Inside the container, server-side fetches use the Docker
+  # network name (http://api:8000) which is set via API_INTERNAL_URL.
   web:
     build:
       context: ./web
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3010:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-      - WATCHPACK_POLLING=true
+      # Browser-side (injected at build time by Next.js — points to host port)
+      NEXT_PUBLIC_API_URL: "http://localhost:8010"
+      # Server-side fetches inside Docker use the internal network
+      API_INTERNAL_URL: "http://api:8000"
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
     depends_on:
-      - api
+      api:
+        condition: service_started
     volumes:
       - ./web:/app
-      - /app/node_modules
-      - /app/.next
+      # Named volumes prevent host node_modules / .next from leaking in
+      - web_node_modules:/app/node_modules
+      - web_next_cache:/app/.next
     command: npm run dev
+    restart: unless-stopped
+
+  # ── Next.js admin portal ──────────────────────────────────────────────────
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    ports:
+      - "3011:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8010"
+      API_INTERNAL_URL: "http://api:8000"
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+    depends_on:
+      api:
+        condition: service_started
+    volumes:
+      - ./admin:/app
+      - admin_node_modules:/app/node_modules
+      - admin_next_cache:/app/.next
+    profiles:
+      - admin
     restart: unless-stopped
 
   # ── MinIO (S3-compatible local storage) ───────────────────────────────────
   minio:
     image: minio/minio:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9010:9000"
+      - "9011:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -129,15 +167,15 @@ services:
   mailpit:
     image: axllent/mailpit:latest
     ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
+      - "1026:1025"   # SMTP
+      - "8026:8025"   # Web UI
     restart: unless-stopped
 
   # ── pgAdmin ───────────────────────────────────────────────────────────────
   pgadmin:
     image: dpage/pgadmin4:latest
     ports:
-      - "5050:80"
+      - "5051:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@local.dev
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -151,7 +189,7 @@ services:
   ollama:
     image: ollama/ollama:latest
     ports:
-      - "11434:11434"
+      - "11435:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
@@ -161,4 +199,8 @@ volumes:
   minio_data:
   pgadmin_data:
   ollama_data:
-  jwt_keys:        # Persists generated JWT keys across container restarts
+  jwt_keys:
+  web_node_modules:
+  web_next_cache:
+  admin_node_modules:
+  admin_next_cache:

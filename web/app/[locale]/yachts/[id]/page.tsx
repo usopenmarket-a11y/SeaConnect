@@ -95,7 +95,7 @@ const REVIEWS = [
 // ── Data fetching ─────────────────────────────────────────────────────────────
 
 async function fetchYacht(id: string): Promise<YachtDetail | null> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+  const apiUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
   try {
     const res = await fetch(`${apiUrl}/api/v1/yachts/${id}/`, {
       cache: 'no-store',

@@ -1,0 +1,36 @@
+# Root-level .dockerignore
+# Keeps the Docker build context clean for services built from subdirectories.
+# Each service (web, backend, admin) has its own context so this file applies
+# only when docker compose builds from the repo root.
+
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+web/node_modules
+web/.next
+admin/node_modules
+admin/.next
+
+.git
+.env*.local
+*.log
+.DS_Store
+
+Documentation/
+Design/
+01-Business-Strategy/
+02-Legal-Administrative/
+03-Technical-Product/
+04-Operations-Management/
+05-Payment-Financial/
+06-Geographic-Regulatory/
+07-Analytics-Reporting/
+08-Growth-Strategy/
+09-Safety-Security/
+SPRINT-*.md
+AGENT-COSTS.md
+HANDOFFS.md
