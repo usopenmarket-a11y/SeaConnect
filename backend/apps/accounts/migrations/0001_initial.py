@@ -21,9 +21,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("core", "0001_initial"),
+        ("auth", "0012_alter_user_first_name_max_length"),
         ("contenttypes", "0002_remove_content_type_name"),
-        # Token blacklist app must exist before we reference it.
-        ("token_blacklist", "0012_alter_outstandingtoken_user"),
     ]
 
     operations = [

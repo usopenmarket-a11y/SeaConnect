@@ -305,9 +305,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
         "KEY_PREFIX": "sc",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django.core.cache.backends.redis.RedisCache",
-        },
     }
 }
 

@@ -1,27 +1,28 @@
 # ── Stage 1: deps ────────────────────────────────────────────────────────────
-# Installs node_modules into a separate cached layer.
-# Rebuilt only when package.json / package-lock.json change.
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --legacy-peer-deps
 
 # ── Stage 2: dev ─────────────────────────────────────────────────────────────
-# Target used by docker compose for local development.
-# Source is bind-mounted from the host; node_modules live in a named volume
-# that is seeded from this image on first `docker compose up --build`.
+# docker compose bind-mounts ./web → /app.
+# node_modules live in a named volume at /app/node_modules.
+# entrypoint.sh installs deps into that volume on first start if it's empty.
+# It lives at /usr/local/bin/sc-entrypoint (avoids name clash with node base).
 FROM node:20-alpine AS dev
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json package-lock.json* next.config.mjs tsconfig.json tailwind.config.ts postcss.config.js ./
-COPY public ./public
-COPY . .
+
+COPY package.json package-lock.json* ./
+
+COPY entrypoint.sh /usr/local/bin/sc-entrypoint
+RUN chmod +x /usr/local/bin/sc-entrypoint
+
 ENV NODE_ENV=development
 EXPOSE 3000
+ENTRYPOINT ["/usr/local/bin/sc-entrypoint"]
 CMD ["npm", "run", "dev"]
 
 # ── Stage 3: builder ─────────────────────────────────────────────────────────
-# Produces the optimised Next.js standalone output for production / UAT.
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
