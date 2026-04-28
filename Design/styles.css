@@ -2,6 +2,175 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@300;400;500;600;700;900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@300;400;500&display=swap');
 
+/* ── scroll reveal + sticky storytelling ─────── */
+html { scroll-behavior: auto; } /* lenis owns scroll */
+.reveal {
+  opacity: 0;
+  transform: translate3d(0, 28px, 0);
+  transition: opacity 1s cubic-bezier(.2,.8,.2,1), transform 1s cubic-bezier(.2,.8,.2,1);
+  will-change: transform, opacity;
+}
+.reveal.in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* hero parallax wrapper */
+.hero-img-parallax {
+  position: absolute;
+  inset: -10% 0 -10% 0;
+  height: 120%;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+}
+
+/* sticky storytelling block */
+.sticky-story {
+  position: relative;
+  background: var(--abyss);
+  color: var(--sand);
+}
+.sticky-story-track {
+  height: 320vh; /* scrubbing distance */
+  position: relative;
+}
+.sticky-story-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  align-items: stretch;
+}
+.sticky-img-stack {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+}
+.sticky-img-stack .pane {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 0.6s, transform 1.2s cubic-bezier(.2,.8,.2,1);
+  opacity: 0;
+}
+.sticky-img-stack .pane.on { opacity: 1; }
+.sticky-text-stack {
+  position: relative;
+  padding: 80px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.sticky-step {
+  position: absolute;
+  inset: 80px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.55s, transform 0.7s cubic-bezier(.2,.8,.2,1);
+}
+.sticky-step.on { opacity: 1; transform: translateY(0); }
+.sticky-step .num-tag {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: oklch(0.78 0.02 220);
+  margin-bottom: 18px;
+  direction: ltr;
+}
+.sticky-step h2 {
+  font-family: var(--ff-display);
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin-bottom: 22px;
+}
+.sticky-step h2 em { font-style: italic; color: var(--clay-soft); }
+.sticky-step p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: oklch(0.92 0.012 220);
+  max-width: 42ch;
+}
+.sticky-progress {
+  position: absolute;
+  top: 50%;
+  right: 32px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 5;
+}
+.sticky-progress .dot {
+  width: 6px;
+  height: 26px;
+  background: oklch(1 0 0 / 0.18);
+  transition: background 0.4s, height 0.4s;
+}
+.sticky-progress .dot.on { background: var(--clay); height: 38px; }
+
+/* horizontal scroll number marquee */
+.marquee-band {
+  background: var(--ink);
+  color: var(--sand);
+  overflow: hidden;
+  border-block: 1px solid var(--ink);
+  padding: 22px 0;
+  direction: ltr;
+}
+.marquee-viewport {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.marquee-track {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  gap: 48px;
+  align-items: center;
+  animation-name: marquee-x;
+  animation-duration: 60s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.marquee-track .item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--ff-display);
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.marquee-track .item .n {
+  font-family: var(--ff-mono);
+  font-weight: 500;
+  color: var(--clay-soft);
+}
+.marquee-track .item .sep {
+  width: 6px; height: 6px; background: var(--clay); border-radius: 50%;
+  display: inline-block; align-self: center;
+}
+@keyframes marquee-x {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+
+/* scroll-reveal helpers for boat cards staggered */
+.boat-card.reveal { opacity: 0; }
+
+
+
 :root {
   /* Deep sea + pearl — more elegant */
   --ink: oklch(0.20 0.045 235);
@@ -1724,6 +1893,129 @@ img { display: block; max-width: 100%; }
 .avail-pill.open { background: var(--sand); color: var(--ink); }
 .avail-pill.limited { background: var(--clay); color: var(--foam); border-color: var(--clay); }
 .avail-pill.hold { background: transparent; color: var(--sand); }
+
+/* ── Scroll-driven sea canvas (all customer pages) ───── */
+.sea-scene {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+.app-shell { position: relative; }
+
+/* All customer-facing pages: layer content above the sea, give them frosted backgrounds */
+body[data-page="home"] .top-strip,
+body[data-page="home"] .nav,
+body[data-page="home"] .footer,
+body[data-page="boats"] .top-strip,
+body[data-page="boats"] .nav,
+body[data-page="boats"] .footer,
+body[data-page="detail"] .top-strip,
+body[data-page="detail"] .nav,
+body[data-page="detail"] .footer,
+body[data-page="book"] .top-strip,
+body[data-page="book"] .nav,
+body[data-page="book"] .footer,
+body[data-page="confirm"] .top-strip,
+body[data-page="confirm"] .nav,
+body[data-page="confirm"] .footer,
+body[data-page="market"] .top-strip,
+body[data-page="market"] .nav,
+body[data-page="market"] .footer,
+body[data-page="comps"] .top-strip,
+body[data-page="comps"] .nav,
+body[data-page="comps"] .footer,
+body[data-page="profile"] .top-strip,
+body[data-page="profile"] .nav,
+body[data-page="profile"] .footer { position: relative; z-index: 5; }
+
+/* Hero on home stays transparent */
+body[data-page="home"] .hero { background: transparent; }
+body[data-page="home"] .hero-img-parallax,
+body[data-page="home"] .hero-overlay,
+body[data-page="home"] .hero-lottie,
+body[data-page="home"] .hero-lottie-tl { display: none; }
+body[data-page="home"] .hero-content { position: relative; z-index: 5; color: var(--foam); }
+body[data-page="home"] .hero-title { text-shadow: 0 2px 28px oklch(0.14 0.04 240 / 0.55); }
+
+/* Region strip and marquee tinted dark over sea */
+body[data-page="home"] .region-strip,
+body[data-page="home"] .marquee-band {
+  position: relative;
+  z-index: 2;
+  background: oklch(0.14 0.04 240 / 0.55);
+  backdrop-filter: blur(6px);
+  border-color: oklch(1 0 0 / 0.1);
+}
+body[data-page="home"] .region-strip .region-chip {
+  background: oklch(1 0 0 / 0.12);
+  color: var(--sand);
+  border-color: oklch(1 0 0 / 0.2);
+}
+body[data-page="home"] .region-strip .region-chip.active {
+  background: var(--sand);
+  color: var(--ink);
+}
+
+/* All sections sit above sea with frosted parchment background — stays readable
+   across all pages while letting the sea peek through edges and gaps */
+body[data-page="home"] .section,
+body[data-page="home"] .editorial,
+body[data-page="boats"] .section,
+body[data-page="boats"] .region-strip,
+body[data-page="detail"] .detail-gallery,
+body[data-page="detail"] .detail-body,
+body[data-page="book"] .book-shell,
+body[data-page="book"] .book-head,
+body[data-page="confirm"] .confirm-wrap,
+body[data-page="market"] .section,
+body[data-page="comps"] .section,
+body[data-page="profile"] .section {
+  position: relative;
+  z-index: 2;
+  background: oklch(0.97 0.008 210 / 0.94);
+  backdrop-filter: blur(10px);
+}
+
+/* Sticky story scrubs over sea — keep its dark abyss but let sea peek thru with low alpha */
+body[data-page="home"] .sticky-story {
+  position: relative;
+  z-index: 2;
+  background: oklch(0.14 0.04 240 / 0.85);
+  backdrop-filter: blur(8px);
+}
+
+/* Header strips on inner pages — tint subtly so sea reads as background */
+body[data-page="boats"] .nav,
+body[data-page="detail"] .nav,
+body[data-page="book"] .nav,
+body[data-page="confirm"] .nav,
+body[data-page="market"] .nav,
+body[data-page="comps"] .nav,
+body[data-page="profile"] .nav {
+  background: oklch(0.99 0.004 210 / 0.85);
+  backdrop-filter: blur(14px);
+}
+body[data-page="boats"] .top-strip,
+body[data-page="detail"] .top-strip,
+body[data-page="book"] .top-strip,
+body[data-page="confirm"] .top-strip,
+body[data-page="market"] .top-strip,
+body[data-page="comps"] .top-strip,
+body[data-page="profile"] .top-strip { background: oklch(0.14 0.04 240 / 0.95); }
+
+/* page edges — slight gap so sea is visible at the borders of the page */
+body[data-page="boats"] .app-shell,
+body[data-page="detail"] .app-shell,
+body[data-page="book"] .app-shell,
+body[data-page="confirm"] .app-shell,
+body[data-page="market"] .app-shell,
+body[data-page="comps"] .app-shell,
+body[data-page="profile"] .app-shell {
+  background: transparent;
+}
 
 /* scrollbar subtle */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
