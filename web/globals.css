@@ -1339,3 +1339,49 @@ img { display: block; max-width: 100%; }
 
 .tick-circle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--muted); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
 .tick-circle.on { background: oklch(0.55 0.13 155); border-color: oklch(0.55 0.13 155); color: var(--foam); }
+
+/* ── closing CTA block (home page § 05) ──────────── */
+.closing-cta {
+  background: var(--clay);
+  color: var(--foam);
+  padding: 56px 48px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.closing-cta .cta-kicker {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  opacity: 0.85;
+  margin-bottom: 16px;
+  direction: ltr;
+}
+.closing-cta h3 {
+  font-family: var(--ff-display);
+  font-size: 52px;
+  line-height: 1;
+  font-weight: 700;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+.closing-cta h3 em { font-style: italic; }
+.closing-cta p {
+  font-size: 16px;
+  line-height: 1.6;
+  opacity: 0.95;
+  max-width: 48ch;
+}
+.btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── nav active underline fix for RTL ───────────── */
+.nav-link.active::after {
+  inset-inline-start: 18px;
+  inset-inline-end: 18px;
+}
+

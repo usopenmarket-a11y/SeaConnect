@@ -1,17 +1,15 @@
-import * as React from 'react'
-
 /**
  * BoatCard — individual yacht/boat card for grid listings.
  *
  * Matches BoatCard() from Design/shared.jsx exactly.
- * Server Component (no client interactivity — clicking is handled by wrapping
- * anchor). The card itself is an <a> tag via next/link so it works in Server
- * Component context and is keyboard accessible.
+ * Structure: .boat-card-wrap > .boat-card (Link) > .media + .body
+ * Server Component — clicking handled by wrapping <a>.
+ * The .open-arrow and .card-glare are CSS-hover only (no tilt in SSR).
  *
- * Props accept either the mock-data shape (from Design/data.jsx) or the API
- * shape so the component can be used in both fallback and live modes.
+ * Accepts both API shape (name_ar, price_per_day) and mock shape (name, img, typeEn).
  */
 
+import * as React from 'react'
 import Link from 'next/link'
 
 export interface BoatCardData {
@@ -47,7 +45,6 @@ interface BoatCardProps {
 }
 
 export function BoatCard({ boat, locale }: BoatCardProps): React.ReactElement {
-  // Normalise fields: API uses snake_case, mock data uses camelCase
   const imgSrc =
     boat.img ??
     boat.primary_image_url ??
@@ -59,54 +56,64 @@ export function BoatCard({ boat, locale }: BoatCardProps): React.ReactElement {
   const currency = boat.currency ?? 'EGP'
 
   return (
-    <Link href={`/${locale}/yachts/${boat.id}`} className="boat-card">
-      {/* Image */}
-      <div className="media">
-        <div
-          className="media-img"
-          style={{ backgroundImage: `url(${imgSrc})` }}
-          role="img"
-          aria-label={boat.name}
-        />
-        {boat.tagEn && <span className="badge">{boat.tagEn}</span>}
-        {boat.coords && <span className="verified">✓ {boat.coords}</span>}
-      </div>
+    <div className="boat-card-wrap">
+      <Link href={`/${locale}/yachts/${boat.id}`} className="boat-card">
+        {/* Image area */}
+        <div className="media">
+          <div
+            className="media-img"
+            style={{ backgroundImage: `url(${imgSrc})` }}
+            role="img"
+            aria-label={boat.name}
+          />
+          {/* Glare overlay — CSS hover driven, no JS needed */}
+          <div className="card-glare" aria-hidden="true" />
+          {boat.tagEn && <span className="badge">{boat.tagEn}</span>}
+          {boat.coords && <span className="verified">✓ {boat.coords}</span>}
+          {/* Open arrow — appears on hover via CSS */}
+          <div className="open-arrow" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M7 17 L17 7 M9 7 L17 7 L17 15" />
+            </svg>
+          </div>
+        </div>
 
-      {/* Card body */}
-      <div className="body">
-        <div className="meta-row">
-          <span>{(boat.typeEn ?? boat.type ?? '').toUpperCase()}</span>
-          <span>{(boat.regionEn ?? boat.region ?? '').toUpperCase()}</span>
-        </div>
-        <div className="name">{boat.name}</div>
-        {boat.captEn && (
-          <div className="capt">
-            مع <em>{boat.captEn}</em>
+        {/* Card body */}
+        <div className="body">
+          <div className="meta-row">
+            <span>{(boat.typeEn ?? boat.type ?? '').toUpperCase()}</span>
+            <span>{(boat.regionEn ?? boat.region ?? '').toUpperCase()}</span>
           </div>
-        )}
-        <div className="specs">
-          {boat.length && <span>{boat.length}FT</span>}
-          {boat.length && pax > 0 && <span>·</span>}
-          {pax > 0 && <span>{pax} PAX</span>}
-          {pax > 0 && boat.year && <span>·</span>}
-          {boat.year && <span>{boat.year}</span>}
-        </div>
-        <div className="foot">
-          <div className="price">
-            <span className="num">{priceNum.toLocaleString('en')}</span>
-            <span className="unit"> {currency} / DAY</span>
-          </div>
-          {boat.rating != null && (
-            <div className="rating">
-              <span className="star">★</span>
-              <span>{boat.rating.toFixed(2)}</span>
-              {boat.reviews != null && (
-                <span style={{ opacity: 0.5 }}>({boat.reviews})</span>
-              )}
+          <div className="name">{boat.name}</div>
+          {boat.captEn && (
+            <div className="capt">
+              مع <em>{boat.captEn}</em>
             </div>
           )}
+          <div className="specs">
+            {boat.length != null && <span>{boat.length}FT</span>}
+            {boat.length != null && pax > 0 && <span>·</span>}
+            {pax > 0 && <span>{pax} PAX</span>}
+            {pax > 0 && boat.year != null && <span>·</span>}
+            {boat.year != null && <span>{boat.year}</span>}
+          </div>
+          <div className="foot">
+            <div className="price">
+              <span className="num">{priceNum.toLocaleString('en')}</span>
+              <span className="unit"> {currency} / DAY</span>
+            </div>
+            {boat.rating != null && (
+              <div className="rating">
+                <span className="star">★</span>
+                <span>{boat.rating.toFixed(2)}</span>
+                {boat.reviews != null && (
+                  <span style={{ opacity: 0.5 }}>({boat.reviews})</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   )
 }

@@ -1,26 +1,32 @@
 /**
- * Home page — Server Component (SSR for SEO per ADR-003).
+ * Home page — Server Component shell (ADR-003: SSR for SEO).
  *
- * Visual design matches Design/home.jsx from the prototype exactly.
- * Featured boats are fetched server-side from the API at request time.
- * All other sections (hero, marquee, gear teaser, competitions, closing CTA)
- * use static/mock data matching Design/data.jsx.
+ * Interactive islands (Hero parallax, RegionStrip, StickyStory) are Client
+ * Components imported here. Static sections (gear, competitions, closing CTA)
+ * remain as Server Component JSX.
  *
- * ADR-014: logical CSS properties throughout globals.css.
- * ADR-015: i18n keys added to ar.json + en.json for all user-visible strings.
- * ADR-003: Server Component — no 'use client' directive.
+ * Matches Design/home.jsx Home() + Hero() + MarqueeBand() + StickyStory() exactly.
+ * API fetches boats server-side; falls back to mock data on error.
+ *
+ * ADR-014: logical CSS throughout globals.css.
+ * ADR-015: i18n keys via t() for all user-visible strings.
  */
 
 import * as React from 'react'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
+import { HeroSection } from '@/components/home/HeroSection'
+import { RegionStrip } from '@/components/home/RegionStrip'
+import { MarqueeBand } from '@/components/ui/MarqueeBand'
+import { StickyStory } from '@/components/home/StickyStory'
+import { Reveal } from '@/components/ui/Reveal'
 
 interface HomePageProps {
   params: { locale: string }
 }
 
-// ── Static mock data (matches Design/data.jsx) ───────────────────────────────
+// ── Static mock data (matches Design/data.jsx) ────────────────────────────────
 
 const REGIONS = [
   { ar: 'كل السواحل', en: 'All coasts', count: 183 },
@@ -31,17 +37,6 @@ const REGIONS = [
   { ar: 'بورسعيد', en: 'Port Said', count: 12 },
   { ar: 'الأقصر — النيل', en: 'Luxor — Nile', count: 9 },
   { ar: 'أسوان — النيل', en: 'Aswan — Nile', count: 7 },
-] as const
-
-const MARQUEE_ITEMS = [
-  ['183', 'قارب معتمد · VESSELS'],
-  ['12', 'منطقة بحرية · REGIONS'],
-  ['4.92', 'متوسط التقييم · RATING'],
-  ['24H', 'حماية الضمان · ESCROW'],
-  ['100K', 'EGP تأمين لكل مسافر'],
-  ['12', 'بطولات هذا الموسم · TOURNAMENTS'],
-  ['0%', 'عمولة · أول ٣ شهور'],
-  ['8,400+', 'ساعة إبحار · LOGGED'],
 ] as const
 
 const GEAR = [
@@ -120,7 +115,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
   },
 ]
 
-// ── API fetch ────────────────────────────────────────────────────────────────
+// ── API fetch ─────────────────────────────────────────────────────────────────
 
 interface ApiYacht {
   id: string
@@ -144,7 +139,6 @@ async function fetchFeaturedBoats(locale: string): Promise<BoatCardData[]> {
     const data = (await res.json()) as { results: ApiYacht[] }
     const results = data.results ?? []
     if (results.length === 0) return FALLBACK_BOATS
-
     return results.slice(0, 6).map((y) => ({
       id: y.id,
       name: locale === 'ar' ? (y.name_ar || y.name) : y.name,
@@ -160,11 +154,7 @@ async function fetchFeaturedBoats(locale: string): Promise<BoatCardData[]> {
   }
 }
 
-// ── Duplicate marquee items for seamless loop ────────────────────────────────
-
-const ALL_MARQUEE = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
-
-// ── Page component ───────────────────────────────────────────────────────────
+// ── Page component ────────────────────────────────────────────────────────────
 
 export default async function HomePage({
   params: { locale },
@@ -175,203 +165,88 @@ export default async function HomePage({
 
   return (
     <>
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <div className="hero" data-screen-label="hero">
-        <div
-          className="hero-img-parallax"
-          style={{
-            backgroundImage:
-              'url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=80)',
-          }}
-        />
-        <div className="hero-overlay" />
-        <div className="hero-content">
-          <div className="hero-kicker">
-            <span className="dot" />
-            <span>ISSUE 01 · SPRING 2026</span>
-            <span style={{ opacity: 0.5 }}>·</span>
-            <span>{t('hero.kicker')}</span>
-          </div>
-          <h1 className="hero-title">
-            {t('hero.line1')}<br />
-            مما <em>{t('hero.line2em')}</em>.
-          </h1>
-          <p className="hero-sub">{t('hero.sub')}</p>
+      {/* ── Hero (Client Component — parallax + search form) ────────────── */}
+      <HeroSection
+        locale={locale}
+        kicker={t('hero.kicker')}
+        line1={t('hero.line1')}
+        line2em={t('hero.line2em')}
+        sub={t('hero.sub')}
+        searchLabels={{
+          destination: t('search.destination'),
+          date: t('search.date'),
+          duration: t('search.duration'),
+          passengers: t('search.passengers'),
+          btn: t('search.btn'),
+        }}
+      />
 
-          {/* Search bar */}
-          <div className="search-bar">
-            <div className="field">
-              <label>{t('search.destination')}</label>
-              <select defaultValue="hurghada">
-                <option value="hurghada">الغردقة · البحر الأحمر</option>
-                <option value="alex">الإسكندرية · المتوسط</option>
-                <option value="sharm">شرم الشيخ</option>
-                <option value="luxor">الأقصر · النيل</option>
-              </select>
-            </div>
-            <div className="field">
-              <label>{t('search.date')}</label>
-              <input defaultValue="12 مايو 2026" readOnly />
-            </div>
-            <div className="field">
-              <label>{t('search.duration')}</label>
-              <select defaultValue="full">
-                <option value="half">نصف يوم · 6 س</option>
-                <option value="full">يوم كامل · 10 س</option>
-                <option value="multi">أيام متعددة</option>
-              </select>
-            </div>
-            <div className="field">
-              <label>{t('search.passengers')}</label>
-              <select defaultValue="6">
-                <option>2 أشخاص</option>
-                <option>4 أشخاص</option>
-                <option>6 أشخاص</option>
-                <option>10 أشخاص</option>
-              </select>
-            </div>
-            <Link href={`/${locale}/yachts`} className="search-btn">
-              {t('search.btn')} ←
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Region chips strip ────────────────────────────────────────────── */}
-      <div className="region-strip" data-screen-label="region-strip">
-        {REGIONS.map((r, i) => (
-          <button
-            key={i}
-            className={`region-chip${i === 0 ? ' active' : ''}`}
-          >
-            <span>{locale === 'ar' ? r.ar : r.en}</span>
-            <span className="count">{r.count}</span>
-          </button>
-        ))}
-      </div>
+      {/* ── Region chips strip (Client Component — active state) ────────── */}
+      <RegionStrip regions={[...REGIONS]} locale={locale} />
 
       {/* ── Marquee band ─────────────────────────────────────────────────── */}
-      <div className="marquee-band" data-screen-label="marquee-band">
-        <div className="marquee-viewport">
-          <div className="marquee-track">
-            {ALL_MARQUEE.map(([n, l], i) => (
-              <span key={i} className="item">
-                <span className="n num">{n}</span>
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontFamily: 'var(--ff-mono)',
-                    letterSpacing: '0.1em',
-                    color: 'oklch(0.78 0.02 220)',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {l}
-                </span>
-                <span className="sep" />
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      <MarqueeBand />
 
-      {/* ── Featured boats ────────────────────────────────────────────────── */}
+      {/* ── Featured boats grid ──────────────────────────────────────────── */}
       <div className="section" data-screen-label="featured-boats">
-        <div className="section-head">
-          <div>
-            <div className="num-tag">§ 01 · FEATURED VESSELS</div>
-            <h2>
-              {t('featured.heading1')} <em>{t('featured.heading2em')}</em> {t('featured.heading3')}
-            </h2>
+        <Reveal>
+          <div className="section-head">
+            <div>
+              <div className="num-tag">§ 01 · FEATURED VESSELS</div>
+              <h2>
+                {t('featured.heading1')} <em>{t('featured.heading2em')}</em> {t('featured.heading3')}
+              </h2>
+            </div>
+            <Link href={`/${locale}/yachts`} className="right-link">
+              {t('featured.viewAll')} (183) ←
+            </Link>
           </div>
-          <Link href={`/${locale}/yachts`} className="right-link">
-            {t('featured.viewAll')} (183) ←
-          </Link>
-        </div>
+        </Reveal>
         <div className="boat-grid">
-          {boats.map((boat) => (
-            <BoatCard key={boat.id} boat={boat} locale={locale} />
+          {boats.map((boat, i) => (
+            <Reveal key={boat.id} delay={i * 60}>
+              <BoatCard boat={boat} locale={locale} />
+            </Reveal>
           ))}
         </div>
       </div>
 
-      {/* ── Trust / Sticky story (static, simplified for SSR) ─────────────── */}
-      <div className="sticky-story" data-screen-label="trust-section">
-        <div className="sticky-story-inner">
-          <div
-            className="sticky-story-img"
-            style={{
-              backgroundImage:
-                'url(https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=1600&q=80)',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'linear-gradient(115deg, oklch(0.14 0.04 240 / 0.55), oklch(0.14 0.04 240 / 0.15))',
-              }}
-            />
-          </div>
-          <div className="sticky-story-steps">
-            <div className="sticky-story-step">
-              <div className="num-tag">§ TRUST · STEP 01 — INSPECTION</div>
-              <h3>
-                {t('trust.step1.line1')},<br />
-                <em>{t('trust.step1.line2em')}</em> {t('trust.step1.line3')}.
-              </h3>
-              <p>{t('trust.step1.body')}</p>
-            </div>
-            <div className="sticky-story-step">
-              <div className="num-tag">§ TRUST · STEP 02 — ESCROW</div>
-              <h3>
-                {t('trust.step2.line1')} <em>{t('trust.step2.line2em')}</em>,<br />
-                {t('trust.step2.line3')}.
-              </h3>
-              <p>{t('trust.step2.body')}</p>
-            </div>
-            <div className="sticky-story-step">
-              <div className="num-tag">§ TRUST · STEP 03 — INSURANCE</div>
-              <h3>
-                {t('trust.step3.line1')}<br />
-                <em>{t('trust.step3.line2em')}</em>.
-              </h3>
-              <p>{t('trust.step3.body')}</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* ── Sticky story — Trust & Verification (Client Component) ──────── */}
+      <StickyStory />
 
       {/* ── Gear marketplace teaser ──────────────────────────────────────── */}
       <div className="section" data-screen-label="gear-teaser">
-        <div className="section-head">
-          <div>
-            <div className="num-tag">§ 03 · GEAR MARKETPLACE</div>
-            <h2>
-              {t('gear.heading1')} — <em>{t('gear.heading2em')}</em> {t('gear.heading3')}
-            </h2>
+        <Reveal>
+          <div className="section-head">
+            <div>
+              <div className="num-tag">§ 03 · GEAR MARKETPLACE</div>
+              <h2>
+                {t('gear.heading1')} — <em>{t('gear.heading2em')}</em> {t('gear.heading3')}
+              </h2>
+            </div>
+            <Link href={`/${locale}/marketplace`} className="right-link">
+              {t('gear.viewAll')} ←
+            </Link>
           </div>
-          <Link href={`/${locale}/marketplace`} className="right-link">
-            {t('gear.viewAll')} ←
-          </Link>
-        </div>
+        </Reveal>
         <div className="gear-grid">
           {GEAR.slice(0, 8).map((g, i) => (
-            <div key={i} className="gear-card">
-              <div
-                className="img"
-                style={{ backgroundImage: `url(${g.img})` }}
-                role="img"
-                aria-label={g.title}
-              />
-              <div className="brand">{g.brand}</div>
-              <div className="title">{g.title}</div>
-              <div className="price">
-                <span className="num">{g.price.toLocaleString('en')}</span>
-                <span className="unit"> EGP</span>
+            <Reveal key={i} delay={i * 50}>
+              <div className="gear-card">
+                <div
+                  className="img"
+                  style={{ backgroundImage: `url(${g.img})` }}
+                  role="img"
+                  aria-label={g.title}
+                />
+                <div className="brand">{g.brand}</div>
+                <div className="title">{g.title}</div>
+                <div className="price">
+                  <span className="num">{g.price.toLocaleString('en')}</span>
+                  <span className="unit"> EGP</span>
+                </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -382,73 +257,83 @@ export default async function HomePage({
         style={{ background: 'var(--sand-2)' }}
         data-screen-label="competitions-teaser"
       >
-        <div className="section-head">
-          <div>
-            <div className="num-tag">§ 04 · TOURNAMENTS & EVENTS</div>
-            <h2>
-              {t('comps.heading1')} <em>{t('comps.heading2em')}</em>
-            </h2>
+        <Reveal>
+          <div className="section-head">
+            <div>
+              <div className="num-tag">§ 04 · TOURNAMENTS & EVENTS</div>
+              <h2>
+                {t('comps.heading1')} <em>{t('comps.heading2em')}</em>
+              </h2>
+            </div>
+            <Link href={`/${locale}/competitions`} className="right-link">
+              {t('comps.viewAll')} ←
+            </Link>
           </div>
-          <Link href={`/${locale}/competitions`} className="right-link">
-            {t('comps.viewAll')} ←
-          </Link>
-        </div>
+        </Reveal>
         <div style={{ background: 'var(--foam)', border: '1px solid var(--rule)' }}>
           {COMPETITIONS.map((c, i) => (
-            <div key={i} className="comp-row">
-              <div className="date">
-                <div className="d num">{c.d}</div>
-                <div className="m">{c.m} 2026</div>
+            <Reveal key={i} delay={i * 70}>
+              <div className="comp-row">
+                <div className="date">
+                  <div className="d num">{c.d}</div>
+                  <div className="m">{c.m} 2026</div>
+                </div>
+                <div className="title">
+                  <div className="t">{c.title}</div>
+                  <div className="sub">{c.sub}</div>
+                </div>
+                <div className="meta">
+                  <span className="n num">{c.participants}</span>
+                  <span className="l">مشارك</span>
+                </div>
+                <div className="meta">
+                  <span className="n num">{c.prize}</span>
+                  <span className="l">جوائز EGP</span>
+                </div>
+                <button className="cta">سجّل · {c.fee} EGP</button>
               </div>
-              <div className="title">
-                <div className="t">{c.title}</div>
-                <div className="sub">{c.sub}</div>
-              </div>
-              <div className="meta">
-                <span className="n num">{c.participants}</span>
-                <span className="l">مشارك</span>
-              </div>
-              <div className="meta">
-                <span className="n num">{c.prize}</span>
-                <span className="l">جوائز EGP</span>
-              </div>
-              <button className="cta">سجّل · {c.fee} EGP</button>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
 
-      {/* ── Closing CTA ───────────────────────────────────────────────────── */}
-      <div className="section" style={{ paddingTop: 20, paddingBottom: 60 }} data-screen-label="closing-cta">
-        <div className="closing-cta">
-          <div>
-            <div className="cta-kicker">§ 05 · FOR BOAT OWNERS</div>
-            <h3>
-              {t('cta.line1')} <em>{t('cta.line2em')}</em> {t('cta.line3')}.
-            </h3>
-            <p>{t('cta.body')}</p>
+      {/* ── Closing CTA — For boat owners ────────────────────────────────── */}
+      <div
+        className="section"
+        style={{ paddingTop: 20, paddingBottom: 60 }}
+        data-screen-label="closing-cta"
+      >
+        <Reveal>
+          <div className="closing-cta">
+            <div>
+              <div className="cta-kicker">§ 05 · FOR BOAT OWNERS</div>
+              <h3>
+                {t('cta.line1')} <em>{t('cta.line2em')}</em> {t('cta.line3')}.
+              </h3>
+              <p>{t('cta.body')}</p>
+            </div>
+            <div className="btn-stack">
+              <Link
+                href={`/${locale}/owner/new-listing`}
+                className="btn btn-lg cta-shimmer"
+                style={{ background: 'var(--ink)', color: 'var(--sand)' }}
+              >
+                {t('cta.primaryBtn')} ←
+              </Link>
+              <Link
+                href={`/${locale}/about`}
+                className="btn btn-lg"
+                style={{
+                  background: 'transparent',
+                  color: 'var(--foam)',
+                  border: '1px solid var(--foam)',
+                }}
+              >
+                {t('cta.secondaryBtn')}
+              </Link>
+            </div>
           </div>
-          <div className="btn-stack">
-            <Link
-              href={`/${locale}/owner/new-listing`}
-              className="btn btn-lg"
-              style={{ background: 'var(--ink)', color: 'var(--sand)' }}
-            >
-              {t('cta.primaryBtn')} ←
-            </Link>
-            <Link
-              href={`/${locale}/about`}
-              className="btn btn-lg"
-              style={{
-                background: 'transparent',
-                color: 'var(--foam)',
-                border: '1px solid var(--foam)',
-              }}
-            >
-              {t('cta.secondaryBtn')}
-            </Link>
-          </div>
-        </div>
+        </Reveal>
       </div>
     </>
   )

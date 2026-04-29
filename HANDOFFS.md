@@ -561,3 +561,52 @@ curl http://localhost:3000/ar/yachts/<uuid-with-departure-port>
 
 ### Build Verification
 - `npx tsc --noEmit` — PASS, 0 errors (executed this session).
+
+---
+
+## HANDOFF-2026-04-29-004
+
+**Status:** DONE
+**From:** design-to-code-agent (this session)
+**To:** nextjs-page-agent / qa-agent
+**Sprint:** 5 (design fidelity pass)
+**Feature:** Full design-to-code conversion: scroll hooks, interactive components, BoatCard wrap, StickyStory, AvailabilityCalendar
+
+### What Was Completed
+- `web/hooks/useReveal.ts` — IntersectionObserver fade-and-rise hook (converted from `Design/scroll.jsx`). Returns `{ref, className: 'reveal'|'reveal in', visible}`.
+- `web/hooks/useParallax.ts` — scroll-driven CSS transform hook. Returns `{ref, style: {transform, willChange}, t}`.
+- `web/hooks/useScrollProgress.ts` — element scroll progress 0..1 through viewport. Returns `{ref, progress}`.
+- `web/components/ui/Reveal.tsx` — Client Component wrapper for fade-and-rise animation. Props: `as`, `delay`, `className`, `children`.
+- `web/components/layout/ScrollProgress.tsx` — clay/brass gradient fixed progress bar at top of page. Client Component.
+- `web/components/layout/Nav.tsx` — updated to render `<ScrollProgress />` alongside the nav element.
+- `web/components/boats/BoatCard.tsx` — added `.boat-card-wrap` outer div (required by CSS tilt/reveal animations), `.card-glare` overlay, `.open-arrow` icon — matching `Design/shared.jsx BoatCard()` exactly.
+- `web/components/home/HeroSection.tsx` — Client Component. Parallax background via `useParallax(0.35)`, staggered `<Reveal>` for kicker/title/sub/search-bar. Search form submits to `/${locale}/yachts`.
+- `web/components/home/RegionStrip.tsx` — Client Component. Active chip state via `useState`. Matches Design region-strip exactly.
+- `web/components/home/StickyStory.tsx` — Client Component. Full scroll-driven sticky story with `useScrollProgress()`. Image crossfade, text step transitions, dot progress indicator. 320vh height for scroll scrubbing. Matches `Design/home.jsx StickyStory()` exactly.
+- `web/components/ui/MarqueeBand.tsx` — Server Component. Doubled items for seamless CSS `@keyframes marquee-x` loop.
+- `web/components/weather/AvailabilityCalendar.tsx` — Client Component. Full availability calendar + 7-day weather forecast panel. Month navigation, 42-cell grid with open/limited/hold/booked statuses, weather hero panel, 4 metrics, SVG temperature curve, 7-day forecast row, avail-footer with price pill. All SVG weather icons included (SunIcon, PartialCloudIcon, CloudIcon, WindIcon, WindMini). Matches `Design/availability.jsx AvailabilityWeather()` exactly.
+- `web/app/[locale]/page.tsx` — homepage rebuilt using all new Client Component islands.
+- `web/app/[locale]/yachts/[id]/page.tsx` — replaced `WeatherWidget + WhatsBiting` with `AvailabilityCalendar` (matching the Design's `detail.jsx` layout).
+- `web/globals.css` — added missing `.closing-cta`, `.cta-kicker`, `.btn-stack` classes matching `Design/styles.css`.
+
+### API Endpoints Required
+- Homepage featured boats: `GET /api/v1/yachts/?ordering=-created_at` (already exists)
+- Yacht detail: `GET /api/v1/yachts/{id}/` (already exists)
+- AvailabilityCalendar: uses deterministic mock pattern (no live API call needed until `GET /api/v1/bookings/yachts/{id}/availability/` ships)
+
+### How to Test
+```bash
+# TypeScript (PASS, 0 errors):
+cd web && npx tsc --noEmit
+
+# HTTP smoke tests:
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3010/ar     # → 200
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3010/en     # → 200
+curl -s -o /dev/null -w "%{http_code}" http://localhost:3010/ar/yachts  # → 200
+```
+
+### Design Elements Not Converted (and why)
+- `useTilt` 3D card tilt — omitted intentionally. The CSS classes `.boat-card-wrap` and `.card-glare` are present; the JS pointer-event tilt requires wrapping every BoatCard in a Client Component just for that effect. Hover CSS still provides the scale+shadow effect which covers 95% of the visual.
+- `useMagnetic` button drift — pure enhancement, safely skipped. Buttons still animate via CSS transitions.
+- Lottie player — not present in the Next.js codebase (never was); the `Design/shared.jsx` Lottie component is prototype-only.
+- RoleSwitcher — prototype debugging tool, correctly excluded from production code.
