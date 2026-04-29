@@ -116,9 +116,9 @@ services:
         condition: service_started
     volumes:
       - ./web:/app
-      # Named volumes prevent host node_modules / .next from leaking in
+      # node_modules in a named volume so host OS doesn't shadow container's install
       - web_node_modules:/app/node_modules
-      - web_next_cache:/app/.next
+      # .next is NOT a named volume — dev mode recompiles on demand from source
     command: npm run dev
     restart: unless-stopped
 
@@ -140,7 +140,6 @@ services:
     volumes:
       - ./admin:/app
       - admin_node_modules:/app/node_modules
-      - admin_next_cache:/app/.next
     profiles:
       - admin
     restart: unless-stopped
@@ -202,6 +201,4 @@ volumes:
   ollama_data:
   jwt_keys:
   web_node_modules:
-  web_next_cache:
   admin_node_modules:
-  admin_next_cache:
