@@ -1,4 +1,5 @@
 /* global React, BOATS, GEAR, COMPETITIONS, Lottie */
+const { SellerLayout, SellerListing, SellerBookings, SellerCalendar, SellerPayouts, SellerOnboard } = window;
 
 // ── ADMIN DASHBOARD ─────────────────────────────────
 function AdminDash() {
@@ -185,7 +186,7 @@ function AdminDash() {
 }
 
 // ── SELLER / OWNER DASHBOARD ────────────────────────
-function SellerDash() {
+function SellerDashContent() {
   const cal = [];
   for (let i = 0; i < 35; i++) {
     const day = i - 2;
@@ -194,12 +195,6 @@ function SellerDash() {
     const today = day === 8;
     cal.push({ day: day >= 1 && day <= 30 ? day : '', booked, hold, today });
   }
-
-  const navItems = {
-    dash: [['لوحة التحكم', 'DASHBOARD', null, true], ['التقويم', 'CALENDAR', null], ['الحجوزات', 'BOOKINGS', 8]],
-    listings: [['قاربي', 'MY BOAT', null], ['معرض الصور', 'MEDIA', 14], ['التسعير', 'PRICING', null], ['منتجات المتجر', 'GEAR LISTINGS', 23]],
-    finance: [['المدفوعات', 'PAYOUTS', null], ['الضمان', 'ESCROW', 3], ['الضرائب', 'TAX', null]],
-  };
 
   const bookings = [
     { d: '12 MAY', name: 'نور حسن', pax: 6, amt: 5480, status: 'pending', avatar: 'ن' },
@@ -210,45 +205,20 @@ function SellerDash() {
   ];
 
   return (
-    <div className="dash-layout" dir="rtl">
-      <aside className="sidebar-dash">
-        <div className="brand-mini">
-          <span className="dot" />
-          سي كونكت
-          <span style={{ fontSize: 10, fontFamily: 'var(--ff-mono)', opacity: 0.6, letterSpacing: '0.1em', marginRight: 'auto' }}>OWNER</span>
-        </div>
-        {Object.entries({ 'الإدارة': navItems.dash, 'القوائم': navItems.listings, 'المالية': navItems.finance }).map(([g, items]) => (
-          <div key={g}>
-            <div className="section-label">{g}</div>
-            {items.map(([ar, en, n, active]) => (
-              <div key={en} className={`nav-item ${active ? 'active' : ''}`}>
-                <span>{ar}</span>
-                {n !== null && <span className="n">{n}</span>}
-              </div>
-            ))}
-          </div>
-        ))}
-        <div style={{ marginTop: 32, padding: 12, border: '1px dashed oklch(1 0 0 / 0.2)', fontFamily: 'var(--ff-mono)', fontSize: 10, letterSpacing: '0.08em', lineHeight: 1.6, opacity: 0.7, direction: 'ltr' }}>
-          0% COMMISSION<br />
-          MONTHS 1–3 ACTIVE<br />
-          63 DAYS REMAINING
-        </div>
-      </aside>
-
-      <div className="dash-wrap">
-        <div className="dash-head">
-          <div>
-            <div className="num-tag">§ OWNER · CAPT. MAHMOUD SEIF · HURGHADA</div>
-            <h1>أهلاً <em>محمود</em></h1>
-            <div style={{ marginTop: 10, fontFamily: 'var(--ff-mono)', fontSize: 12, color: 'var(--muted)', letterSpacing: '0.05em', direction: 'ltr' }}>
-              "البحر الأحمر" · 42 FT · LIVE · ★ 4.92 (148)
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-ghost">تعديل القارب</button>
-            <button className="btn btn-clay">+ إضافة قارب جديد</button>
+    <>
+      <div className="dash-head">
+        <div>
+          <div className="num-tag">§ OWNER · CAPT. MAHMOUD SEIF · HURGHADA</div>
+          <h1>أهلاً <em>محمود</em></h1>
+          <div style={{ marginTop: 10, fontFamily: 'var(--ff-mono)', fontSize: 12, color: 'var(--muted)', letterSpacing: '0.05em', direction: 'ltr' }}>
+            "البحر الأحمر" · 42 FT · LIVE · ★ 4.92 (148)
           </div>
         </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button className="btn btn-ghost">تعديل القارب</button>
+          <button className="btn btn-clay">+ إضافة قارب جديد</button>
+        </div>
+      </div>
 
         <div className="kpi-grid">
           {[
@@ -367,9 +337,51 @@ function SellerDash() {
             <button className="btn" style={{ background: 'var(--clay)', color: 'var(--foam)', marginTop: 16 }}>طبّق الاقتراح ←</button>
           </div>
         </div>
-      </div>
-    </div>
+    </>
   );
 }
 
-Object.assign(window, { AdminDash, SellerDash });
+function SellerDash() {
+  const [sub, setSub] = useState('dash');
+  let title = 'أهلاً', em = 'محمود', kicker = '§ OWNER · CAPT. MAHMOUD SEIF';
+  let actions = (
+    <>
+      <button className="btn btn-ghost">تعديل القارب</button>
+      <button className="btn btn-clay">+ إضافة قارب جديد</button>
+    </>
+  );
+  let content = null;
+  if (sub === 'dash') return <SellerLayout subPage={sub} setSubPage={setSub} title=""><SellerDashContent /></SellerLayout>;
+  if (sub === 'listing') {
+    title = 'تعديل قاربي'; em = '· LISTING'; kicker = '§ LISTING EDITOR';
+    actions = (<><button className="btn btn-ghost">معاينة</button><button className="btn btn-clay">حفظ</button></>);
+    content = <SellerListing />;
+  } else if (sub === 'bookings') {
+    title = 'الحجوزات'; em = ''; kicker = '§ BOOKINGS · 8 UPCOMING';
+    actions = (<><button className="btn btn-ghost">تصدير CSV</button></>);
+    content = <SellerBookings />;
+  } else if (sub === 'calendar') {
+    title = 'تقويم'; em = 'الإبحار'; kicker = '§ CALENDAR · MAY 2026';
+    actions = null;
+    content = <SellerCalendar />;
+  } else if (sub === 'payouts') {
+    title = 'المدفوعات'; em = '· PAYOUTS'; kicker = '§ EARNINGS · ESCROW · BANK';
+    actions = (<><button className="btn btn-ghost">تنزيل كشف</button></>);
+    content = <SellerPayouts />;
+  } else if (sub === 'onboard') {
+    title = 'التحقق من الحساب'; em = ''; kicker = '§ VERIFICATION · STEP 4 / 6';
+    actions = null;
+    content = <SellerOnboard />;
+  } else {
+    title = 'الإعدادات'; em = ''; content = <div className="dash-card"><h3>قريباً</h3><p style={{color:'var(--muted-2)'}}>هذه الصفحة قيد التطوير.</p></div>;
+  }
+  return (
+    <SellerLayout subPage={sub} setSubPage={setSub} title={title} titleEm={em} kicker={kicker} actions={actions}>
+      {content}
+    </SellerLayout>
+  );
+}
+
+const { useState } = React;
+
+Object.assign(window, { AdminDash, SellerDash, SellerDashContent });

@@ -1,4 +1,13 @@
-/* global React, BOATS, REVIEWS, AvailabilityWeather */
+/* global React, BOATS, REVIEWS, AvailabilityWeather, Reveal, useParallax */
+
+function ParallaxImage({ src, speed = 0.2, ...rest }) {
+  const { ref, style } = useParallax(speed);
+  return (
+    <div ref={ref} {...rest} style={{ ...rest.style, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ ...style, position: 'absolute', inset: '-15% 0', backgroundImage: `url(${src})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+    </div>
+  );
+}
 
 function BoatDetail({ boat, onBook, onNavigate }) {
   if (!boat) return null;
@@ -12,11 +21,11 @@ function BoatDetail({ boat, onBook, onNavigate }) {
   return (
     <>
       <div className="detail-gallery">
-        <div className="main" style={{ backgroundImage: `url(${gallery[0]})` }} />
-        <div style={{ backgroundImage: `url(${gallery[1]})` }} />
-        <div style={{ backgroundImage: `url(${gallery[2]})` }} />
-        <div style={{ backgroundImage: `url(${gallery[3]})` }} />
-        <div style={{ backgroundImage: `url(${gallery[4]})`, position: 'relative' }}>
+        <ParallaxImage src={gallery[0]} speed={0.18} className="main" />
+        <ParallaxImage src={gallery[1]} speed={0.10} />
+        <ParallaxImage src={gallery[2]} speed={0.14} />
+        <ParallaxImage src={gallery[3]} speed={0.08} />
+        <div style={{ backgroundImage: `url(${gallery[4]})`, position: 'relative', backgroundSize: 'cover', backgroundPosition: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'oklch(0.22 0.04 240 / 0.55)', color: 'var(--sand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--ff-mono)', fontSize: 12, letterSpacing: '0.1em' }}>
             + ١٤ صورة
           </div>
@@ -33,7 +42,7 @@ function BoatDetail({ boat, onBook, onNavigate }) {
             <span>{boat.nameEn.toUpperCase()}</span>
           </div>
 
-          <h1>{boat.name}<br /><em style={{ fontSize: '0.55em' }}>{boat.nameEn}</em></h1>
+          <Reveal as="h1">{boat.name}<br /><em style={{ fontSize: '0.55em' }}>{boat.nameEn}</em></Reveal>
 
           <div className="detail-meta-row">
             <div className="item"><span className="l">TYPE</span><span className="v">{boat.typeEn}</span></div>
@@ -52,7 +61,7 @@ function BoatDetail({ boat, onBook, onNavigate }) {
             </p>
           </div>
 
-          <div className="subhead">المواصفات التقنية</div>
+          <Reveal className="subhead">المواصفات التقنية</Reveal>
           <div className="spec-grid">
             <div className="cell">
               <div className="l">LENGTH OVERALL</div>
@@ -80,7 +89,7 @@ function BoatDetail({ boat, onBook, onNavigate }) {
             </div>
           </div>
 
-          <div className="subhead">ما تشمله الرحلة</div>
+          <Reveal className="subhead">ما تشمله الرحلة</Reveal>
           <div className="amen-grid">
             {[
               ['طاقم من ٣ أفراد + ربان معتمد', true],
@@ -103,7 +112,7 @@ function BoatDetail({ boat, onBook, onNavigate }) {
 
           <AvailabilityWeather boat={boat} region={boat.regionEn.toLowerCase()} />
 
-          <div className="subhead" id="reviews">التقييمات · {boat.rating.toFixed(2)} / 5 ({boat.reviews} تقييم)</div>
+          <Reveal className="subhead" id="reviews">التقييمات · {boat.rating.toFixed(2)} / 5 ({boat.reviews} تقييم)</Reveal>
           {REVIEWS.map((r, i) => (
             <div key={i} className="review">
               <div className="author">
@@ -121,7 +130,7 @@ function BoatDetail({ boat, onBook, onNavigate }) {
             عرض كل {boat.reviews} تقييم ←
           </button>
 
-          <div className="subhead">الموقع ونقطة الانطلاق</div>
+          <Reveal className="subhead">الموقع ونقطة الانطلاق</Reveal>
           <div style={{ aspectRatio: '16/7', background: 'var(--sand-2)', position: 'relative', overflow: 'hidden', border: '1px solid var(--rule)' }}>
             <div style={{
               position: 'absolute', inset: 0,
@@ -183,7 +192,7 @@ function BoatDetail({ boat, onBook, onNavigate }) {
             <div className="row total"><span className="l">الإجمالي</span><span className="v">{(boat.price + Math.round(boat.price * 0.12) + 180).toLocaleString('en')} EGP</span></div>
           </div>
 
-          <button className="btn btn-clay btn-lg" style={{ width: '100%', marginTop: 18 }} onClick={() => onBook(boat)}>
+          <button className="btn btn-clay btn-lg cta-shimmer" style={{ width: '100%', marginTop: 18 }} onClick={() => onBook(boat)}>
             متابعة الحجز ←
           </button>
 

@@ -21,6 +21,7 @@
   <script type="text/babel" src="detail.jsx"></script>
   <script type="text/babel" src="booking.jsx"></script>
   <script type="text/babel" src="altpages.jsx"></script>
+  <script type="text/babel" src="seller-pages.jsx"></script>
   <script type="text/babel" src="dashboards.jsx"></script>
   <script type="text/babel" src="availability.jsx"></script>
 
@@ -80,6 +81,7 @@
         }>
           <SeaScene />
           <TopStrip />
+          <ScrollProgress />
           <Nav currentPage={page} onNavigate={nav} />
 
           {page === 'home' && <Home onNavigate={nav} onOpenBoat={openBoat} />}

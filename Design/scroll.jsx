@@ -147,4 +147,93 @@ function useScrollProgress() {
   return { ref, progress: p };
 }
 
-Object.assign(window, { useReveal, Reveal, RevealStagger, useParallax, useScrollProgress });
+// ── useTilt — pointer-driven 3D tilt for cards ────────
+function useTilt(max = 8) {
+  const ref = React.useRef(null);
+  const [s, setS] = React.useState({ rx: 0, ry: 0, mx: 50, my: 50, hover: false });
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      setS({
+        rx: (0.5 - y) * max * 2,
+        ry: (x - 0.5) * max * 2,
+        mx: x * 100,
+        my: y * 100,
+        hover: true,
+      });
+    };
+    const onLeave = () => setS({ rx: 0, ry: 0, mx: 50, my: 50, hover: false });
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, [max]);
+  const style = {
+    transform: `perspective(900px) rotateX(${s.rx}deg) rotateY(${s.ry}deg) translateZ(0)`,
+    transition: s.hover ? 'transform 0.08s linear' : 'transform 0.5s cubic-bezier(.2,.8,.2,1)',
+  };
+  return { ref, style, mx: s.mx, my: s.my, hover: s.hover };
+}
+
+// ── useMagnetic — buttons drift toward cursor ─────────
+function useMagnetic(strength = 14) {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onMove = (e) => {
+      const r = el.getBoundingClientRect();
+      const x = e.clientX - (r.left + r.width / 2);
+      const y = e.clientY - (r.top + r.height / 2);
+      el.style.transform = `translate3d(${(x / r.width) * strength}px, ${(y / r.height) * strength}px, 0)`;
+    };
+    const onLeave = () => { el.style.transform = 'translate3d(0,0,0)'; };
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerleave', onLeave);
+    return () => {
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerleave', onLeave);
+    };
+  }, [strength]);
+  return ref;
+}
+
+// ── useCountUp — count to target when in view ────────
+function useCountUp(target, opts = {}) {
+  const ref = React.useRef(null);
+  const [n, setN] = React.useState(0);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) {
+          io.disconnect();
+          const dur = opts.duration || 1500;
+          const t0 = performance.now();
+          const tick = (now) => {
+            const t = Math.min(1, (now - t0) / dur);
+            const eased = 1 - Math.pow(1 - t, 3);
+            setN(target * eased);
+            if (t < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      });
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [target]);
+  return { ref, value: n };
+}
+
+// alias
+function useScrollScrub() { return useScrollProgress(); }
+
+Object.assign(window, { useReveal, Reveal, RevealStagger, useParallax, useScrollProgress, useTilt, useMagnetic, useCountUp, useScrollScrub });

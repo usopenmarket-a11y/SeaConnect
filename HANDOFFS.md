@@ -370,3 +370,194 @@ curl http://localhost:3000/en
 - `globals.css` has valid CSS (logical properties, @keyframes, CSS variables).
 - `ar.json` and `en.json` parse as valid JSON with matching keys for all `home.*` additions.
 - `npx tsc --noEmit` — DEFERRED (no node_modules in sandbox; run inside Docker `web` container).
+
+---
+
+## HANDOFF-2026-04-29-001
+
+**Status:** READY
+**From:** django-model-agent
+**To:** api-endpoint-agent, nextjs-page-agent
+**Sprint:** 5
+**Feature:** Sprint 5 Phase A — Marketplace backend (models, migrations, admin, serializers, views, URLs, seed)
+
+### What Was Completed
+- 7 models written to `backend/apps/marketplace/models.py`: `VendorProfile`, `ProductCategory`, `ProductStatus` (TextChoices), `Product`, `Cart`, `CartItem`, `OrderStatus` (TextChoices), `Order`, `OrderItem`. All UUID PKs, all inherit `TimeStampedModel`, all monetary fields `DecimalField(12,2)`, currency from `region.currency` (ADR-018 compliant).
+- `backend/apps/marketplace/migrations/0001_initial.py` — generated and applied. Creates 7 tables with 4 indexes (`idx_product_vendor_status`, `idx_product_cat_status`, `idx_product_status`, `idx_order_customer_status`).
+- `backend/apps/marketplace/admin.py` — 5 registered admins: `VendorProfileAdmin` (with bulk `verify_vendors` action), `ProductCategoryAdmin` (prepopulated slug), `ProductAdmin`, `CartAdmin` (with `CartItemInline`), `OrderAdmin` (with `OrderItemInline`, read-only financial fields).
+- `backend/apps/marketplace/serializers.py` — 7 serializers: `ProductCategorySerializer`, `ProductListSerializer`, `ProductDetailSerializer`, `CartItemSerializer` (with `line_total` computed field), `CartSerializer` (with `item_count`), `OrderItemSerializer`, `OrderSerializer`.
+- `backend/apps/marketplace/views.py` — 8 views: `ProductListView` (public, cursor-paginated, category filter), `ProductDetailView` (public), `CategoryListView` (public, no pagination), `CartView` (GET), `CartItemView` (POST add/update), `CartItemDetailView` (PATCH/DELETE), `OrderListCreateView` (checkout from cart, atomic), `OrderDetailView`.
+- `backend/apps/marketplace/urls.py` — 8 URL patterns under `/api/v1/marketplace/...`.
+- `backend/apps/marketplace/management/commands/seed_marketplace.py` — idempotent seed: 3 categories, vendor user `vendor@seaconnect.local`, verified `VendorProfile`, 5 active products. Currency sourced from `region.currency`.
+
+### Build Verification (all 4 commands passed in Docker)
+- `python manage.py makemigrations marketplace` — PASS, generated `0001_initial.py`
+- `python manage.py migrate` — PASS, 0 errors
+- `python manage.py check` — PASS, 0 issues
+- `python manage.py seed_marketplace` — PASS, 3 categories + 1 vendor + 5 products created; idempotency confirmed (second run outputs "already seeded, skipping")
+
+### Contract for api-endpoint-agent
+- `GET /api/v1/marketplace/products/` — public, cursor-paginated, optional `?category=<slug>` filter. Returns `ProductListSerializer` shape.
+- `GET /api/v1/marketplace/products/<uuid:id>/` — public. Returns `ProductDetailSerializer`.
+- `GET /api/v1/marketplace/categories/` — public, no pagination. Returns `ProductCategorySerializer` list.
+- `GET /api/v1/marketplace/cart/` — IsAuthenticated. Returns `CartSerializer`.
+- `POST /api/v1/marketplace/cart/items/` body `{product_id, quantity}` — 201 (created) or 200 (updated).
+- `PATCH /api/v1/marketplace/cart/items/<uuid:id>/` body `{quantity}` — 200.
+- `DELETE /api/v1/marketplace/cart/items/<uuid:id>/` — 204.
+- `POST /api/v1/marketplace/orders/` body `{delivery_address}` — atomic checkout; empties cart; 400 if cart empty.
+- `GET /api/v1/marketplace/orders/` — cursor-paginated list for authenticated user.
+- `GET /api/v1/marketplace/orders/<uuid:id>/` — detail for authenticated user.
+
+### Contract for nextjs-page-agent
+- Marketplace listing page `/[locale]/marketplace` should fetch `GET /api/v1/marketplace/products/` (Server Component, SSR for SEO, ADR-003).
+- Use `BoatCard`-style `.gear-card` CSS class from `Design/styles.css` (already in `web/globals.css`).
+- Category filter tabs should pass `?category=<slug>` query param.
+- Cart and checkout are Client Components (require auth).
+- Seed data vendor: `vendor@seaconnect.local`, password `vendorpass123!`.
+
+### How to Test
+```bash
+# Products (public)
+curl http://localhost:8000/api/v1/marketplace/products/
+curl http://localhost:8000/api/v1/marketplace/products/?category=fishing-gear
+curl http://localhost:8000/api/v1/marketplace/categories/
+
+# Cart (requires JWT)
+ACCESS=$(curl -s -X POST http://localhost:8000/api/v1/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"customer@example.com","password":"..."}' | jq -r .access)
+curl -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/marketplace/cart/
+
+# Seed idempotency
+docker compose exec api python manage.py seed_marketplace
+# → "Marketplace data already seeded. Skipping."
+```
+
+---
+
+## HANDOFF-2026-04-29-01
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** nextjs-page-agent / qa-agent
+**Sprint:** 5 Phase C (Tasks C-3, C-4)
+**Feature:** Marketplace product listing + detail pages
+
+### What Was Completed
+- `app/[locale]/marketplace/page.tsx` — Server Component listing page: editorial header matching Design/altpages.jsx `Marketplace()`, `.pill-tabs` category filter (each pill is a `<Link>` to `?category={slug}`), `.gear-grid` with `ProductCard` components, empty state, SSR metadata with hreflang.
+- `app/[locale]/marketplace/[id]/page.tsx` — Server Component detail page: 16/7 hero image, `detail-body` two-column layout, `AddToCartButton` nested Client Component island, `notFound()` on 404, SSR metadata.
+- `components/marketplace/ProductCard.tsx` — Server Component card; locale-aware name/vendor, Arabic-Indic numerals in AR, currency from API.
+- `components/marketplace/AddToCartButton.tsx` — Client Component; uses `useAuth()` for login check, `getAccessToken()` for Bearer token, `POST /api/v1/marketplace/cart/items/`, idle/loading/success/error state machine with 3-second success reset.
+- `loading.tsx` + `error.tsx` for both listing and detail routes (4 files total).
+- i18n keys added to `messages/ar.json` and `messages/en.json` under `"marketplace"` namespace (7 keys + 5 under `"detail"`).
+
+### Contract
+- API: `GET /api/v1/marketplace/categories/` — list of categories.
+- API: `GET /api/v1/marketplace/products/?category={slug}` — filtered products.
+- API: `GET /api/v1/marketplace/products/{id}/` — product detail (404 → notFound()).
+- API: `POST /api/v1/marketplace/cart/items/` body `{product_id, quantity}` — add to cart (auth required).
+
+### How to Test
+```bash
+# Listing page (public)
+curl http://localhost:3000/ar/marketplace
+
+# Detail page (public)
+curl http://localhost:3000/ar/marketplace/<product-uuid>
+
+# TypeScript check (must stay clean)
+cd web && npx tsc --noEmit
+```
+
+### Open Items
+- Nav already had the marketplace link (`متجر العدد` → `/marketplace`) — no change needed.
+- Cart checkout page (`/marketplace/cart`) is deferred to Sprint 5 Phase D.
+- Product description fields (`description` / `description_ar`) are not yet in the `Product` type returned by `GET /api/v1/marketplace/products/{id}/` per current API spec — add them when the backend adds those fields.
+
+---
+
+## HANDOFF-2026-04-29-002
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** sprint-5 agents, sprint-planning-coordinator
+**Sprint:** 5
+**Feature:** Sprint 5 Phase D-1 + D-2 — pytest integration tests (marketplace + weather)
+
+### What Was Completed
+- `backend/apps/marketplace/tests/__init__.py` — empty package file
+- `backend/apps/marketplace/tests/conftest.py` — local api_client fixture (DRF APIClient); required because the top-level `tests/conftest.py` is not on the pytest conftest resolution path for files inside `apps/`
+- `backend/apps/marketplace/tests/test_marketplace.py` — 21 tests across 5 classes:
+  - `TestProductList` (5 tests): active-only filter, unverified vendor exclusion, category slug filter, no-auth-required
+  - `TestProductDetail` (3 tests): active returns 200, draft returns 404, unverified vendor returns 404
+  - `TestCartItemAdd` (4 tests): auth required, creates CartItem, updates quantity on duplicate add, draft product returns 404
+  - `TestCartItemDelete` (3 tests): removes item returns 204, other-user's item returns 404, auth required
+  - `TestOrderCreate` (6 tests): 2-item checkout creates order + empties cart, empty cart returns 400, currency from region, unit_price snapshot, auth required, order list scoped per user
+- `backend/apps/weather/tests/__init__.py` — empty package file
+- `backend/apps/weather/tests/conftest.py` — local api_client fixture
+- `backend/apps/weather/tests/test_weather.py` — 23 tests across 4 classes + 1 plain class:
+  - `TestComputeAdvisory` (8 tests): pure unit tests, no DB, no HTTP — safe/caution/danger boundaries, None handling
+  - `TestWeatherView` (7 tests): advisory level in response, fields present, Redis cache hit = 0 extra HTTP calls, 400 on missing port_id, 404 on inactive port, 200 DB fallback on connection error, 503 when no DB fallback
+  - `TestWhatsBiting` (4 tests): current month species appears, other month excluded, 400 on missing param, peak species ordered first
+  - `TestFishingSeasons` (4 tests): 3-month seed all returned, empty list when none seeded, scoped to port, 400 on missing param
+
+### Bug Found and Fixed in Production Code
+- `apps/marketplace/views.py` `ProductListView` and `OrderListCreateView` lacked `ordering = ["-created_at"]`. The global `CursorPagination` default ordering is `created` (without `_at`), causing `FieldError` on every product list and order list request. Fixed both views before tests ran.
+
+### Coverage Achieved
+- `apps/marketplace` combined: **90%** (views.py 90%, models.py 93%, serializers.py 98%)
+- `apps/weather` combined: **100%** (views.py 100%, models.py 93%, serializers.py 100%)
+- TOTAL across both apps: **88%** — exceeds 80% minimum (ADR requirement)
+- Excluded from coverage (expected 0%): seed management commands (`seed_marketplace.py`, `seed_fishing_seasons.py`) — these are CLI tools, not API logic
+
+### All Tests Pass
+- 44 tests collected, 44 passed in ~8 seconds
+- Run command: `docker compose exec api bash -c "cd /app && pytest apps/marketplace/tests/ apps/weather/tests/ -v"`
+
+### How to Test
+```bash
+# Run all Sprint 5 tests (inside Docker):
+docker compose exec api bash -c "cd /app && pytest apps/marketplace/tests/ apps/weather/tests/ -v"
+
+# Coverage report:
+docker compose exec api bash -c "cd /app && pytest apps/marketplace/tests/ apps/weather/tests/ --cov=apps.marketplace --cov=apps.weather --cov-report=term-missing -q"
+```
+
+### Known Gaps
+- `CartItemDetailView.patch()` (PATCH /cart/items/{id}/) — quantity update path not tested (view exists, 1 happy-path test would bring views.py to 95%). Deferred as low-risk.
+- `OrderDetailView` — GET /orders/{id}/ not tested directly; covered implicitly via order list test.
+- Seed management commands have 0% coverage — intentional, they are CLI tools not part of the API surface.
+
+---
+
+## HANDOFF-2026-04-29-003
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** nextjs-page-agent / qa-agent
+**Sprint:** 5 Phase C (Tasks C-1, C-2)
+**Feature:** WeatherWidget + WhatsBiting on yacht detail page
+
+### What Was Completed
+- `web/components/weather/WeatherWidget.tsx` — Client Component (`'use client'`). Accepts `portId: string`. Uses SWR to fetch `GET /api/v1/weather/?port_id={portId}`. Renders `.avail-block` with temperature, four `.wm` metrics (wave height, wind speed, wave period, wind direction), and a color-coded advisory badge (safe=green, caution=brass, danger=clay). Loading skeleton with pulsing placeholders. Error/unavailable state with mono message from `t('weather.unavailable')`.
+- `web/components/weather/WhatsBiting.tsx` — Client Component (`'use client'`). Accepts `portId: string`. Uses SWR to fetch `GET /api/v1/fishing/whats-biting/?port_id={portId}`. Renders `.avail-block` + `.gear-grid` with species cards — locale-aware name (name_ar/name), italic scientific name, clay peak-season badge on is_peak entries. Loading skeleton (4 placeholder cards). Empty state via `t('fishing.noData')`.
+- `web/app/[locale]/yachts/[id]/page.tsx` — imports both components; renders them between the amenities grid and the reviews section, guarded by `yacht.departure_port?.id`. Zero change to the Server Component itself (Islands architecture).
+- `web/messages/ar.json` — added `"weather"` and `"fishing"` namespaces (13 + 3 keys).
+- `web/messages/en.json` — English equivalents for all new keys. Parity maintained (12 namespaces each).
+
+### Contract
+- API: `GET /api/v1/weather/?port_id={uuid}` — weather data for a port; 503 when unavailable, network errors handled gracefully.
+- API: `GET /api/v1/fishing/whats-biting/?port_id={uuid}` — array of `{species, month, is_peak}` for current month.
+
+### How to Test
+```bash
+# TypeScript check (passed with 0 errors this session)
+cd web && npx tsc --noEmit
+
+# Visual smoke test (requires docker compose up):
+curl http://localhost:3000/ar/yachts/<uuid-with-departure-port>
+# → WeatherWidget and WhatsBiting sections rendered between amenities and reviews
+```
+
+### Build Verification
+- `npx tsc --noEmit` — PASS, 0 errors (executed this session).

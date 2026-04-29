@@ -159,7 +159,7 @@ function Hero({ onNavigate }) {
                 <option>10 أشخاص</option>
               </select>
             </div>
-            <button className="search-btn" onClick={() => onNavigate('boats')}>
+            <button className="search-btn cta-shimmer" onClick={() => onNavigate('boats')}>
               ابحث ←
             </button>
           </div>

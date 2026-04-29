@@ -202,6 +202,45 @@
       "payment_received": "تم استلام الدفع"
     }
   },
+  "marketplace": {
+    "title": "متجر العدة",
+    "allCategories": "كل المنتجات",
+    "empty": "لا توجد منتجات متاحة حالياً.",
+    "price": "السعر",
+    "vendor": "البائع",
+    "viewProduct": "عرض المنتج",
+    "detail": {
+      "addToCart": "أضف إلى السلة",
+      "adding": "جارٍ الإضافة...",
+      "addedToCart": "تمت الإضافة إلى السلة ✓",
+      "outOfStock": "نفد المخزون",
+      "loginToAdd": "سجّل الدخول لإضافة المنتجات"
+    }
+  },
+  "weather": {
+    "title": "الطقس والأمواج",
+    "waveHeight": "ارتفاع الموجة",
+    "windSpeed": "سرعة الرياح",
+    "temperature": "درجة الحرارة",
+    "wavePeriod": "دورة الموجة",
+    "windDirection": "اتجاه الرياح",
+    "advisory": {
+      "safe": "آمن للإبحار",
+      "caution": "توخَّ الحذر",
+      "danger": "خطر · لا تُبحر"
+    },
+    "unavailable": "بيانات الطقس غير متاحة حالياً.",
+    "meters": "م",
+    "kmh": "كم/س",
+    "celsius": "°م",
+    "seconds": "ث",
+    "degrees": "°"
+  },
+  "fishing": {
+    "whatsBiting": "ماذا يُصطاد الآن؟",
+    "peakSeason": "موسم الذروة",
+    "noData": "لا تتوفر بيانات صيد لهذا الميناء هذا الشهر."
+  },
   "owner": {
     "nav": {
       "dashboard": "لوحة التحكم",

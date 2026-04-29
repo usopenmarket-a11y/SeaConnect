@@ -17,6 +17,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
+import WeatherWidget from '@/components/weather/WeatherWidget'
+import WhatsBiting from '@/components/weather/WhatsBiting'
 
 // ── Types (matching API spec) ─────────────────────────────────────────────────
 
@@ -324,6 +326,14 @@ export default async function YachtDetailPage({
               </div>
             ))}
           </div>
+
+          {/* Weather widget + What's Biting — Client Component islands */}
+          {yacht.departure_port?.id && (
+            <>
+              <WeatherWidget portId={yacht.departure_port.id} />
+              <WhatsBiting portId={yacht.departure_port.id} />
+            </>
+          )}
 
           {/* Reviews */}
           <div className="subhead" id="reviews">

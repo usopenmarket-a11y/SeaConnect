@@ -202,6 +202,45 @@
       "payment_received": "Payment received"
     }
   },
+  "marketplace": {
+    "title": "Gear Marketplace",
+    "allCategories": "All Products",
+    "empty": "No products available yet.",
+    "price": "Price",
+    "vendor": "Vendor",
+    "viewProduct": "View Product",
+    "detail": {
+      "addToCart": "Add to Cart",
+      "adding": "Adding...",
+      "addedToCart": "Added to cart ✓",
+      "outOfStock": "Out of stock",
+      "loginToAdd": "Log in to add products"
+    }
+  },
+  "weather": {
+    "title": "Weather & Seas",
+    "waveHeight": "Wave Height",
+    "windSpeed": "Wind Speed",
+    "temperature": "Temperature",
+    "wavePeriod": "Wave Period",
+    "windDirection": "Wind Direction",
+    "advisory": {
+      "safe": "Safe to sail",
+      "caution": "Caution advised",
+      "danger": "Danger · Do not sail"
+    },
+    "unavailable": "Weather data temporarily unavailable.",
+    "meters": "m",
+    "kmh": "km/h",
+    "celsius": "°C",
+    "seconds": "s",
+    "degrees": "°"
+  },
+  "fishing": {
+    "whatsBiting": "What's Biting Now?",
+    "peakSeason": "Peak Season",
+    "noData": "No fishing data available for this port this month."
+  },
   "owner": {
     "nav": {
       "dashboard": "Dashboard",

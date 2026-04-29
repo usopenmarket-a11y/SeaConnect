@@ -1,4 +1,4 @@
-/* global React */
+/* global React, useTilt */
 const { useState: useStateC } = React;
 
 // ── Small shared components ──────────────────────────
@@ -17,6 +17,29 @@ function TopStrip() {
         <span>AIR 27°C</span>
         <span>BOATS LIVE · 183</span>
       </div>
+    </div>
+  );
+}
+
+function ScrollProgress() {
+  const [p, setP] = React.useState(0);
+  React.useEffect(() => {
+    let frame;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const h = document.documentElement;
+        const scrollable = h.scrollHeight - h.clientHeight;
+        setP(scrollable > 0 ? h.scrollTop / scrollable : 0);
+      });
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); cancelAnimationFrame(frame); };
+  }, []);
+  return (
+    <div className="scroll-progress">
+      <div className="bar" style={{ transform: `scaleX(${p})` }} />
     </div>
   );
 }
@@ -137,36 +160,49 @@ function TweaksPanel({ density, setDensity }) {
 
 // ── Boat card ────────────────────────────────────────
 function BoatCard({ boat, onClick }) {
+  const tilt = window.useTilt(5);
   return (
-    <div className="boat-card" onClick={() => onClick(boat)}>
-      <div className="media">
-        <div className="media-img" style={{ backgroundImage: `url(${boat.img})` }} />
-        <span className="badge">{boat.tagEn}</span>
-        <span className="verified">✓ {boat.coords}</span>
-      </div>
-      <div className="body">
-        <div className="meta-row">
-          <span>{boat.typeEn.toUpperCase()}</span>
-          <span>{boat.regionEn.toUpperCase()}</span>
-        </div>
-        <div className="name">{boat.name}</div>
-        <div className="capt">مع <em>{boat.captEn}</em></div>
-        <div className="specs">
-          <span>{boat.length}FT</span>
-          <span>·</span>
-          <span>{boat.pax} PAX</span>
-          <span>·</span>
-          <span>{boat.year}</span>
-        </div>
-        <div className="foot">
-          <div className="price">
-            <span className="num">{boat.price.toLocaleString('en')}</span>
-            <span className="unit"> EGP / DAY</span>
+    <div className="boat-card-wrap" ref={tilt.ref} style={tilt.style}>
+      <div className="boat-card" onClick={() => onClick(boat)}>
+        <div className="media">
+          <div className="media-img" style={{ backgroundImage: `url(${boat.img})` }} />
+          <div
+            className="card-glare"
+            style={{
+              opacity: tilt.hover ? 1 : 0,
+              background: `radial-gradient(circle at ${tilt.mx}% ${tilt.my}%, oklch(1 0 0 / 0.35), transparent 55%)`,
+            }}
+          />
+          <span className="badge">{boat.tagEn}</span>
+          <span className="verified">✓ {boat.coords}</span>
+          <div className="open-arrow" style={{ transform: tilt.hover ? 'translate(0,0)' : 'translate(8px,-8px)', opacity: tilt.hover ? 1 : 0 }}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17 L17 7 M9 7 L17 7 L17 15" /></svg>
           </div>
-          <div className="rating">
-            <span className="star">★</span>
-            <span>{boat.rating.toFixed(2)}</span>
-            <span style={{ opacity: 0.5 }}>({boat.reviews})</span>
+        </div>
+        <div className="body">
+          <div className="meta-row">
+            <span>{boat.typeEn.toUpperCase()}</span>
+            <span>{boat.regionEn.toUpperCase()}</span>
+          </div>
+          <div className="name">{boat.name}</div>
+          <div className="capt">مع <em>{boat.captEn}</em></div>
+          <div className="specs">
+            <span>{boat.length}FT</span>
+            <span>·</span>
+            <span>{boat.pax} PAX</span>
+            <span>·</span>
+            <span>{boat.year}</span>
+          </div>
+          <div className="foot">
+            <div className="price">
+              <span className="num">{boat.price.toLocaleString('en')}</span>
+              <span className="unit"> EGP / DAY</span>
+            </div>
+            <div className="rating">
+              <span className="star">★</span>
+              <span>{boat.rating.toFixed(2)}</span>
+              <span style={{ opacity: 0.5 }}>({boat.reviews})</span>
+            </div>
           </div>
         </div>
       </div>
@@ -219,4 +255,4 @@ function RoleSwitcher({ role, setRole }) {
   );
 }
 
-Object.assign(window, { TopStrip, Nav, Footer, TweaksPanel, BoatCard, Lottie, RoleSwitcher });
+Object.assign(window, { TopStrip, Nav, Footer, TweaksPanel, BoatCard, Lottie, RoleSwitcher, ScrollProgress });
