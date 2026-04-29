@@ -1,24 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
-title SeaConnect — Dev Launcher
+title SeaConnect Dev Launcher
 chcp 65001 >nul 2>&1
-
-:: ─────────────────────────────────────────────────────────────────────────────
-:: SeaConnect START.bat
-:: Builds and starts the full local development stack via Docker Compose.
-:: Double-click this file or run it from any terminal in the project root.
-::
-:: Ports (all shifted to avoid conflicts with other apps):
-::   Web        → http://localhost:3010/ar
-::   API        → http://localhost:8010/api/v1/
-::   API admin  → http://localhost:8010/admin/
-::   pgAdmin    → http://localhost:5051
-::   MinIO      → http://localhost:9011
-::   Mailpit    → http://localhost:8026
-::   Ollama     → http://localhost:11435
-::   PostgreSQL → localhost:5433
-::   Redis      → localhost:6380
-:: ─────────────────────────────────────────────────────────────────────────────
 
 cd /d "%~dp0"
 
@@ -35,34 +18,34 @@ if %errorlevel% neq 0 (
 )
 call :print_ok "Docker is running"
 
-:: ── 2. .env.dev present? ─────────────────────────────────────────────────────
+:: ── 2. .env.dev present? ──────────────────────────────────────────────────────
 if not exist ".env.dev" (
-    call :print_warn ".env.dev not found — creating from defaults..."
+    call :print_warn ".env.dev not found -- creating from defaults..."
     call :create_env_dev
 )
 call :print_ok ".env.dev present"
 
-:: ── 3. Route command ─────────────────────────────────────────────────────────
+:: ── 3. Route command ──────────────────────────────────────────────────────────
 set "CMD=%~1"
-if /i "%CMD%"==""             goto :do_start
-if /i "%CMD%"=="start"        goto :do_start
-if /i "%CMD%"=="build"        goto :do_build
-if /i "%CMD%"=="rebuild"      goto :do_rebuild
-if /i "%CMD%"=="stop"         goto :do_stop
-if /i "%CMD%"=="restart"      goto :do_restart
-if /i "%CMD%"=="logs"         goto :do_logs
-if /i "%CMD%"=="status"       goto :do_status
-if /i "%CMD%"=="shell"        goto :do_shell
-if /i "%CMD%"=="clean"        goto :do_clean
+if /i "%CMD%"==""          goto :do_start
+if /i "%CMD%"=="start"     goto :do_start
+if /i "%CMD%"=="build"     goto :do_start
+if /i "%CMD%"=="rebuild"   goto :do_rebuild
+if /i "%CMD%"=="stop"      goto :do_stop
+if /i "%CMD%"=="restart"   goto :do_restart
+if /i "%CMD%"=="logs"      goto :do_logs
+if /i "%CMD%"=="status"    goto :do_status
+if /i "%CMD%"=="shell"     goto :do_shell
+if /i "%CMD%"=="clean"     goto :do_clean
 
 call :print_error "Unknown command: %CMD%"
 call :print_usage
 pause
 exit /b 1
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_start
-:: If any SeaConnect containers are already running, stop them first.
+:: If already running, stop first to avoid port conflicts.
 docker compose ps --services --filter "status=running" 2>nul | findstr /r "." >nul 2>&1
 if %errorlevel% equ 0 (
     echo.
@@ -91,14 +74,16 @@ if %errorlevel% neq 0 (
 
 goto :wait_and_show
 
-:: ─────────────────────────────────────────────────────────────────────────────
-:do_build
-:: Alias for do_start — same behaviour (cache-aware build + up).
-goto :do_start
-
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_rebuild
-:: Force-rebuild every layer from scratch (use after major dependency changes).
+:: Force-rebuild every layer from scratch.
+docker compose ps --services --filter "status=running" 2>nul | findstr /r "." >nul 2>&1
+if %errorlevel% equ 0 (
+    echo.
+    call :print_warn "Stopping running stack before rebuild..."
+    docker compose down
+)
+
 echo.
 call :print_step "Force-rebuilding all images from scratch (no cache)..."
 docker compose build --no-cache
@@ -119,7 +104,7 @@ if %errorlevel% neq 0 (
 
 goto :wait_and_show
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_stop
 echo.
 call :print_step "Stopping all SeaConnect containers..."
@@ -129,7 +114,7 @@ echo.
 pause
 exit /b 0
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_restart
 echo.
 call :print_step "Stopping containers..."
@@ -140,16 +125,16 @@ docker compose build
 docker compose up -d
 goto :wait_and_show
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_logs
 echo.
-call :print_step "Streaming logs — press Ctrl+C to stop..."
+call :print_step "Streaming logs -- press Ctrl+C to stop..."
 echo.
 docker compose logs -f
 pause
 exit /b 0
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_status
 echo.
 docker compose ps
@@ -157,15 +142,14 @@ echo.
 pause
 exit /b 0
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_shell
-:: Open a bash shell inside the API container
 echo.
-call :print_step "Opening shell in API container..."
+call :print_step "Opening bash shell in API container..."
 docker compose exec api bash
 exit /b 0
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :do_clean
 echo.
 echo  +----------------------------------------------------------+
@@ -186,9 +170,8 @@ echo.
 pause
 exit /b 0
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :wait_and_show
-:: Poll until the web container is up, then print the URL table.
 echo.
 call :print_step "Waiting for services to be healthy..."
 
@@ -198,7 +181,6 @@ set /a TRIES=0
 set /a TRIES+=1
 if %TRIES% gtr 45 goto :_poll_timeout
 
-:: findstr works with alternation using /r; "Up" covers normal running state
 docker compose ps web 2>nul | findstr /i "running\|Up " >nul 2>&1
 if %errorlevel% equ 0 goto :_ready
 
@@ -208,50 +190,49 @@ goto :_poll
 
 :_poll_timeout
 echo.
-call :print_warn "Containers are taking a while — they may still be starting."
+call :print_warn "Containers are taking longer than expected."
 call :print_warn "Run  START.bat logs  to watch the boot sequence."
 goto :_print_table
 
 :_ready
 echo.
-call :print_ok "Services are up!"
+call :print_ok "All services are up!"
 
 :_print_table
 echo.
-echo  +==================================================================+
-echo  ^|                  SeaConnect is running                          ^|
-echo  +==================================================================+
-echo  ^|                                                                  ^|
-echo  ^|   CUSTOMER WEB   --^>  http://localhost:3010/ar                  ^|
-echo  ^|   DJANGO API     --^>  http://localhost:8010/api/v1/             ^|
-echo  ^|   DJANGO ADMIN   --^>  http://localhost:8010/admin/              ^|
-echo  ^|                                                                  ^|
-echo  ^|   pgAdmin        --^>  http://localhost:5051                     ^|
-echo  ^|   MinIO Console  --^>  http://localhost:9011                     ^|
-echo  ^|   Mailpit        --^>  http://localhost:8026                     ^|
-echo  ^|   Ollama         --^>  http://localhost:11435                    ^|
-echo  ^|                                                                  ^|
-echo  +------------------------------------------------------------------+
-echo  ^|   Credentials                                                    ^|
-echo  ^|   App superuser  --^>  admin@seaconnect.local / admin123         ^|
-echo  ^|   pgAdmin        --^>  admin@local.dev / admin                   ^|
-echo  ^|   MinIO          --^>  minioadmin / minioadmin                   ^|
-echo  ^|   PostgreSQL     --^>  localhost:5433  sc_user / localpassword   ^|
-echo  ^|   Redis          --^>  localhost:6380                            ^|
-echo  +------------------------------------------------------------------+
-echo  ^|   Commands                                                       ^|
-echo  ^|     START.bat            -- smart start (cache-aware)           ^|
-echo  ^|     START.bat rebuild    -- force rebuild from scratch          ^|
-echo  ^|     START.bat stop       -- stop all containers                 ^|
-echo  ^|     START.bat restart    -- stop + rebuild + start              ^|
-echo  ^|     START.bat logs       -- stream logs                         ^|
-echo  ^|     START.bat status     -- show container status               ^|
-echo  ^|     START.bat shell      -- bash shell inside API container     ^|
-echo  ^|     START.bat clean      -- stop + wipe DB (irreversible)       ^|
-echo  +==================================================================+
+echo  +================================================================+
+echo  ^|            SeaConnect is running                              ^|
+echo  +================================================================+
+echo  ^|                                                                ^|
+echo  ^|   CUSTOMER WEB  --^>  http://localhost:3010/ar                 ^|
+echo  ^|   DJANGO API    --^>  http://localhost:8010/api/v1/            ^|
+echo  ^|   DJANGO ADMIN  --^>  http://localhost:8010/admin/             ^|
+echo  ^|                                                                ^|
+echo  ^|   pgAdmin       --^>  http://localhost:5051                    ^|
+echo  ^|   MinIO Console --^>  http://localhost:9011                    ^|
+echo  ^|   Mailpit       --^>  http://localhost:8026                    ^|
+echo  ^|   Ollama        --^>  http://localhost:11435                   ^|
+echo  ^|                                                                ^|
+echo  +----------------------------------------------------------------+
+echo  ^|   Credentials                                                  ^|
+echo  ^|   App login   --^>  admin@seaconnect.local / admin123          ^|
+echo  ^|   pgAdmin     --^>  admin@local.dev / admin                    ^|
+echo  ^|   MinIO       --^>  minioadmin / minioadmin                    ^|
+echo  ^|   PostgreSQL  --^>  localhost:5433  sc_user / localpassword    ^|
+echo  ^|   Redis       --^>  localhost:6380                             ^|
+echo  +----------------------------------------------------------------+
+echo  ^|   Commands                                                     ^|
+echo  ^|     START.bat           -- smart start (stops if running)     ^|
+echo  ^|     START.bat rebuild   -- force rebuild from scratch         ^|
+echo  ^|     START.bat stop      -- stop all containers                ^|
+echo  ^|     START.bat restart   -- stop + rebuild + start             ^|
+echo  ^|     START.bat logs      -- stream all logs                    ^|
+echo  ^|     START.bat status    -- show container status              ^|
+echo  ^|     START.bat shell     -- bash shell in API container        ^|
+echo  ^|     START.bat clean     -- wipe everything (deletes DB)       ^|
+echo  +================================================================+
 echo.
 
-:: Open the app in the default browser
 start "" "http://localhost:3010/ar"
 
 echo  Browser opened. Press any key to stream logs (Ctrl+C to detach)...
@@ -259,16 +240,16 @@ pause >nul
 docker compose logs -f
 exit /b 0
 
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 :: Subroutines
-:: ─────────────────────────────────────────────────────────────────────────────
+:: ==============================================================================
 
 :print_header
 echo.
-echo  +-----------------------------------------------------------------+
-echo  ^|   SeaConnect  --  Egypt's Maritime Leisure Platform            ^|
-echo  ^|   Local Dev Stack  ^|  docker compose  ^|  WSL2 + Docker Desktop ^|
-echo  +-----------------------------------------------------------------+
+echo  +----------------------------------------------------------------+
+echo  ^|  SeaConnect -- Egypt's Maritime Leisure Platform              ^|
+echo  ^|  Local Dev Stack  ^|  docker compose  ^|  WSL2 + Docker Desktop ^|
+echo  +----------------------------------------------------------------+
 echo.
 goto :eof
 
@@ -294,11 +275,11 @@ goto :eof
 echo.
 echo  Usage:  START.bat [command]
 echo.
-echo    (no arg)   Smart start -- build changed layers, then up
+echo    (no arg)   Smart start -- stops if running, then builds and starts
 echo    build      Same as no arg
-echo    rebuild    Force rebuild ALL layers from scratch (slow, thorough)
+echo    rebuild    Force rebuild ALL layers from scratch
 echo    stop       Stop all containers
-echo    restart    Stop, rebuild changed layers, start
+echo    restart    Stop, rebuild, start
 echo    logs       Stream logs from all containers
 echo    status     Show container status table
 echo    shell      Open bash inside the API container
@@ -307,7 +288,6 @@ echo.
 goto :eof
 
 :create_env_dev
-:: Write a working .env.dev matching what docker-compose.yml expects.
 (
 echo # SeaConnect Development Environment
 echo # Generated by START.bat
