@@ -62,7 +62,15 @@ exit /b 1
 
 :: ─────────────────────────────────────────────────────────────────────────────
 :do_start
-:: Smart start — build only layers that changed, then start containers.
+:: If any SeaConnect containers are already running, stop them first.
+docker compose ps --services --filter "status=running" 2>nul | findstr /r "." >nul 2>&1
+if %errorlevel% equ 0 (
+    echo.
+    call :print_warn "SeaConnect is already running -- stopping first..."
+    docker compose down
+    call :print_ok "Stopped. Restarting now..."
+)
+
 echo.
 call :print_step "Building images (cache-aware, skips unchanged layers)..."
 docker compose build
