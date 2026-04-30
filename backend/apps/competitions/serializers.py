@@ -70,7 +70,7 @@ class CompetitionEntrySerializer(serializers.ModelSerializer):
 
     def get_user_name(self, obj: CompetitionEntry) -> str:
         """Return full name or email as fallback."""
-        return obj.user.get_full_name() or obj.user.email
+        return obj.user.full_name or obj.user.email
 
 
 class CompetitionListSerializer(serializers.ModelSerializer):

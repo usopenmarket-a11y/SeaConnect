@@ -74,11 +74,12 @@ def _make_region(code: str = "EG", currency: str = "EGP") -> Region:
 def _make_user(email: str, role: str = UserRole.CUSTOMER, region: Region | None = None) -> User:
     if region is None:
         region = _make_region()
+    prefix = email.split("@")[0].replace("_", " ").title()
     return User.objects.create_user(
         email=email,
         password="TestPass123!",
-        first_name="Test",
-        last_name="User",
+        first_name=prefix,
+        last_name="",
         role=role,
         region=region,
     )
@@ -450,7 +451,7 @@ class TestLeaderboard:
         results = response.data["results"]
         assert len(results) >= 2
         # Rank 1 (index 0) should be the heavier catch
-        heavy_name = user_heavy.get_full_name() or user_heavy.email
+        heavy_name = user_heavy.full_name or user_heavy.email
         assert results[0]["user_name"] == heavy_name
         assert results[0]["rank"] == 1
 
@@ -472,8 +473,8 @@ class TestLeaderboard:
         response = api_client.get(_comp_leaderboard_url(comp.id))
         assert response.status_code == 200
         names = [r["user_name"] for r in response.data["results"]]
-        confirmed_name = confirmed_user.get_full_name() or confirmed_user.email
-        registered_name = registered_user.get_full_name() or registered_user.email
+        confirmed_name = confirmed_user.full_name or confirmed_user.email
+        registered_name = registered_user.full_name or registered_user.email
         assert confirmed_name in names
         assert registered_name not in names
 

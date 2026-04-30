@@ -21,6 +21,11 @@ class CompetitionPagination(CursorPagination):
     ordering = "-start_date"
 
 
+class EntryPagination(CursorPagination):
+    page_size = 20
+    ordering = "-created_at"
+
+
 class CompetitionListView(generics.ListAPIView):
     serializer_class = CompetitionListSerializer
     permission_classes = [permissions.AllowAny]
@@ -89,7 +94,7 @@ class CompetitionEnterView(APIView):
 class MyEntriesView(generics.ListAPIView):
     serializer_class = CompetitionEntrySerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = CompetitionPagination
+    pagination_class = EntryPagination
 
     def get_queryset(self):
         return CompetitionEntry.objects.filter(
@@ -131,7 +136,7 @@ class LeaderboardView(APIView):
         data = [
             {
                 "rank": rank,
-                "user_name": entry.user.get_full_name() or entry.user.email,
+                "user_name": entry.user.full_name or entry.user.email,
                 "total_weight_kg": str(entry.total_weight or 0),
                 "catch_count": entry.catch_count,
             }

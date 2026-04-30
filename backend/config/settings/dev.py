@@ -56,6 +56,15 @@ EMAIL_PORT = config("EMAIL_PORT", default=1025, cast=int)
 EMAIL_USE_TLS = False
 
 # ---------------------------------------------------------------------------
+# Throttling — effectively unlimited in dev/test so pytest suites don't 429
+# ---------------------------------------------------------------------------
+
+REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {  # type: ignore[index]
+    "anon": "10000/minute",
+    "user": "10000/minute",
+}
+
+# ---------------------------------------------------------------------------
 # JWT — fall back to HS256 in dev if RSA key files are missing
 # ---------------------------------------------------------------------------
 
