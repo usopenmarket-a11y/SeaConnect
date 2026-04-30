@@ -244,6 +244,7 @@
   "owner": {
     "nav": {
       "dashboard": "لوحة التحكم",
+      "calendar": "التقويم",
       "bookings": "الحجوزات",
       "myYachts": "قواربي"
     },

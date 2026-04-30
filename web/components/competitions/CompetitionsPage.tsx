@@ -1,0 +1,85 @@
+'use client'
+
+import * as React from 'react'
+
+import type { Competition } from '@/app/[locale]/competitions/page'
+
+interface Props {
+  competitions: Competition[]
+}
+
+function formatDate(dateStr: string): { day: string; month: string } {
+  const d = new Date(dateStr)
+  const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+  return {
+    day: String(d.getDate()),
+    month: months[d.getMonth()] ?? '',
+  }
+}
+
+function formatPrize(amount: string): string {
+  const n = Number(amount)
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${Math.round(n / 1_000)}K`
+  return n.toLocaleString('en')
+}
+
+export function CompetitionsPage({ competitions }: Props): React.ReactElement {
+  return (
+    <div dir="rtl">
+      {/* Header */}
+      <div style={{ padding: '40px 48px 24px', borderBottom: '2px solid var(--ink)' }}>
+        <div className="mono" style={{ fontSize: 11, letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: 8 }}>
+          § TOURNAMENTS · FISHING CALENDAR 2026
+        </div>
+        <h1 className="display" style={{ fontSize: 72, lineHeight: 0.95, letterSpacing: '-0.02em', fontWeight: 700 }}>
+          {/* TODO: i18n */}
+          البطولات <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>والأحداث</em>.
+        </h1>
+        <p style={{ fontSize: 16, color: 'var(--ink-2)', maxWidth: '52ch', marginTop: 14 }}>
+          تقويم كل بطولات الصيد في مصر — من أندية الهواة إلى البطولات الاحترافية. سجّل، تابع اللوحة، اعرض صيدك.
+        </p>
+      </div>
+
+      {/* Competition list */}
+      <div className="section" style={{ background: 'var(--foam)' }}>
+        {competitions.length === 0 ? (
+          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--muted-2)' }}>
+            <div className="display" style={{ fontSize: 28, marginBottom: 8 }}>لا توجد بطولات مفتوحة حالياً</div>
+            <div className="mono" style={{ fontSize: 12, letterSpacing: '0.1em' }}>NO OPEN TOURNAMENTS · CHECK BACK SOON</div>
+          </div>
+        ) : (
+          <div style={{ border: '1px solid var(--rule)' }}>
+            {competitions.map((c) => {
+              const { day, month } = formatDate(c.start_date)
+              return (
+                <div key={c.id} className="comp-row">
+                  <div className="date">
+                    <div className="d num">{day}</div>
+                    <div className="m">{month} 2026</div>
+                  </div>
+                  <div className="title">
+                    <div className="t">{c.title}</div>
+                    <div className="sub">{c.title_en} · {c.region_name.toUpperCase()}</div>
+                  </div>
+                  <div className="meta">
+                    <span className="n num">{c.entry_count}</span>
+                    <span className="l">مشارك</span>
+                  </div>
+                  <div className="meta">
+                    <span className="n num">{formatPrize(c.prize_pool)}</span>
+                    <span className="l">جوائز EGP</span>
+                  </div>
+                  {/* TODO: wire to POST /api/v1/competitions/<id>/enter/ with auth check */}
+                  <button className="cta">
+                    سجّل · {Number(c.entry_fee).toLocaleString('en')} EGP
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

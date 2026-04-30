@@ -21,11 +21,12 @@ interface Props {
 
 interface NavItem {
   hrefSegment: string
-  labelKey: 'dashboard' | 'bookings' | 'myYachts'
+  labelKey: 'dashboard' | 'bookings' | 'myYachts' | 'calendar'
 }
 
 const items: NavItem[] = [
   { hrefSegment: 'owner/dashboard', labelKey: 'dashboard' },
+  { hrefSegment: 'owner/calendar', labelKey: 'calendar' },
   { hrefSegment: 'owner/bookings', labelKey: 'bookings' },
   { hrefSegment: 'owner/yachts', labelKey: 'myYachts' },
 ]
