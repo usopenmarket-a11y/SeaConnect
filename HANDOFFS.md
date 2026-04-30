@@ -610,3 +610,29 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3010/ar/yachts  # → 20
 - `useMagnetic` button drift — pure enhancement, safely skipped. Buttons still animate via CSS transitions.
 - Lottie player — not present in the Next.js codebase (never was); the `Design/shared.jsx` Lottie component is prototype-only.
 - RoleSwitcher — prototype debugging tool, correctly excluded from production code.
+
+---
+
+## HANDOFF-2026-04-30-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** api-endpoint-agent, django-model-agent
+**Sprint:** 6
+**Feature:** Comprehensive pytest test coverage — competitions, accounts, booking state machine
+
+### What Was Completed
+- Created `apps/competitions/tests/test_competitions.py` — 36 tests covering CompetitionListView, CompetitionDetailView, CompetitionEnterView (auth/happy/ALREADY_ENTERED/COMP_NOT_OPEN/DEADLINE_PASSED/COMP_FULL), LeaderboardView (confirmed-only, ranked), MyEntriesView (scoped), CatchLogCreateView (owner/wrong-user/404)
+- Created `apps/accounts/tests/test_accounts.py` — 50 tests covering UserManager (create_user, create_superuser, UUID PK, email normalisation), User model properties (full_name, __str__, region FK, nullable region), RegisterSerializer validation (duplicate email, weak password, admin role rejection), and full endpoint acceptance suite for register/login/refresh/me
+- Verified `tests/test_booking_state_machine.py` already covers confirm, decline, customer cancel, double-confirm atomicity — no additions required (19 existing tests)
+- All 11 test files pass AST syntax check — 0 errors; total 269 tests across codebase
+
+### Contract
+`03-Technical-Product/02-API-Specification.md` — competitions and accounts endpoint shapes
+`03-Technical-Product/10-ADR-Log.md` — ADR-001 (UUID PKs), ADR-012 (booking events), ADR-018 (currency from region)
+
+### Coverage Notes
+- competitions app: 36 tests cover all 6 view classes and all documented error codes (ALREADY_ENTERED, COMP_NOT_OPEN, DEADLINE_PASSED, COMP_FULL)
+- accounts app: 50 tests — model layer + serializer layer + HTTP layer; known gap: OAuth (Google/Apple) flows not yet testable without provider mock
+- booking state machine: fully covered in existing tests; no gaps identified
+- Known untested apps: analytics, notifications (no endpoints spec'd yet in API spec)

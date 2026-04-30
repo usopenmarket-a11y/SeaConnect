@@ -321,6 +321,7 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_ENABLE_UTC = True
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True  # suppress CPendingDeprecationWarning
 
 # Default task settings — all tasks must override per ADR-011.
 CELERY_TASK_MAX_RETRIES = 3

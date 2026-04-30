@@ -44,6 +44,8 @@ interface BoatCardProps {
   locale: string
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export function BoatCard({ boat, locale }: BoatCardProps): React.ReactElement {
   const imgSrc =
     boat.img ??
@@ -54,66 +56,77 @@ export function BoatCard({ boat, locale }: BoatCardProps): React.ReactElement {
   const priceNum =
     boat.price ?? (boat.price_per_day ? Number(boat.price_per_day) : 0)
   const currency = boat.currency ?? 'EGP'
+  const isRealBoat = UUID_RE.test(boat.id)
+
+  const cardContent = (
+    <>
+      {/* Image area */}
+      <div className="media">
+        <div
+          className="media-img"
+          style={{ backgroundImage: `url(${imgSrc})` }}
+          role="img"
+          aria-label={boat.name}
+        />
+        <div className="card-glare" aria-hidden="true" />
+        {boat.tagEn && <span className="badge">{boat.tagEn}</span>}
+        {boat.coords && <span className="verified">✓ {boat.coords}</span>}
+        <div className="open-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M7 17 L17 7 M9 7 L17 7 L17 15" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="body">
+        <div className="meta-row">
+          <span>{(boat.typeEn ?? boat.type ?? '').toUpperCase()}</span>
+          <span>{(boat.regionEn ?? boat.region ?? '').toUpperCase()}</span>
+        </div>
+        <div className="name">{boat.name}</div>
+        {boat.captEn && (
+          <div className="capt">
+            مع <em>{boat.captEn}</em>
+          </div>
+        )}
+        <div className="specs">
+          {boat.length != null && <span>{boat.length}FT</span>}
+          {boat.length != null && pax > 0 && <span>·</span>}
+          {pax > 0 && <span>{pax} PAX</span>}
+          {pax > 0 && boat.year != null && <span>·</span>}
+          {boat.year != null && <span>{boat.year}</span>}
+        </div>
+        <div className="foot">
+          <div className="price">
+            <span className="num">{priceNum.toLocaleString('en')}</span>
+            <span className="unit"> {currency} / DAY</span>
+          </div>
+          {boat.rating != null && (
+            <div className="rating">
+              <span className="star">★</span>
+              <span>{boat.rating.toFixed(2)}</span>
+              {boat.reviews != null && (
+                <span style={{ opacity: 0.5 }}>({boat.reviews})</span>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  )
 
   return (
     <div className="boat-card-wrap">
-      <Link href={`/${locale}/yachts/${boat.id}`} className="boat-card">
-        {/* Image area */}
-        <div className="media">
-          <div
-            className="media-img"
-            style={{ backgroundImage: `url(${imgSrc})` }}
-            role="img"
-            aria-label={boat.name}
-          />
-          {/* Glare overlay — CSS hover driven, no JS needed */}
-          <div className="card-glare" aria-hidden="true" />
-          {boat.tagEn && <span className="badge">{boat.tagEn}</span>}
-          {boat.coords && <span className="verified">✓ {boat.coords}</span>}
-          {/* Open arrow — appears on hover via CSS */}
-          <div className="open-arrow" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M7 17 L17 7 M9 7 L17 7 L17 15" />
-            </svg>
-          </div>
+      {isRealBoat ? (
+        <Link href={`/${locale}/yachts/${boat.id}`} className="boat-card">
+          {cardContent}
+        </Link>
+      ) : (
+        <div className="boat-card" style={{ cursor: 'default' }}>
+          {cardContent}
         </div>
-
-        {/* Card body */}
-        <div className="body">
-          <div className="meta-row">
-            <span>{(boat.typeEn ?? boat.type ?? '').toUpperCase()}</span>
-            <span>{(boat.regionEn ?? boat.region ?? '').toUpperCase()}</span>
-          </div>
-          <div className="name">{boat.name}</div>
-          {boat.captEn && (
-            <div className="capt">
-              مع <em>{boat.captEn}</em>
-            </div>
-          )}
-          <div className="specs">
-            {boat.length != null && <span>{boat.length}FT</span>}
-            {boat.length != null && pax > 0 && <span>·</span>}
-            {pax > 0 && <span>{pax} PAX</span>}
-            {pax > 0 && boat.year != null && <span>·</span>}
-            {boat.year != null && <span>{boat.year}</span>}
-          </div>
-          <div className="foot">
-            <div className="price">
-              <span className="num">{priceNum.toLocaleString('en')}</span>
-              <span className="unit"> {currency} / DAY</span>
-            </div>
-            {boat.rating != null && (
-              <div className="rating">
-                <span className="star">★</span>
-                <span>{boat.rating.toFixed(2)}</span>
-                {boat.reviews != null && (
-                  <span style={{ opacity: 0.5 }}>({boat.reviews})</span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </Link>
+      )}
     </div>
   )
 }
