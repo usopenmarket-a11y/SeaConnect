@@ -216,7 +216,7 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
   // Placeholder SWR call — will swap to /api/v1/admin/analytics/ once available.
   // We fire-and-forget; no data is rendered from this yet.
   useSWR(
-    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'}/api/v1/health/`,
+    `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'}/health/`,
     fetcher,
     {
       revalidateOnFocus: false,

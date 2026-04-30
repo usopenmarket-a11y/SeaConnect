@@ -16,10 +16,15 @@ RUN pip install --no-cache-dir -r requirements/dev.txt
 
 COPY . .
 
-RUN mkdir -p /app/keys
+RUN mkdir -p /app/keys && \
+    addgroup --system appgroup && \
+    adduser --system --ingroup appgroup --home /app appuser && \
+    chown -R appuser:appgroup /app
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+USER appuser
 
 EXPOSE 8000
 
