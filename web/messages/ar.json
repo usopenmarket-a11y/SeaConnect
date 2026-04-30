@@ -246,7 +246,9 @@
       "dashboard": "لوحة التحكم",
       "calendar": "التقويم",
       "bookings": "الحجوزات",
-      "myYachts": "قواربي"
+      "myYachts": "قواربي",
+      "payouts": "المدفوعات",
+      "onboarding": "التحقق"
     },
     "guard": {
       "checking": "جارٍ التحقق من الصلاحيات...",

@@ -246,7 +246,9 @@
       "dashboard": "Dashboard",
       "calendar": "Calendar",
       "bookings": "Bookings",
-      "myYachts": "My yachts"
+      "myYachts": "My yachts",
+      "payouts": "Payouts",
+      "onboarding": "Verification"
     },
     "guard": {
       "checking": "Checking permissions...",

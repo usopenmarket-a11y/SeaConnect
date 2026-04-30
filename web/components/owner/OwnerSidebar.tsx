@@ -21,7 +21,7 @@ interface Props {
 
 interface NavItem {
   hrefSegment: string
-  labelKey: 'dashboard' | 'bookings' | 'myYachts' | 'calendar'
+  labelKey: 'dashboard' | 'bookings' | 'myYachts' | 'calendar' | 'payouts' | 'onboarding'
 }
 
 const items: NavItem[] = [
@@ -29,6 +29,8 @@ const items: NavItem[] = [
   { hrefSegment: 'owner/calendar', labelKey: 'calendar' },
   { hrefSegment: 'owner/bookings', labelKey: 'bookings' },
   { hrefSegment: 'owner/yachts', labelKey: 'myYachts' },
+  { hrefSegment: 'owner/payouts', labelKey: 'payouts' },
+  { hrefSegment: 'owner/onboarding', labelKey: 'onboarding' },
 ]
 
 export function OwnerSidebar({ locale }: Props): React.ReactElement {
