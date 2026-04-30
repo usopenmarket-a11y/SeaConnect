@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminYachtListView,
     BookingCancelView,
     BookingConfirmView,
     BookingDeclineView,
@@ -44,4 +45,6 @@ urlpatterns = [
         BookingCancelView.as_view(),
         name="booking-cancel",
     ),
+    # Admin — KYC / operations portal
+    path("admin/yachts/", AdminYachtListView.as_view(), name="admin-yacht-list"),
 ]

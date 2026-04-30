@@ -132,6 +132,39 @@ class RegisterSerializer(serializers.ModelSerializer[User]):
         )
 
 
+class AdminUserSerializer(serializers.ModelSerializer[User]):
+    """Read serializer for the admin user list endpoint.
+
+    Exposes identity and status fields needed by the admin portal to review
+    and manage users across all roles. region_name avoids a client-side join.
+    """
+
+    region_name = serializers.SerializerMethodField(
+        help_text="English name of the user's home region, or null if unset.",
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "is_verified",
+            "is_active",
+            "created_at",
+            "region_name",
+        ]
+        read_only_fields = fields
+
+    def get_region_name(self, obj: User) -> str | None:
+        """Return region.name_en if the user has a region FK, else None."""
+        if obj.region_id and obj.region:
+            return obj.region.name_en
+        return None
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Extends the standard JWT serializer to embed role and region in the token.
 

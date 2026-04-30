@@ -1,0 +1,393 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;900&family=Geist+Mono:wght@300;400;500&display=swap');
+
+/* ── CSS Custom Properties ─────────────────────── */
+:root {
+  --ink: oklch(0.20 0.045 235);
+  --ink-2: oklch(0.28 0.055 230);
+  --abyss: oklch(0.14 0.04 240);
+  --tide: oklch(0.46 0.09 215);
+  --sea: oklch(0.38 0.08 220);
+  --sea-glow: oklch(0.62 0.10 200);
+  --foam: oklch(0.99 0.004 200);
+  --pearl: oklch(0.97 0.008 210);
+  --sand: oklch(0.955 0.015 85);
+  --sand-2: oklch(0.93 0.022 80);
+  --sand-3: oklch(0.87 0.028 75);
+  --clay: oklch(0.58 0.12 40);
+  --clay-soft: oklch(0.86 0.05 55);
+  --brass: oklch(0.72 0.09 75);
+  --rule: oklch(0.84 0.015 215);
+  --rule-strong: oklch(0.68 0.025 215);
+  --muted: oklch(0.46 0.02 230);
+  --muted-2: oklch(0.60 0.015 230);
+
+  --ff-display: 'Cairo', serif;
+  --ff-sans: 'Cairo', 'Inter', system-ui, sans-serif;
+  --ff-mono: 'Geist Mono', ui-monospace, monospace;
+
+  --pad: 20px;
+  --pad-sm: 14px;
+  --pad-lg: 32px;
+  --row-h: 56px;
+  --card-pad: 24px;
+  --gap: 16px;
+  --radius: 4px;
+}
+
+/* ── Reset ─────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--pearl);
+  color: var(--ink);
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ── Utility Classes ───────────────────────────── */
+.mono { font-family: var(--ff-mono); letter-spacing: 0.01em; }
+.display { font-family: var(--ff-display); font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; }
+.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+.num { font-family: var(--ff-mono); direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+.hairline { border: 0; border-top: 1px solid var(--rule); }
+
+/* ── Buttons ───────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 2px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--ff-sans);
+  transition: all 0.15s;
+  border: 1px solid transparent;
+}
+.btn-primary { background: var(--ink); color: var(--sand); }
+.btn-primary:hover { background: var(--ink-2); }
+.btn-ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: var(--sand); }
+.btn-clay { background: var(--clay); color: var(--foam); }
+.btn-clay:hover { filter: brightness(0.95); }
+.btn-danger { background: oklch(0.52 0.16 25); color: var(--foam); border-color: transparent; }
+.btn-danger:hover { filter: brightness(0.9); }
+.btn-approve { background: oklch(0.48 0.13 155); color: var(--foam); border-color: transparent; }
+.btn-approve:hover { filter: brightness(0.9); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-lg { padding: 16px 28px; font-size: 15px; }
+
+/* ── Admin Dashboard Layout ────────────────────── */
+.dash-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ───────────────────────────────────── */
+.sidebar-dash {
+  width: 240px;
+  background: var(--abyss);
+  color: var(--sand);
+  padding: 28px 20px;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-dash .brand-mini {
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.sidebar-dash .brand-mini .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--clay);
+  display: inline-block;
+  flex-shrink: 0;
+  align-self: center;
+}
+.sidebar-dash .section-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  opacity: 0.55;
+  text-transform: uppercase;
+  margin: 22px 0 8px;
+}
+.sidebar-dash .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s;
+  text-decoration: none;
+  color: var(--sand);
+}
+.sidebar-dash .nav-item:hover { background: oklch(1 0 0 / 0.06); }
+.sidebar-dash .nav-item.active {
+  background: oklch(1 0 0 / 0.10);
+  border-inline-end: 2px solid var(--clay);
+}
+.sidebar-dash .nav-item .n {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  margin-inline-start: auto;
+  opacity: 0.55;
+  direction: ltr;
+}
+
+/* ── Dashboard Main Area ───────────────────────── */
+.dash-wrap {
+  padding: 40px 48px 80px;
+  min-width: 0;
+}
+
+.dash-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 20px;
+  margin-bottom: 32px;
+}
+.dash-head .num-tag {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  direction: ltr;
+}
+.dash-head h1 {
+  font-family: var(--ff-display);
+  font-size: 54px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.dash-head h1 em { font-style: italic; color: var(--clay); }
+
+/* ── KPI Grid ──────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-bottom: 40px;
+}
+.kpi { background: var(--foam); padding: 24px 26px 26px; }
+.kpi .l {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  direction: ltr;
+}
+.kpi .v {
+  font-family: var(--ff-display);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.kpi .v .unit {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-inline-end: 4px;
+}
+.kpi .delta {
+  margin-top: 10px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  direction: ltr;
+}
+.kpi .delta.up { color: oklch(0.55 0.13 155); }
+.kpi .delta.dn { color: var(--clay); }
+
+/* ── Dashboard Row / Card ──────────────────────── */
+.dash-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+.dash-card {
+  background: var(--foam);
+  border: 1px solid var(--rule);
+  padding: 26px 28px;
+}
+.dash-card h3 {
+  font-family: var(--ff-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+.dash-card .sub {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+/* ── Dashboard Table ───────────────────────────── */
+.dash-table { width: 100%; border-collapse: collapse; }
+.dash-table th,
+.dash-table td {
+  text-align: right;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+}
+.dash-table th {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 500;
+  padding-bottom: 10px;
+}
+.dash-table td.num {
+  font-family: var(--ff-mono);
+  text-align: left;
+  direction: ltr;
+}
+.dash-table tr:hover td { background: var(--pearl); }
+
+/* ── Status Pill ───────────────────────────────── */
+.pill-status {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border: 1px solid var(--rule-strong);
+  text-transform: uppercase;
+  display: inline-block;
+  white-space: nowrap;
+}
+.pill-status.ok { border-color: oklch(0.55 0.13 155); color: oklch(0.48 0.13 155); }
+.pill-status.warn { border-color: var(--clay); color: var(--clay); }
+.pill-status.pending { background: oklch(0.92 0.05 55); color: oklch(0.4 0.13 50); border: 1px solid oklch(0.85 0.08 55); }
+.pill-status.live { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+
+/* ── Revenue Chart ─────────────────────────────── */
+.revenue-chart {
+  height: 180px;
+  position: relative;
+  margin-top: 10px;
+}
+.revenue-chart svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ── KYC Queue Item ────────────────────────────── */
+.kyc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.kyc-item:last-of-type { border-bottom: none; }
+.kyc-item .kyc-name { font-weight: 500; margin-bottom: 2px; }
+.kyc-item .kyc-meta {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  direction: ltr;
+}
+
+/* ── Boat Thumbnail ────────────────────────────── */
+.boat-thumb {
+  width: 36px;
+  height: 36px;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+/* ── Page Header Actions ───────────────────────── */
+.head-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── KYC Detail Page ───────────────────────────── */
+.kyc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+.kyc-full-item {
+  border: 1px solid var(--rule);
+  background: var(--foam);
+  padding: 24px 26px;
+}
+.kyc-full-item .kyc-heading {
+  font-family: var(--ff-display);
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.kyc-full-item .kyc-sub {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.kyc-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+}
+.kyc-field-row:last-of-type { border-bottom: none; }
+.kyc-field-row .label { color: var(--muted-2); }
+.kyc-field-row .value { font-family: var(--ff-mono); font-size: 13px; }
+.kyc-actions-bar {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}

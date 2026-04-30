@@ -1,0 +1,59 @@
+{
+  "admin": {
+    "nav": {
+      "brandName": "سي كونكت",
+      "platformGroup": "الإدارة",
+      "marketplaceGroup": "السوق",
+      "moderationGroup": "المراجعة",
+      "overview": "نظرة عامة",
+      "transactions": "المعاملات",
+      "revenue": "الإيرادات",
+      "reports": "التقارير",
+      "boats": "القوارب",
+      "vendors": "البائعون",
+      "competitions": "البطولات",
+      "users": "العملاء",
+      "pending": "قيد المراجعة",
+      "disputes": "البلاغات",
+      "kycQueue": "تحقق KYC"
+    },
+    "dashboard": {
+      "title": "لوحة الإدارة",
+      "kicker": "§ ADMIN · PLATFORM OVERVIEW · APR 2026",
+      "exportReport": "تصدير تقرير",
+      "platformSettings": "إعدادات المنصة",
+      "revenueCard": {
+        "title": "الإيرادات · آخر ١٢ شهر",
+        "sub": "REVENUE · LAST 12 MONTHS · EGP"
+      },
+      "kycCard": {
+        "title": "تحقق KYC · قيد المراجعة",
+        "viewAll": "عرض القائمة كاملة (14)"
+      },
+      "transactions": {
+        "title": "أحدث المعاملات",
+        "sub": "RECENT TRANSACTIONS · LIVE"
+      },
+      "topBoats": {
+        "title": "أفضل القوارب أداءً",
+        "sub": "TOP PERFORMING VESSELS · LAST 30 DAYS"
+      }
+    },
+    "kyc": {
+      "title": "تحقق KYC",
+      "kicker": "§ ADMIN · KYC REVIEW QUEUE · APR 2026",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "requestInfo": "طلب معلومات إضافية",
+      "rejectReasonLabel": "REJECTION REASON (OPTIONAL)",
+      "rejectReasonPlaceholder": "وضّح سبب الرفض للمالك...",
+      "ownerDetails": "OWNER DETAILS",
+      "ownerName": "اسم المالك",
+      "nationalId": "رقم الهوية",
+      "licenseNumber": "رقم الترخيص",
+      "documents": "SUBMITTED DOCUMENTS",
+      "filter": "تصفية",
+      "loadMore": "تحميل المزيد ↓"
+    }
+  }
+}

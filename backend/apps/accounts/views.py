@@ -1,5 +1,5 @@
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,8 +7,10 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from apps.core.pagination import SeaConnectCursorPagination
+
 from .models import User
-from .serializers import RegisterSerializer, UserProfileSerializer
+from .serializers import AdminUserSerializer, RegisterSerializer, UserProfileSerializer
 
 
 class RegisterView(generics.CreateAPIView):  # type: ignore[type-arg]
@@ -62,3 +64,32 @@ class UserMeView(generics.RetrieveUpdateAPIView):  # type: ignore[type-arg]
 
     def get_object(self) -> User:
         return self.request.user  # type: ignore[return-value]
+
+
+class AdminUserListView(generics.ListAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/admin/users/ — paginated user list for the admin portal.
+
+    Query parameters:
+        role   — filter by UserRole value (customer, owner, vendor, admin).
+        search — case-insensitive email substring match.
+
+    Requires: Django admin role (is_staff=True).
+    Pagination: CursorPagination (ADR-013), 20 per page, ordered by -created_at.
+    """
+
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = SeaConnectCursorPagination
+
+    def get_queryset(self):  # type: ignore[override]
+        qs = User.objects.select_related("region").order_by("-created_at")
+
+        role = self.request.query_params.get("role")
+        if role:
+            qs = qs.filter(role=role)
+
+        search = self.request.query_params.get("search")
+        if search:
+            qs = qs.filter(email__icontains=search)
+
+        return qs

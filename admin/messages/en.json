@@ -1,0 +1,59 @@
+{
+  "admin": {
+    "nav": {
+      "brandName": "SeaConnect",
+      "platformGroup": "Platform",
+      "marketplaceGroup": "Marketplace",
+      "moderationGroup": "Moderation",
+      "overview": "Overview",
+      "transactions": "Transactions",
+      "revenue": "Revenue",
+      "reports": "Reports",
+      "boats": "Boats",
+      "vendors": "Vendors",
+      "competitions": "Competitions",
+      "users": "Customers",
+      "pending": "Pending Review",
+      "disputes": "Disputes",
+      "kycQueue": "KYC Queue"
+    },
+    "dashboard": {
+      "title": "Admin Dashboard",
+      "kicker": "§ ADMIN · PLATFORM OVERVIEW · APR 2026",
+      "exportReport": "Export Report",
+      "platformSettings": "Platform Settings",
+      "revenueCard": {
+        "title": "Revenue · Last 12 Months",
+        "sub": "REVENUE · LAST 12 MONTHS · EGP"
+      },
+      "kycCard": {
+        "title": "KYC Verification · Pending",
+        "viewAll": "View Full Queue (14)"
+      },
+      "transactions": {
+        "title": "Recent Transactions",
+        "sub": "RECENT TRANSACTIONS · LIVE"
+      },
+      "topBoats": {
+        "title": "Top Performing Boats",
+        "sub": "TOP PERFORMING VESSELS · LAST 30 DAYS"
+      }
+    },
+    "kyc": {
+      "title": "KYC Verification",
+      "kicker": "§ ADMIN · KYC REVIEW QUEUE · APR 2026",
+      "approve": "Approve",
+      "reject": "Reject",
+      "requestInfo": "Request More Info",
+      "rejectReasonLabel": "REJECTION REASON (OPTIONAL)",
+      "rejectReasonPlaceholder": "Explain the rejection reason to the owner...",
+      "ownerDetails": "OWNER DETAILS",
+      "ownerName": "Owner Name",
+      "nationalId": "National ID",
+      "licenseNumber": "License Number",
+      "documents": "SUBMITTED DOCUMENTS",
+      "filter": "Filter",
+      "loadMore": "Load More ↓"
+    }
+  }
+}

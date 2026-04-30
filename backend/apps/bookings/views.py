@@ -18,13 +18,14 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status
 from rest_framework.filters import OrderingFilter
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import UserRole
 from apps.core.models import DeparturePort
+from apps.core.pagination import SeaConnectCursorPagination
 
 from .filters import YachtFilter
 from .models import Availability, Booking, Yacht
@@ -293,3 +294,42 @@ class YachtAvailabilityView(APIView):
             )
             results.append(obj)
         return Response(AvailabilitySerializer(results, many=True).data)
+
+
+# ---------------------------------------------------------------------------
+# Admin — KYC / operations portal views
+# ---------------------------------------------------------------------------
+
+
+class AdminYachtListView(generics.ListAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/admin/yachts/ — all yachts including drafts for admin review.
+
+    Returns every yacht regardless of status (draft, active, inactive) and
+    including soft-deleted records so admins have full visibility.
+
+    Query parameters:
+        status — filter by YachtStatus value (draft, active, inactive).
+
+    Requires: Django admin role (is_staff=True).
+    Pagination: CursorPagination (ADR-013), 20 per page, ordered by -created_at.
+    """
+
+    permission_classes = [IsAdminUser]
+    pagination_class = SeaConnectCursorPagination
+
+    def get_queryset(self):  # type: ignore[override]
+        qs = (
+            Yacht.objects.select_related("owner", "region", "departure_port")
+            .prefetch_related("media")
+            .order_by("-created_at")
+        )
+
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        return qs
+
+    def get_serializer_class(self):  # type: ignore[override]
+        from apps.bookings.serializers import YachtListSerializer
+        return YachtListSerializer

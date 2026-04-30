@@ -123,10 +123,12 @@ services:
     restart: unless-stopped
 
   # ── Next.js admin portal ──────────────────────────────────────────────────
+  # Start with: docker compose --profile admin up admin
   admin:
     build:
       context: ./admin
       dockerfile: Dockerfile
+      target: dev
     ports:
       - "3011:3000"
     environment:
@@ -140,6 +142,7 @@ services:
     volumes:
       - ./admin:/app
       - admin_node_modules:/app/node_modules
+    command: npm run dev
     profiles:
       - admin
     restart: unless-stopped
