@@ -6,7 +6,7 @@ Stripe are added in Sprint 7/8 they get their own webhook routes.
 """
 from django.urls import path
 
-from .views import FawryWebhookView, PaymentInitiateView
+from .views import EscrowListView, FawryWebhookView, PaymentInitiateView, PayoutListView
 
 app_name = "payments"
 
@@ -20,5 +20,15 @@ urlpatterns = [
         "payments/webhook/fawry/",
         FawryWebhookView.as_view(),
         name="fawry-webhook",
+    ),
+    path(
+        "payments/payouts/",
+        PayoutListView.as_view(),
+        name="payout-list",
+    ),
+    path(
+        "payments/escrow/",
+        EscrowListView.as_view(),
+        name="escrow-list",
     ),
 ]

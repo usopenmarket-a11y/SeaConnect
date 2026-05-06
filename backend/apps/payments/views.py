@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import logging
 
+from django.conf import settings
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -18,10 +20,16 @@ from apps.bookings.models import (
     BookingEventType,
     BookingStatus,
 )
+from apps.core.pagination import SeaConnectCursorPagination
 
-from .models import Payment, PaymentProviderChoices, PaymentStatus
+from .models import Payment, PaymentProviderChoices, PaymentStatus, Payout
 from .providers.registry import get_provider  # ADR-007 — currency-driven lookup
-from .serializers import PaymentInitiateSerializer, PaymentSerializer
+from .serializers import (
+    EscrowBookingSerializer,
+    PaymentInitiateSerializer,
+    PaymentSerializer,
+    PayoutSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -166,7 +174,7 @@ class FawryWebhookView(APIView):
                 "prevent retry storm",
                 result.provider_ref,
             )
-            return Response(status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_200_OK)  # suppress retry storm
 
         with transaction.atomic():
             payment.status = result.status
@@ -189,3 +197,67 @@ class FawryWebhookView(APIView):
                 )
 
         return Response(status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Payout history — Sprint 9B
+# ---------------------------------------------------------------------------
+
+
+class PayoutListView(APIView):
+    """GET /api/v1/payments/payouts/.
+
+    Returns the authenticated owner's payout history, newest first.
+    Cursor-paginated (ADR-013). Read-only — payouts are created by the
+    system payout cycle job, never by API callers.
+    """
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = SeaConnectCursorPagination
+
+    def get(self, request: Request) -> Response:
+        qs = (
+            Payout.objects.filter(owner=request.user)
+            .order_by("-scheduled_date")
+        )
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request, view=self)
+        if page is not None:
+            serializer = PayoutSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = PayoutSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+# ---------------------------------------------------------------------------
+# Escrow hold window — Sprint 9B
+# ---------------------------------------------------------------------------
+
+
+class EscrowListView(APIView):
+    """GET /api/v1/payments/escrow/.
+
+    Returns completed bookings that are still within the 24-hour escrow
+    hold window (PAYOUT_HOLD_HOURS). Scoped to yachts owned by the
+    authenticated user so owners see their own escrow items.
+
+    No N+1: uses select_related on customer, yacht, region.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        hold_hours: int = getattr(settings, "PAYOUT_HOLD_HOURS", 24)
+        cutoff = timezone.now() - timezone.timedelta(hours=hold_hours)
+
+        qs = (
+            Booking.objects.select_related("customer", "yacht", "region")
+            .filter(
+                yacht__owner=request.user,
+                status=BookingStatus.COMPLETED,
+                updated_at__gte=cutoff,
+            )
+            .order_by("-updated_at")
+        )
+        serializer = EscrowBookingSerializer(qs, many=True)
+        return Response({"results": serializer.data})

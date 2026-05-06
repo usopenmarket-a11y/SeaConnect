@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import Payment
+from .models import Payment, Payout
 
 
 class PaymentInitiateSerializer(serializers.Serializer):  # type: ignore[type-arg]
@@ -31,3 +31,62 @@ class PaymentSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
             "created_at",
         ]
         read_only_fields = fields
+
+
+class PayoutSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read-only serializer for owner payout history.
+
+    All fields are read-only — payouts are created by the system (payout
+    cycle job), never by API callers.
+    """
+
+    class Meta:
+        model = Payout
+        fields = [
+            "id",
+            "amount",
+            "currency",
+            "status",
+            "reference",
+            "payment_method",
+            "scheduled_date",
+            "paid_at",
+            "escrow_booking_ids",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class EscrowBookingSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Read serializer for bookings currently in the escrow hold window.
+
+    Returned by GET /api/v1/payments/escrow/. Shows completed bookings
+    where the 24-hour release window has not yet elapsed.
+    """
+
+    id = serializers.UUIDField(read_only=True)
+    customer_name = serializers.SerializerMethodField()
+    trip_date = serializers.DateField(source="end_date", read_only=True)
+    amount = serializers.DecimalField(
+        source="total_amount",
+        max_digits=12,
+        decimal_places=2,
+        read_only=True,
+    )
+    currency = serializers.CharField(read_only=True)
+    release_hours = serializers.SerializerMethodField()
+
+    def get_customer_name(self, obj) -> str:  # type: ignore[override]
+        full = f"{obj.customer.first_name} {obj.customer.last_name}".strip()
+        return full or obj.customer.email
+
+    def get_release_hours(self, obj) -> float:  # type: ignore[override]
+        """Hours remaining before the 24-hour escrow window expires."""
+        from django.utils import timezone
+
+        hold_hours: int = 24
+        if obj.updated_at is None:
+            return float(hold_hours)
+        elapsed = (timezone.now() - obj.updated_at).total_seconds() / 3600
+        remaining = hold_hours - elapsed
+        return round(max(remaining, 0.0), 2)

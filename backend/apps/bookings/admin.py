@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import (
     Availability,
+    BlockedDate,
     Booking,
     BookingEvent,
     Yacht,
@@ -47,6 +48,16 @@ class AvailabilityAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = ["yacht", "date", "status", "price_override"]
     list_filter = ["status"]
     search_fields = ["yacht__name", "yacht__name_ar"]
+    raw_id_fields = ["yacht"]
+    ordering = ["yacht", "date"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+
+
+@admin.register(BlockedDate)
+class BlockedDateAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    list_display = ["yacht", "date", "reason"]
+    list_filter = ["yacht"]
+    search_fields = ["yacht__name", "yacht__name_ar", "reason"]
     raw_id_fields = ["yacht"]
     ordering = ["yacht", "date"]
     readonly_fields = ["id", "created_at", "updated_at"]

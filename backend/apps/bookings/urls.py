@@ -10,6 +10,7 @@ from .views import (
     YachtAvailabilityView,
     YachtDetailView,
     YachtListView,
+    YachtMonthAvailabilityView,
 )
 
 app_name = "bookings"
@@ -44,6 +45,12 @@ urlpatterns = [
         "bookings/<uuid:id>/cancel/",
         BookingCancelView.as_view(),
         name="booking-cancel",
+    ),
+    # Sprint 9C — month-based availability calendar
+    path(
+        "bookings/yachts/<uuid:yacht_id>/availability/",
+        YachtMonthAvailabilityView.as_view(),
+        name="yacht-month-availability",
     ),
     # Admin — KYC / operations portal
     path("admin/yachts/", AdminYachtListView.as_view(), name="admin-yacht-list"),

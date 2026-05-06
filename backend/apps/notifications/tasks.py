@@ -9,17 +9,70 @@ ADR-011 compliance:
   - Idempotency guard on every task (check status != PENDING before acting).
 
 Dev behaviour:
-  - FCM: payload is logged at INFO level; no real HTTP call is made.
+  - FCM: when FIREBASE_CREDENTIALS_JSON env var is absent, the push is marked
+    'sent' immediately (no real HTTP call) so the dev loop stays unblocked.
   - Email: routed to Mailpit via Django's SMTP backend (EMAIL_HOST=mailpit).
+
+Sprint 9A: real Firebase Admin SDK integration via _get_firebase_app().
 """
+import base64
+import json
 import logging
 
 from celery import shared_task
+from decouple import config
 from django.utils import timezone
 
 from apps.notifications.models import Notification, NotificationStatus
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Firebase singleton — lazy-initialised once per worker process
+# ---------------------------------------------------------------------------
+
+_firebase_app = None
+
+
+def _get_firebase_app():
+    """Lazy-initialise the Firebase app singleton.
+
+    Returns the Firebase App instance on success, or None when
+    FIREBASE_CREDENTIALS_JSON is absent (dev / CI environments).
+
+    The singleton is stored at module level so each Celery worker process
+    initialises Firebase exactly once, regardless of how many tasks it runs.
+    """
+    global _firebase_app
+    if _firebase_app is not None:
+        return _firebase_app
+
+    import firebase_admin
+    from firebase_admin import credentials
+
+    # Check if another code path already initialised the app (e.g. tests)
+    try:
+        _firebase_app = firebase_admin.get_app()
+        return _firebase_app
+    except ValueError:
+        pass  # App not yet initialised — proceed below
+
+    creds_b64 = config("FIREBASE_CREDENTIALS_JSON", default="")
+    if not creds_b64:
+        logger.info("FIREBASE_CREDENTIALS_JSON not set — FCM calls will be skipped (dev mode).")
+        _firebase_app = None
+        return None
+
+    try:
+        creds_json = json.loads(base64.b64decode(creds_b64))
+        cred = credentials.Certificate(creds_json)
+        _firebase_app = firebase_admin.initialize_app(cred)
+        logger.info("Firebase Admin SDK initialised successfully.")
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to initialise Firebase Admin SDK: %s", exc)
+        _firebase_app = None
+
+    return _firebase_app
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
@@ -28,8 +81,12 @@ def send_push_notification(self, notification_id: str) -> None:
 
     Idempotency guard: exits immediately if status is not PENDING.
 
-    In development, the FCM payload is logged at INFO level.  The real FCM
-    HTTP v1 API call is deferred to Sprint 9 (marked with TODO below).
+    When FIREBASE_CREDENTIALS_JSON is not set (dev/CI), the notification is
+    marked 'sent' immediately without a real FCM call so the dev loop
+    stays unblocked.
+
+    FCM errors are NOT retried — a stale/revoked device token would keep
+    failing regardless of how many retries are attempted.
 
     Args:
         notification_id: String UUID of the Notification row to process.
@@ -76,33 +133,48 @@ def send_push_notification(self, notification_id: str) -> None:
         },
     }
 
-    try:
-        # Dev: log the payload. No real HTTP call in this sprint.
-        # TODO Sprint 9: replace with real FCM call:
-        #   import firebase_admin
-        #   from firebase_admin import messaging
-        #   msg = messaging.Message(
-        #       token=payload["token"],
-        #       notification=messaging.Notification(**payload["notification"]),
-        #       data=payload["data"],
-        #   )
-        #   messaging.send(msg)
-        logger.info("FCM push payload (dev): %s", payload)
+    app = _get_firebase_app()
 
+    if app is None:
+        # Firebase not configured — dev/CI mode: log and mark sent immediately.
+        logger.info(
+            "Firebase not configured — skipping real FCM call for notification %s (dev mode).",
+            notification_id,
+        )
         notif.status = NotificationStatus.SENT
         notif.sent_at = timezone.now()
         notif.save(update_fields=["status", "sent_at", "updated_at"])
+        return
+
+    from firebase_admin import messaging  # noqa: PLC0415 — late import, firebase_admin is optional
+
+    fcm_message = messaging.Message(
+        notification=messaging.Notification(
+            title=payload["notification"]["title"],
+            body=payload["notification"]["body"],
+        ),
+        token=payload["token"],
+        data=payload["data"],
+    )
+
+    try:
+        messaging.send(fcm_message, app=app)
+        notif.status = NotificationStatus.SENT
+        notif.sent_at = timezone.now()
+        notif.save(update_fields=["status", "sent_at", "updated_at"])
+        logger.info("send_push_notification: FCM accepted notification %s.", notification_id)
 
     except Exception as exc:
+        # Do NOT retry FCM failures — the device token may be stale/invalid.
+        # Retrying would flood Firebase and never succeed for revoked tokens.
         logger.error(
-            "send_push_notification: delivery failed for %s — %s",
+            "send_push_notification: FCM rejected notification %s — %s",
             notification_id,
             exc,
         )
         notif.status = NotificationStatus.FAILED
         notif.failure_reason = str(exc)
         notif.save(update_fields=["status", "failure_reason", "updated_at"])
-        raise self.retry(exc=exc)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

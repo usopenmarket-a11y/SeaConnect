@@ -408,3 +408,49 @@ class BookingEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.booking_id} — {self.event_type} @ {self.created_at}"
+
+
+# ---------------------------------------------------------------------------
+# Sprint 9C — BlockedDate (owner maintenance / personal blocks)
+# ---------------------------------------------------------------------------
+
+
+class BlockedDate(TimeStampedModel):
+    """Owner-blocked dates — maintenance, personal use, etc.
+
+    Distinct from ``Availability`` (which the booking system also writes to).
+    ``BlockedDate`` is owner-authored only and always renders as ``"blocked"``
+    in the availability calendar regardless of any Booking state.
+
+    ADR-001 — UUID PK.
+    ADR-018 — No currency field needed (no monetary value here).
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    yacht = models.ForeignKey(
+        Yacht,
+        on_delete=models.CASCADE,
+        related_name="blocked_dates",
+        help_text="Yacht whose calendar this block applies to.",
+    )
+    date = models.DateField(
+        help_text="The calendar date being blocked (owner's region timezone).",
+    )
+    reason = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional human-readable reason (maintenance, personal, etc.).",
+    )
+
+    class Meta:
+        db_table = "bookings_blocked_date"
+        ordering = ["date"]
+        unique_together = [["yacht", "date"]]
+        indexes = [
+            models.Index(fields=["yacht", "date"], name="idx_blockeddate_yacht_date"),
+        ]
+        verbose_name = "Blocked Date"
+        verbose_name_plural = "Blocked Dates"
+
+    def __str__(self) -> str:
+        return f"{self.yacht.name} — {self.date} (blocked)"

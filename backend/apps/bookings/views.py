@@ -12,6 +12,7 @@ ADR compliance:
 """
 from __future__ import annotations
 
+import calendar
 import datetime
 
 from django.shortcuts import get_object_or_404
@@ -28,7 +29,7 @@ from apps.core.models import DeparturePort
 from apps.core.pagination import SeaConnectCursorPagination
 
 from .filters import YachtFilter
-from .models import Availability, Booking, Yacht
+from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht
 from .serializers import (
     AvailabilitySerializer,
     AvailabilityWriteSerializer,
@@ -294,6 +295,145 @@ class YachtAvailabilityView(APIView):
             )
             results.append(obj)
         return Response(AvailabilitySerializer(results, many=True).data)
+
+
+# ---------------------------------------------------------------------------
+# Sprint 9C — Month-based yacht availability calendar
+# ---------------------------------------------------------------------------
+
+
+class YachtMonthAvailabilityView(APIView):
+    """GET /api/v1/bookings/yachts/{yacht_id}/availability/?month=YYYY-MM
+
+    Public endpoint — no authentication required.  Returns a day-keyed dict
+    with open / booked / blocked / limited status for every day in the
+    requested month, plus the yacht's base pricing.
+
+    Status priority (highest wins for a day):
+      1. blocked  — BlockedDate row exists for this yacht+date
+      2. booked   — any Booking with status in (confirmed, pending_owner)
+                    whose range covers the date
+      3. limited  — confirmed booking count on this day == yacht.capacity - 1
+                    (one passenger slot left; only applies when capacity > 0)
+      4. open     — no conflicts
+
+    Currency is resolved from the yacht's departure_port region if available,
+    then from yacht.currency directly, then falls back to 'EGP' as last resort.
+    (ADR-018: never hardcode currency except as final fallback per the spec comment.)
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request, yacht_id) -> Response:
+        yacht = get_object_or_404(
+            Yacht.objects.select_related("departure_port__region", "region"),
+            id=yacht_id,
+            is_deleted=False,
+        )
+
+        # Parse ?month=YYYY-MM, default to current month on invalid/absent value.
+        month_param = request.query_params.get("month", "")
+        try:
+            parsed = datetime.datetime.strptime(month_param, "%Y-%m")
+            year, month = parsed.year, parsed.month
+        except (ValueError, TypeError):
+            today = datetime.date.today()
+            year, month = today.year, today.month
+
+        # Build the list of all calendar days in the requested month.
+        _, days_in_month = calendar.monthrange(year, month)
+        month_start = datetime.date(year, month, 1)
+        month_end = datetime.date(year, month, days_in_month)
+
+        # Fetch all bookings whose range overlaps with this month in one query.
+        # A booking overlaps if: start_date <= month_end AND end_date >= month_start
+        active_statuses = (
+            BookingStatus.CONFIRMED,
+            BookingStatus.PENDING_OWNER,
+        )
+        bookings = list(
+            Booking.objects.filter(
+                yacht=yacht,
+                status__in=active_statuses,
+                start_date__lte=month_end,
+                end_date__gte=month_start,
+            ).values("start_date", "end_date", "status")
+        )
+
+        # Fetch all blocked dates for this yacht within the month.
+        blocked_dates = set(
+            BlockedDate.objects.filter(
+                yacht=yacht,
+                date__gte=month_start,
+                date__lte=month_end,
+            ).values_list("date", flat=True)
+        )
+
+        # Build per-day booking count maps.
+        # confirmed_count — number of confirmed bookings covering a day (for capacity math)
+        # active_days     — days covered by any confirmed OR pending_owner booking
+        confirmed_count: dict[datetime.date, int] = {}
+        active_days: set[datetime.date] = set()
+
+        for b in bookings:
+            # Clamp booking range to month boundaries for iteration efficiency.
+            b_start = max(b["start_date"], month_start)
+            b_end = min(b["end_date"], month_end)
+            current = b_start
+            while current <= b_end:
+                active_days.add(current)
+                if b["status"] == BookingStatus.CONFIRMED:
+                    confirmed_count[current] = confirmed_count.get(current, 0) + 1
+                current += datetime.timedelta(days=1)
+
+        # Determine status for each day in the month.
+        # Priority (highest wins):
+        #   1. blocked — BlockedDate row exists
+        #   2. limited — capacity > 0 AND confirmed_count == capacity - 1 (one slot left)
+        #                This takes priority over generic "booked" so the UI can show
+        #                "last slot" even when the day has other active bookings.
+        #   3. booked  — any Booking (confirmed or pending_owner) covers the date
+        #   4. open    — no conflicts
+        days: dict[str, str] = {}
+        capacity = yacht.capacity or 0
+
+        for day_num in range(1, days_in_month + 1):
+            day = datetime.date(year, month, day_num)
+            day_str = day.isoformat()
+            cnt = confirmed_count.get(day, 0)
+
+            if day in blocked_dates:
+                days[day_str] = "blocked"
+            elif capacity > 0 and cnt == capacity - 1:
+                # Exactly one slot remaining — surface as limited for the UI
+                days[day_str] = "limited"
+            elif day in active_days:
+                days[day_str] = "booked"
+            else:
+                days[day_str] = "open"
+
+        # Resolve currency (ADR-018: from region, not hardcoded).
+        currency = "EGP"  # last-resort fallback only
+        if hasattr(yacht, "departure_port") and yacht.departure_port_id:
+            dp = yacht.departure_port
+            if hasattr(dp, "region") and dp.region_id:
+                currency = dp.region.currency
+            elif yacht.currency:
+                currency = yacht.currency
+        elif yacht.currency:
+            currency = yacht.currency
+
+        return Response(
+            {
+                "yacht_id": str(yacht.id),
+                "month": f"{year:04d}-{month:02d}",
+                "days": days,
+                "pricing": {
+                    "base_price": str(yacht.price_per_day),
+                    "currency": currency,
+                },
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
