@@ -293,7 +293,7 @@ class TestPaymentInitiateView:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestFawryWebhookView:
     """Tests for POST /api/v1/payments/webhook/fawry/."""
 
