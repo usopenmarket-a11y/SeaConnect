@@ -17,6 +17,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useAuth } from '@/lib/auth'
@@ -123,33 +124,28 @@ function calcFees(pricePerDay: string): {
 // Flow step progress bar
 // ---------------------------------------------------------------------------
 
-const STEPS = [
-  { n: '01', t: 'Trip Details', s: 'تفاصيل الرحلة' },
-  { n: '02', t: 'Your Info', s: 'بياناتك' },
-  { n: '03', t: 'Payment', s: 'الدفع' },
-  { n: '04', t: 'Confirmation', s: 'تأكيد' },
-] as const
+const STEP_NUMS = ['01', '02', '03', '04'] as const
 
 interface StepBarProps {
   current: number
+  stepLabels: string[]
 }
 
-function StepBar({ current }: StepBarProps): React.ReactElement {
+function StepBar({ current, stepLabels }: StepBarProps): React.ReactElement {
   return (
     <div className="flow-steps">
-      {STEPS.map((s, i) => {
+      {STEP_NUMS.map((n, i) => {
         const stepNum = i + 1
         const isCurrent = current === stepNum
         const isDone = current > stepNum
         return (
           <div
-            key={s.n}
+            key={n}
             className={`flow-step${isCurrent ? ' current' : ''}${isDone ? ' done' : ''}`}
           >
-            <div className="n">{s.n}</div>
+            <div className="n">{n}</div>
             <div className="txt">
-              <div className="t">{s.t}</div>
-              <div className="s">{s.s}</div>
+              <div className="t">{stepLabels[i] ?? ''}</div>
             </div>
           </div>
         )
@@ -165,9 +161,10 @@ function StepBar({ current }: StepBarProps): React.ReactElement {
 interface SummaryPanelProps {
   yacht: YachtDetail
   trip: TripDetails
+  t: ReturnType<typeof useTranslations<'booking.checkout'>>
 }
 
-function SummaryPanel({ yacht, trip }: SummaryPanelProps): React.ReactElement {
+function SummaryPanel({ yacht, trip, t }: SummaryPanelProps): React.ReactElement {
   const { base, serviceFee, insurance, total } = calcFees(yacht.price_per_day)
 
   return (
@@ -248,21 +245,19 @@ function SummaryPanel({ yacht, trip }: SummaryPanelProps): React.ReactElement {
         {/* Line items */}
         <div className="line-items" style={{ marginTop: 0, paddingTop: 0, borderTop: 0 }}>
           <div className="row">
-            <span className="l">
-              {fmtNum(base)} × 1 يوم
-            </span>
+            <span className="l">{t('summary.basePrice')}</span>
             <span className="v">{fmtNum(base)}</span>
           </div>
           <div className="row">
-            <span className="l">رسوم الخدمة (12%)</span>
+            <span className="l">{t('summary.serviceFee')}</span>
             <span className="v">{fmtNum(serviceFee)}</span>
           </div>
           <div className="row">
-            <span className="l">تأمين</span>
+            <span className="l">{t('summary.insurance')}</span>
             <span className="v">{fmtNum(insurance)}</span>
           </div>
           <div className="row total">
-            <span className="l">الإجمالي</span>
+            <span className="l">{t('summary.total')}</span>
             <span className="v">
               {fmtNum(total)}{' '}
               <span
@@ -705,6 +700,7 @@ function Step4Confirmation({
 }: Step4Props): React.ReactElement {
   const { base, serviceFee, insurance, total } = calcFees(yacht.price_per_day)
   const router = useRouter()
+  const t = useTranslations('booking.checkout')
 
   const paymentLabel =
     paymentMethod === 'FAWRY'
@@ -730,9 +726,9 @@ function Step4Confirmation({
 
   return (
     <div className="confirm-wrap" style={{ maxWidth: '100%', margin: 0, padding: 0 }}>
-      <div className="confirm-stamp">✓ CONFIRMATION · رقم الحجز {bookingRef}</div>
+      <div className="confirm-stamp">✓ CONFIRMATION · {t('bookingRef')} {bookingRef}</div>
       <div className="confirm-title">
-        رحلتك <em>مؤكّدة</em>.
+        {t('successTitle')}
       </div>
       <p style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--ink-2)', marginTop: 12 }}>
         {paymentMethod === 'FAWRY' && (
@@ -917,7 +913,7 @@ function Step4Confirmation({
             style={{ marginTop: 20, width: '100%' }}
             onClick={() => router.push(`/${locale}/bookings/${bookingId}`)}
           >
-            تتبع حجزك ←
+            {t('trackBooking')}
           </button>
 
           <button
@@ -945,6 +941,7 @@ interface InnerProps {
 function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement {
   const router = useRouter()
   const { user } = useAuth()
+  const t = useTranslations('booking.checkout')
 
   // Remote state
   const [yacht, setYacht] = React.useState<YachtDetail | null>(null)
@@ -1188,14 +1185,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
   // Steps 1-3 — two-column layout with sticky sidebar
   // -------------------------------------------------------------------------
 
-  const nextLabel =
-    step === 3
-      ? paymentMethod === 'FAWRY'
-        ? 'إتمام الحجز والدفع عبر فوري ←'
-        : paymentMethod === 'INSTAPAY'
-          ? 'إتمام الحجز والدفع عبر InstaPay ←'
-          : 'إتمام الحجز والدفع بالبطاقة ←'
-      : 'متابعة ←'
+  const nextLabel = step === 3 ? t('confirmBook') : '→'
 
   return (
     <main dir="rtl" style={{ fontFamily: 'var(--ff-sans)', paddingBottom: 80 }}>
@@ -1214,18 +1204,26 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
             cursor: 'pointer',
           }}
         >
-          ← العودة إلى {yacht.name_ar || yacht.name}
+          {t('back')} {yacht.name_ar || yacht.name}
         </button>
         <h1
           className="display"
           style={{ fontSize: 56, letterSpacing: '-0.02em', lineHeight: 1, marginTop: 4 }}
         >
-          إكمال <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>الحجز</em>
+          {t('title')}
         </h1>
       </div>
 
       {/* Step progress bar */}
-      <StepBar current={step} />
+      <StepBar
+        current={step}
+        stepLabels={[
+          t('steps.tripDetails'),
+          t('steps.yourInfo'),
+          t('steps.payment'),
+          t('steps.review'),
+        ]}
+      />
 
       {/* Body grid */}
       <div
@@ -1319,7 +1317,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
                       animation: 'spin 0.7s linear infinite',
                     }}
                   />
-                  جارٍ المعالجة...
+                  {t('processing')}
                 </span>
               ) : (
                 nextLabel
@@ -1329,7 +1327,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
         </div>
 
         {/* Sticky summary */}
-        <SummaryPanel yacht={yacht} trip={trip} />
+        <SummaryPanel yacht={yacht} trip={trip} t={t} />
       </div>
     </main>
   )
