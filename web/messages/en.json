@@ -160,6 +160,38 @@
       "generic": "Could not create booking. Please try again.",
       "dateRange": "End date must be after start date",
       "capacity": "Passenger count exceeds yacht capacity"
+    },
+    "checkout": {
+      "title": "Complete your booking",
+      "back": "← Back",
+      "steps": {
+        "tripDetails": "Trip details",
+        "yourInfo": "Your info",
+        "payment": "Payment",
+        "review": "Confirm"
+      },
+      "tripType": "Trip type",
+      "departureTime": "Departure",
+      "returnTime": "Return",
+      "specialRequests": "Special requests (optional)",
+      "fullName": "Full name",
+      "phone": "Phone number",
+      "idType": "ID type",
+      "idNumber": "ID number",
+      "emergencyContact": "Emergency contact",
+      "paymentMethod": "Payment method",
+      "confirmBook": "Complete booking",
+      "processing": "Processing...",
+      "successTitle": "Booking confirmed!",
+      "bookingRef": "Booking reference",
+      "trackBooking": "Track your booking →",
+      "summary": {
+        "title": "Booking summary",
+        "basePrice": "Base price",
+        "serviceFee": "Service fee",
+        "insurance": "Insurance",
+        "total": "Total"
+      }
     }
   },
   "bookingList": {
@@ -241,6 +273,38 @@
     "peakSeason": "Peak Season",
     "noData": "No fishing data available for this port this month."
   },
+  "competitions": {
+    "title": "Tournaments",
+    "subtitle": "Egypt's full fishing tournament calendar — from amateur clubs to pro events. Register, track the leaderboard, and show your catch.",
+    "empty": "No open tournaments right now",
+    "emptyHint": "NO OPEN TOURNAMENTS · CHECK BACK SOON",
+    "participants": "participants",
+    "prizes": "prizes EGP",
+    "register": "Register"
+  },
+  "profile": {
+    "tabs": {
+      "all": "All bookings",
+      "upcoming": "Upcoming",
+      "completed": "Completed",
+      "orders": "Store orders",
+      "tournaments": "Tournaments",
+      "favourites": "Favourites"
+    },
+    "upcomingTrips": "Upcoming",
+    "pastTrips": "Completed",
+    "storeOrdersTitle": "Store orders",
+    "tournamentsTitle": "Tournaments",
+    "noUpcoming": "No upcoming bookings",
+    "noCompleted": "No completed trips yet",
+    "noOrders": "No store orders",
+    "noTournaments": "You haven't registered for any tournaments yet",
+    "memberSince": "Member since",
+    "trips": "trips",
+    "tournaments": "tournaments",
+    "storeOrders": "store orders",
+    "points": "points"
+  },
   "owner": {
     "nav": {
       "dashboard": "Dashboard",
@@ -313,6 +377,96 @@
         "submitting": "Creating...",
         "successMessage": "Yacht created successfully",
         "comingSoon": "Yacht creation API is coming soon"
+      }
+    },
+    "calendar": {
+      "addPricingRule": "Pricing rule +",
+      "blockDates": "Block dates",
+      "pricingRulesTitle": "Active pricing rules",
+      "blockedDatesTitle": "Blocked dates",
+      "smartSuggestion": "Smart suggestion",
+      "applyBtn": "Apply ←",
+      "hot": "⚡ HOT · 1 left",
+      "maintenance": "⛔ Maintenance"
+    },
+    "payouts": {
+      "title": "Payouts & Escrow",
+      "nextPayout": "NEXT PAYOUT",
+      "bankAccount": "Bank account",
+      "editBank": "Edit",
+      "addBank": "+ New account",
+      "payoutSchedule": "Payout schedule",
+      "historyTitle": "Ledger",
+      "escrowTitle": "Active escrow",
+      "instantTransfer": "Instant transfer ←",
+      "downloadPdf": "PDF receipt",
+      "schedule": {
+        "weekly": "Weekly",
+        "biweekly": "Bi-weekly",
+        "monthly": "Monthly"
+      },
+      "breakdown": {
+        "totalBookings": "Completed bookings",
+        "escrowHeld": "Escrow hold",
+        "platformCommission": "Platform commission",
+        "taxes": "Taxes"
+      },
+      "table": {
+        "ref": "Reference",
+        "date": "Date",
+        "amount": "Amount",
+        "method": "Method",
+        "status": "Status"
+      },
+      "status": {
+        "deposited": "✓ DEPOSITED",
+        "scheduled": "⏱ SCHEDULED"
+      }
+    },
+    "onboarding": {
+      "title": "Identity verification & onboarding",
+      "progressLabel": "COMPLETE",
+      "checklistTitle": "Verification checklist",
+      "prevStep": "← Previous step",
+      "nextStep": "Save & continue →",
+      "submitReview": "Submit for review →",
+      "steps": {
+        "identity": "Personal identity",
+        "vesselDocs": "Vessel documents",
+        "captainLicense": "Captain license",
+        "insurance": "Boat insurance",
+        "inspection": "Physical inspection",
+        "bankSetup": "Payout setup"
+      },
+      "insurance": {
+        "title": "Boat & passenger insurance",
+        "body": "Every boat on the platform must be insured against maritime accidents and third-party liability. Upload an existing certificate or purchase SeaConnect-approved coverage.",
+        "seaConnectOption": "SeaConnect Marine · Recommended",
+        "uploadOption": "Upload existing certificate",
+        "uploadZone": "↑ Drag certificate here · PDF / JPG · MAX 10MB"
+      },
+      "checklist": {
+        "nationalId": "Valid national ID or passport",
+        "ownershipContract": "Boat ownership contract",
+        "coastGuardCert": "Coast guard registration certificate",
+        "captainLicense": "Certified marine driving license",
+        "insuranceCert": "Valid insurance certificate",
+        "technicalInspection": "Technical boat inspection (30 min)"
+      }
+    },
+    "listing": {
+      "title": "Listing editor",
+      "livePreview": "LIVE PREVIEW · As seen by customers",
+      "published": "Listing published",
+      "previewAsCustomer": "Preview as customer",
+      "saveChanges": "Save changes",
+      "tabs": {
+        "basics": "Basics",
+        "specs": "Specs",
+        "photos": "Photos",
+        "pricing": "Pricing",
+        "amenities": "Amenities",
+        "policies": "Policies"
       }
     }
   }

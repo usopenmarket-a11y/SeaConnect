@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 
 type CellStatus = 'open' | 'limited' | 'booked' | 'block'
 
@@ -55,6 +56,7 @@ function buildCells(month: number): Cell[] {
 }
 
 export function OwnerCalendarPage(): React.ReactElement {
+  const t = useTranslations('owner.calendar')
   const [month, setMonth] = React.useState(4)
   const cells = React.useMemo(() => buildCells(month), [month])
 
@@ -79,8 +81,8 @@ export function OwnerCalendarPage(): React.ReactElement {
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost">قاعدة تسعير +</button>
-          <button className="btn btn-clay">حظر تواريخ</button>
+          <button className="btn btn-ghost">{t('addPricingRule')}</button>
+          <button className="btn btn-clay">{t('blockDates')}</button>
         </div>
       </div>
 
@@ -111,12 +113,12 @@ export function OwnerCalendarPage(): React.ReactElement {
                 )}
                 {c.status === 'limited' && (
                   <div className="event mini">
-                    <span className="mono">⚡ HOT · ١ متبقي</span>
+                    <span className="mono">{t('hot')}</span>
                   </div>
                 )}
                 {c.status === 'block' && (
                   <div className="event mini block">
-                    <span className="mono">⛔ صيانة</span>
+                    <span className="mono">{t('maintenance')}</span>
                   </div>
                 )}
               </div>
@@ -128,7 +130,7 @@ export function OwnerCalendarPage(): React.ReactElement {
       {/* Bottom panels */}
       <div className="dash-row" style={{ marginTop: 24, gridTemplateColumns: '1fr 1fr 1fr' }}>
         <div className="dash-card">
-          <h3>قواعد التسعير النشطة</h3>
+          <h3>{t('pricingRulesTitle')}</h3>
           <div className="sub">3 PRICING RULES ACTIVE</div>
           {[
             ['عطلة نهاية الأسبوع', '+30% خميس + جمعة'],
@@ -146,7 +148,7 @@ export function OwnerCalendarPage(): React.ReactElement {
         </div>
 
         <div className="dash-card">
-          <h3>التواريخ المحظورة</h3>
+          <h3>{t('blockedDatesTitle')}</h3>
           <div className="sub">BLOCKED DATES</div>
           {[
             ['١٤ مايو', 'صيانة المحرك'],
@@ -164,12 +166,12 @@ export function OwnerCalendarPage(): React.ReactElement {
         </div>
 
         <div className="dash-card" style={{ background: 'var(--abyss)', color: 'var(--sand)', borderColor: 'var(--abyss)' }}>
-          <h3 style={{ color: 'var(--sand)' }}>اقتراح ذكي</h3>
+          <h3 style={{ color: 'var(--sand)' }}>{t('smartSuggestion')}</h3>
           <div className="sub" style={{ color: 'var(--sand-3)', opacity: 0.7 }}>SMART SUGGESTION</div>
           <p style={{ fontFamily: 'var(--ff-display)', fontSize: 18, fontWeight: 700, lineHeight: 1.4, margin: '14px 0 12px' }}>
             ٧ تواريخ مفتوحة في الأسبوع القادم — السعر أعلى ١٢٪ من المتوسط. خفّض ٥٪ لزيادة الحجز.
           </p>
-          <button className="btn" style={{ background: 'var(--clay)', color: 'var(--foam)', marginTop: 8 }}>طبّق ←</button>
+          <button className="btn" style={{ background: 'var(--clay)', color: 'var(--foam)', marginTop: 8 }}>{t('applyBtn')}</button>
         </div>
       </div>
     </div>

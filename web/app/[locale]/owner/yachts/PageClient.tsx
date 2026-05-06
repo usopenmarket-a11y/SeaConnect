@@ -11,6 +11,7 @@
  */
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -569,6 +570,7 @@ interface Props {
 }
 
 export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.ReactElement {
+  const t = useTranslations('owner.listing')
   const [tab, setTab] = React.useState<TabId>('basics')
   const [name, setName] = React.useState('البحر الأحمر')
   const [price, setPrice] = React.useState(2280)
@@ -648,15 +650,15 @@ export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.R
       <div className="action-bar">
         <div className="status">
           <span className="dot-live" />
-          <strong>القائمة منشورة</strong>
+          <strong>{t('published')}</strong>
           <span className="mono">· LAST EDIT 12 MIN AGO</span>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn btn-ghost" type="button">
-            معاينة كعميل
+            {t('previewAsCustomer')}
           </button>
           <button className="btn btn-clay" type="button">
-            حفظ التعديلات
+            {t('saveChanges')}
           </button>
         </div>
       </div>

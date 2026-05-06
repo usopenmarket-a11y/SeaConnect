@@ -26,6 +26,7 @@
  */
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,7 @@ interface Props {
 }
 
 export function OnboardingPageClient({ locale: _locale }: Props): React.ReactElement {
+  const t = useTranslations('owner.onboarding')
   // Index of the currently active step (0-based). Initialise at the first
   // 'active' step found in the static config.
   const initialActiveIdx = Math.max(
@@ -173,10 +175,8 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
 
   return (
     <section dir="rtl">
-      {/* Page heading */}
-      {/* TODO: i18n — owner.onboarding.title */}
       <h1 className="mb-6 font-display text-2xl font-bold text-ink">
-        التحقق من الهوية والتأهيل
+        {t('title')}
       </h1>
 
       {/* ── Progress bar ── */}
@@ -184,9 +184,8 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
         <div className="onb-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
           <div className="onb-fill" style={{ width: `${pct}%` }} />
         </div>
-        {/* TODO: i18n — owner.onboarding.progressLabel */}
         <div className="onb-pct mono">
-          {doneCount} / {STEPS.length} COMPLETE · {pct}%
+          {doneCount} / {STEPS.length} {t('progressLabel')} · {pct}%
         </div>
       </div>
 
@@ -231,8 +230,7 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
 
         {/* Verification checklist */}
         <div className="dash-card">
-          {/* TODO: i18n — owner.onboarding.checklistTitle */}
-          <h3>قائمة التحقق</h3>
+          <h3>{t('checklistTitle')}</h3>
           <div className="sub">VERIFICATION CHECKLIST</div>
 
           {CHECKLIST.map((item) => (
@@ -274,28 +272,25 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
           className="btn btn-ghost"
           onClick={handlePrev}
           disabled={activeIdx === 0}
-          aria-label="الخطوة السابقة"
+          aria-label={t('prevStep')}
         >
-          {/* TODO: i18n — owner.onboarding.prevStep */}
-          ← الخطوة السابقة
+          {t('prevStep')}
         </button>
 
         {activeIdx < STEPS.length - 1 ? (
           <button
             className="btn btn-clay cta-shimmer"
             onClick={handleNext}
-            aria-label={`حفظ ومتابعة الخطوة ${activeIdx + 2}`}
+            aria-label={t('nextStep')}
           >
-            {/* TODO: i18n — owner.onboarding.nextStep */}
-            حفظ ومتابعة الخطوة {activeIdx + 2} ←
+            {t('nextStep')}
           </button>
         ) : (
           <button
             className="btn btn-clay cta-shimmer"
-            aria-label="إرسال الطلب للمراجعة"
+            aria-label={t('submitReview')}
           >
-            {/* TODO: i18n — owner.onboarding.submitReview */}
-            إرسال للمراجعة ←
+            {t('submitReview')}
           </button>
         )}
       </div>

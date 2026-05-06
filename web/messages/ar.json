@@ -160,6 +160,38 @@
       "generic": "تعذّر إنشاء الحجز. حاول مجدداً.",
       "dateRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية",
       "capacity": "عدد الركاب يتجاوز سعة القارب"
+    },
+    "checkout": {
+      "title": "إكمال الحجز",
+      "back": "← العودة",
+      "steps": {
+        "tripDetails": "تفاصيل الرحلة",
+        "yourInfo": "بياناتك",
+        "payment": "الدفع",
+        "review": "تأكيد"
+      },
+      "tripType": "نوع الرحلة",
+      "departureTime": "الانطلاق",
+      "returnTime": "العودة",
+      "specialRequests": "طلبات خاصة (اختياري)",
+      "fullName": "الاسم الكامل",
+      "phone": "رقم الجوال",
+      "idType": "نوع الهوية",
+      "idNumber": "رقم الهوية",
+      "emergencyContact": "جهة الاتصال في الطوارئ",
+      "paymentMethod": "طريقة الدفع",
+      "confirmBook": "إتمام الحجز",
+      "processing": "جارٍ المعالجة...",
+      "successTitle": "تم الحجز بنجاح!",
+      "bookingRef": "رقم الحجز",
+      "trackBooking": "تتبع حجزك ←",
+      "summary": {
+        "title": "ملخص الحجز",
+        "basePrice": "السعر الأساسي",
+        "serviceFee": "رسوم الخدمة",
+        "insurance": "تأمين",
+        "total": "الإجمالي"
+      }
     }
   },
   "bookingList": {
@@ -241,6 +273,38 @@
     "peakSeason": "موسم الذروة",
     "noData": "لا تتوفر بيانات صيد لهذا الميناء هذا الشهر."
   },
+  "competitions": {
+    "title": "البطولات",
+    "subtitle": "تقويم كل بطولات الصيد في مصر — من أندية الهواة إلى البطولات الاحترافية. سجّل، تابع اللوحة، اعرض صيدك.",
+    "empty": "لا توجد بطولات مفتوحة حالياً",
+    "emptyHint": "NO OPEN TOURNAMENTS · CHECK BACK SOON",
+    "participants": "مشارك",
+    "prizes": "جوائز EGP",
+    "register": "سجّل"
+  },
+  "profile": {
+    "tabs": {
+      "all": "كل الحجوزات",
+      "upcoming": "القادمة",
+      "completed": "المكتملة",
+      "orders": "طلبات المتجر",
+      "tournaments": "البطولات",
+      "favourites": "المفضّلة"
+    },
+    "upcomingTrips": "قادمة",
+    "pastTrips": "مكتملة",
+    "storeOrdersTitle": "طلبات المتجر",
+    "tournamentsTitle": "البطولات",
+    "noUpcoming": "لا توجد حجوزات قادمة",
+    "noCompleted": "لا توجد رحلات مكتملة بعد",
+    "noOrders": "لا توجد طلبات متجر",
+    "noTournaments": "لم تسجّل في أي بطولة بعد",
+    "memberSince": "عضو منذ",
+    "trips": "رحلات",
+    "tournaments": "بطولات",
+    "storeOrders": "طلبات متجر",
+    "points": "نقاط"
+  },
   "owner": {
     "nav": {
       "dashboard": "لوحة التحكم",
@@ -313,6 +377,96 @@
         "submitting": "جارٍ الإنشاء...",
         "successMessage": "تم إنشاء القارب بنجاح",
         "comingSoon": "ميزة إضافة القوارب قادمة قريباً"
+      }
+    },
+    "calendar": {
+      "addPricingRule": "قاعدة تسعير +",
+      "blockDates": "حظر تواريخ",
+      "pricingRulesTitle": "قواعد التسعير النشطة",
+      "blockedDatesTitle": "التواريخ المحظورة",
+      "smartSuggestion": "اقتراح ذكي",
+      "applyBtn": "طبّق ←",
+      "hot": "⚡ ذروة · ١ متبقي",
+      "maintenance": "⛔ صيانة"
+    },
+    "payouts": {
+      "title": "المدفوعات والضمان",
+      "nextPayout": "الدفعة القادمة",
+      "bankAccount": "حساب البنك",
+      "editBank": "تعديل",
+      "addBank": "+ حساب جديد",
+      "payoutSchedule": "دورة الدفع",
+      "historyTitle": "دفتر السجلات",
+      "escrowTitle": "الضمان النشط · ESCROW",
+      "instantTransfer": "تحويل فوري ←",
+      "downloadPdf": "إيصال PDF",
+      "schedule": {
+        "weekly": "أسبوعي",
+        "biweekly": "نصف شهري",
+        "monthly": "شهري"
+      },
+      "breakdown": {
+        "totalBookings": "إجمالي الحجوزات",
+        "escrowHeld": "محتجز في الضمان",
+        "platformCommission": "عمولة المنصة",
+        "taxes": "ضرائب"
+      },
+      "table": {
+        "ref": "المرجع",
+        "date": "التاريخ",
+        "amount": "المبلغ",
+        "method": "الطريقة",
+        "status": "الحالة"
+      },
+      "status": {
+        "deposited": "✓ محوّل",
+        "scheduled": "⏱ مجدول"
+      }
+    },
+    "onboarding": {
+      "title": "التحقق من الهوية والتأهيل",
+      "progressLabel": "مكتمل",
+      "checklistTitle": "قائمة التحقق",
+      "prevStep": "← الخطوة السابقة",
+      "nextStep": "حفظ ومتابعة →",
+      "submitReview": "إرسال للمراجعة ←",
+      "steps": {
+        "identity": "الهوية الشخصية",
+        "vesselDocs": "مستندات القارب",
+        "captainLicense": "رخصة الربان",
+        "insurance": "تأمين القارب",
+        "inspection": "فحص الفريق",
+        "bankSetup": "الحساب البنكي"
+      },
+      "insurance": {
+        "title": "تأمين القارب والمسافرين",
+        "body": "كل قارب على المنصة يجب أن يكون مؤمّناً ضد الحوادث البحرية ومسؤولية الطرف الثالث.",
+        "seaConnectOption": "SeaConnect Marine · موصى به",
+        "uploadOption": "رفع شهادة موجودة",
+        "uploadZone": "↑ اسحب الشهادة هنا · PDF / JPG · MAX 10MB"
+      },
+      "checklist": {
+        "nationalId": "البطاقة الشخصية أو جواز سفر ساري",
+        "ownershipContract": "عقد ملكية القارب",
+        "coastGuardCert": "شهادة تسجيل خفر السواحل",
+        "captainLicense": "رخصة قيادة بحرية معتمدة",
+        "insuranceCert": "شهادة تأمين سارية",
+        "technicalInspection": "فحص فني للقارب (٣٠ دقيقة)"
+      }
+    },
+    "listing": {
+      "title": "محرر الإعلان",
+      "livePreview": "معاينة مباشرة · كما يراه العميل",
+      "published": "القائمة منشورة",
+      "previewAsCustomer": "معاينة كعميل",
+      "saveChanges": "حفظ التعديلات",
+      "tabs": {
+        "basics": "الأساسيات",
+        "specs": "المواصفات",
+        "photos": "الصور",
+        "pricing": "التسعير",
+        "amenities": "الخدمات",
+        "policies": "السياسات"
       }
     }
   }

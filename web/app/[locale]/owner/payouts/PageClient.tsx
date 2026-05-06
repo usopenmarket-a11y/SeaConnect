@@ -22,6 +22,7 @@
  */
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -98,24 +99,24 @@ interface Props {
 }
 
 export function PayoutsPageClient({ locale }: Props): React.ReactElement {
+  const t = useTranslations('owner.payouts')
   const [schedule, setSchedule] = React.useState<ScheduleOption>('biweekly')
 
   function formatAmount(n: number): string {
     return locale === 'ar' ? n.toLocaleString('ar-EG') : n.toLocaleString('en-US')
   }
 
-  const scheduleOptions: Array<{ value: ScheduleOption; labelAr: string }> = [
-    { value: 'weekly', labelAr: 'كل أسبوع' }, // TODO: i18n — owner.payouts.scheduleWeekly
-    { value: 'biweekly', labelAr: 'كل أسبوعين' }, // TODO: i18n — owner.payouts.scheduleBiweekly
-    { value: 'monthly', labelAr: 'كل شهر' }, // TODO: i18n — owner.payouts.scheduleMonthly
+  const scheduleOptions: Array<{ value: ScheduleOption; label: string }> = [
+    { value: 'weekly', label: t('schedule.weekly') },
+    { value: 'biweekly', label: t('schedule.biweekly') },
+    { value: 'monthly', label: t('schedule.monthly') },
   ]
 
   return (
     <section dir="rtl">
       {/* Page heading */}
       <h1 className="mb-6 font-display text-2xl font-bold text-ink">
-        {/* TODO: i18n — owner.payouts.title */}
-        المدفوعات
+        {t('title')}
       </h1>
 
       {/* ── Top row: next payout + bank/schedule ── */}
@@ -130,9 +131,8 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
             borderColor: 'transparent',
           }}
         >
-          {/* TODO: i18n — owner.payouts.nextPayout */}
           <div className="sub" style={{ color: 'var(--sand-3)', opacity: 0.7 }}>
-            NEXT PAYOUT · {MOCK_SUMMARY.nextPayoutDate}
+            {t('nextPayout')} · {MOCK_SUMMARY.nextPayoutDate}
           </div>
 
           <div
@@ -158,18 +158,17 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
           <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid oklch(1 0 0 / 0.2)' }}>
             {(
               [
-                { labelAr: 'إجمالي الحجوزات', value: formatAmount(MOCK_SUMMARY.totalBookings), variant: null },
-                { labelAr: 'ضمان محتجز (٣ رحلات قادمة)', value: `−${formatAmount(Math.abs(MOCK_SUMMARY.escrowHeld))}`, variant: 'hold' },
-                { labelAr: 'عمولة المنصة 0%', value: '—', variant: 'promo' },
-                { labelAr: 'ضرائب', value: '0', variant: null },
-              ] as Array<{ labelAr: string; value: string; variant: 'hold' | 'promo' | null }>
-            ).map(({ labelAr, value, variant }) => (
+                { labelKey: 'breakdown.totalBookings', value: formatAmount(MOCK_SUMMARY.totalBookings), variant: null },
+                { labelKey: 'breakdown.escrowHeld', value: `−${formatAmount(Math.abs(MOCK_SUMMARY.escrowHeld))}`, variant: 'hold' },
+                { labelKey: 'breakdown.platformCommission', value: '—', variant: 'promo' },
+                { labelKey: 'breakdown.taxes', value: '0', variant: null },
+              ] as Array<{ labelKey: string; value: string; variant: 'hold' | 'promo' | null }>
+            ).map(({ labelKey, value, variant }) => (
               <div
-                key={labelAr}
+                key={labelKey}
                 style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: 14 }}
               >
-                {/* TODO: i18n — owner.payouts.breakdown.* */}
-                <span style={{ opacity: 0.75 }}>{labelAr}</span>
+                <span style={{ opacity: 0.75 }}>{t(labelKey as Parameters<typeof t>[0])}</span>
                 <span
                   className="num mono"
                   style={{
@@ -187,19 +186,17 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
             ))}
           </div>
 
-          {/* TODO: i18n — owner.payouts.instantTransfer */}
           <button
             className="btn cta-shimmer"
             style={{ background: 'var(--clay)', color: 'var(--foam)', width: '100%', marginTop: 18 }}
           >
-            تحويل فوري الآن (رسوم 0.5%)
+            {t('instantTransfer')}
           </button>
         </div>
 
         {/* Bank account + schedule card */}
         <div className="dash-card">
-          {/* TODO: i18n — owner.payouts.bankAccount */}
-          <h3>حساب البنك</h3>
+          <h3>{t('bankAccount')}</h3>
           <div className="sub">BANK ACCOUNT · DEFAULT</div>
 
           <div className="bank-card">
@@ -209,14 +206,11 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
           </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            {/* TODO: i18n — owner.payouts.editBank */}
-            <button className="btn btn-ghost" style={{ flex: 1, fontSize: 12 }}>تعديل</button>
-            {/* TODO: i18n — owner.payouts.addBank */}
-            <button className="btn btn-ghost" style={{ flex: 1, fontSize: 12 }}>+ حساب جديد</button>
+            <button className="btn btn-ghost" style={{ flex: 1, fontSize: 12 }}>{t('editBank')}</button>
+            <button className="btn btn-ghost" style={{ flex: 1, fontSize: 12 }}>{t('addBank')}</button>
           </div>
 
-          {/* TODO: i18n — owner.payouts.payoutSchedule */}
-          <h3 style={{ marginTop: 24 }}>دورة الدفع</h3>
+          <h3 style={{ marginTop: 24 }}>{t('payoutSchedule')}</h3>
           <div className="sub">PAYOUT SCHEDULE</div>
 
           <div className="schedule">
@@ -234,8 +228,7 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
                   className="sr-only"
                 />
                 <span className="radio" aria-hidden="true" />
-                {/* TODO: i18n — owner.payouts.schedule.{value} */}
-                {opt.labelAr}
+                {opt.label}
               </label>
             ))}
           </div>
@@ -244,19 +237,17 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
 
       {/* ── Payout history table ── */}
       <div className="dash-card" style={{ marginTop: 24 }}>
-        {/* TODO: i18n — owner.payouts.historyTitle */}
-        <h3>دفتر السجلات</h3>
+        <h3>{t('historyTitle')}</h3>
         <div className="sub">PAYOUT HISTORY · LAST 90 DAYS</div>
 
         <table className="dash-table">
           <thead>
             <tr>
-              {/* TODO: i18n — owner.payouts.table.* */}
-              <th>المرجع</th>
-              <th>التاريخ</th>
-              <th>المبلغ</th>
-              <th>الطريقة</th>
-              <th>الحالة</th>
+              <th>{t('table.ref')}</th>
+              <th>{t('table.date')}</th>
+              <th>{t('table.amount')}</th>
+              <th>{t('table.method')}</th>
+              <th>{t('table.status')}</th>
               <th></th>
             </tr>
           </thead>
@@ -281,25 +272,18 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
                 </td>
                 <td>
                   {row.status === 'paid' ? (
-                    <span className="pill-status ok">
-                      {/* TODO: i18n — owner.payouts.status.deposited */}
-                      ✓ DEPOSITED
-                    </span>
+                    <span className="pill-status ok">{t('status.deposited')}</span>
                   ) : (
-                    <span className="pill-status pending">
-                      {/* TODO: i18n — owner.payouts.status.scheduled */}
-                      ⏱ SCHEDULED
-                    </span>
+                    <span className="pill-status pending">{t('status.scheduled')}</span>
                   )}
                 </td>
                 <td>
-                  {/* TODO: i18n — owner.payouts.downloadPdf */}
                   <button
                     className="btn btn-ghost"
                     style={{ padding: '6px 12px', fontSize: 12 }}
                     aria-label={`تحميل إيصال PDF للدفعة ${row.ref}`}
                   >
-                    إيصال PDF
+                    {t('downloadPdf')}
                   </button>
                 </td>
               </tr>
@@ -310,8 +294,7 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
 
       {/* ── Escrow section ── */}
       <div className="dash-card" style={{ marginTop: 24 }}>
-        {/* TODO: i18n — owner.payouts.escrowTitle */}
-        <h3>الضمان النشط · ESCROW</h3>
+        <h3>{t('escrowTitle')}</h3>
         <div className="sub">
           {MOCK_ESCROW.length} BOOKINGS HELD · RELEASES AFTER 24H FROM TRIP END
         </div>
