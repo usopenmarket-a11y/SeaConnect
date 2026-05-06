@@ -3,13 +3,8 @@
 /**
  * Owner — new yacht listing form.
  *
- * The POST /api/v1/yachts/ endpoint does not exist yet — full owner
- * yacht CRUD is Sprint 6 scope. This page submits to that path; if the
- * server returns 404 or 405 we show a "coming soon" toast instead of
- * an error so the form stays usable for QA.
- *
- * Departure port options come from the public GET /api/v1/ports/ endpoint
- * (Sprint 1) which already supports `?region=EG` filtering.
+ * POST /api/v1/yachts/ — creates a draft yacht owned by the authenticated owner.
+ * Departure port options come from the public GET /api/v1/ports/ endpoint.
  */
 
 import * as React from 'react'
@@ -143,14 +138,9 @@ export function NewYachtPage({
       void created
     } catch (err) {
       if (err instanceof ApiError) {
-        if (err.status === 404 || err.status === 405) {
-          // Endpoint not yet implemented (Sprint 6). Show graceful info toast.
-          setGlobalMessage({ kind: 'info', text: t('comingSoon') })
-        } else {
-          setGlobalMessage({ kind: 'error', text: err.message })
-          if (err.field && err.field in (fieldErrors as object)) {
-            setFieldErrors({ [err.field]: err.message } as FieldErrors)
-          }
+        setGlobalMessage({ kind: 'error', text: err.message })
+        if (err.field && err.field in (fieldErrors as object)) {
+          setFieldErrors({ [err.field]: err.message } as FieldErrors)
         }
       } else if (err instanceof Error) {
         setGlobalMessage({ kind: 'error', text: err.message })
