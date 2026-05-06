@@ -197,3 +197,97 @@ class AvailabilityWriteSerializer(serializers.ModelSerializer):  # type: ignore[
             "notes": {"required": False, "allow_blank": True},
             "price_override": {"required": False, "allow_null": True},
         }
+
+
+# ---------------------------------------------------------------------------
+# Sprint 10A — Yacht owner CRUD serializers
+# ---------------------------------------------------------------------------
+
+
+class YachtCreateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Write serializer for ``POST /api/v1/yachts/`` (owner creates a yacht).
+
+    ``owner``, ``status``, and ``region`` are set server-side in the view —
+    never accepted from the request body.
+
+    ADR-018: ``currency`` must come from the departure port's region at
+    creation time.  The view resolves this via ``perform_create``; the field
+    is accepted here only as an optional override when the port's region has
+    no currency configured (edge-case safety valve — normally absent from the
+    request).
+    """
+
+    class Meta:
+        model = Yacht
+        fields = [
+            "name",
+            "name_ar",
+            "description",
+            "description_ar",
+            "capacity",
+            "price_per_day",
+            "currency",
+            "yacht_type",
+            "departure_port",
+        ]
+        extra_kwargs = {
+            "description": {"required": False, "allow_blank": True},
+            "description_ar": {"required": False, "allow_blank": True},
+            "currency": {"required": False},
+        }
+
+    def validate_capacity(self, value: int) -> int:
+        if value < 1:
+            raise serializers.ValidationError("capacity must be at least 1.")
+        return value
+
+    def validate_price_per_day(self, value):  # type: ignore[override]
+        if value <= 0:
+            raise serializers.ValidationError("price_per_day must be greater than zero.")
+        return value
+
+
+class YachtUpdateSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Write serializer for ``PATCH /api/v1/yachts/{id}/`` (owner partial update).
+
+    All fields optional — only provided fields are updated.  Owner can toggle
+    status between draft / active / inactive.  ``owner`` and ``region`` are
+    immutable after creation and not exposed here.
+    """
+
+    class Meta:
+        model = Yacht
+        fields = [
+            "name",
+            "name_ar",
+            "description",
+            "description_ar",
+            "capacity",
+            "price_per_day",
+            "currency",
+            "yacht_type",
+            "departure_port",
+            "status",
+        ]
+        extra_kwargs = {
+            "name": {"required": False},
+            "name_ar": {"required": False},
+            "description": {"required": False, "allow_blank": True},
+            "description_ar": {"required": False, "allow_blank": True},
+            "capacity": {"required": False},
+            "price_per_day": {"required": False},
+            "currency": {"required": False},
+            "yacht_type": {"required": False},
+            "departure_port": {"required": False},
+            "status": {"required": False},
+        }
+
+    def validate_capacity(self, value: int) -> int:
+        if value < 1:
+            raise serializers.ValidationError("capacity must be at least 1.")
+        return value
+
+    def validate_price_per_day(self, value):  # type: ignore[override]
+        if value <= 0:
+            raise serializers.ValidationError("price_per_day must be greater than zero.")
+        return value

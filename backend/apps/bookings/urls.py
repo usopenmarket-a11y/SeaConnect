@@ -8,17 +8,17 @@ from .views import (
     BookingDetailView,
     BookingListCreateView,
     YachtAvailabilityView,
-    YachtDetailView,
-    YachtListView,
+    YachtListCreateView,
     YachtMonthAvailabilityView,
+    YachtRetrieveUpdateView,
 )
 
 app_name = "bookings"
 
 urlpatterns = [
-    # Sprint 2 — public yachts
-    path("yachts/", YachtListView.as_view(), name="yacht-list"),
-    path("yachts/<uuid:id>/", YachtDetailView.as_view(), name="yacht-detail"),
+    # Sprint 2 / Sprint 10A — yachts (public GET, owner POST/PATCH)
+    path("yachts/", YachtListCreateView.as_view(), name="yacht-list"),
+    path("yachts/<uuid:id>/", YachtRetrieveUpdateView.as_view(), name="yacht-detail"),
     path(
         "yachts/<uuid:id>/availability/",
         YachtAvailabilityView.as_view(),

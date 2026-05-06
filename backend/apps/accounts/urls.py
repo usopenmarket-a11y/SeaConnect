@@ -1,7 +1,18 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .views import AdminUserListView, LoginView, LogoutView, RegisterView, UserMeView
+from .views import (
+    AdminKYCApproveView,
+    AdminKYCListView,
+    AdminKYCRejectView,
+    AdminUserListView,
+    LoginView,
+    LogoutView,
+    OwnerProfileSubmitView,
+    OwnerProfileView,
+    RegisterView,
+    UserMeView,
+)
 
 app_name = "accounts"
 
@@ -15,4 +26,11 @@ urlpatterns = [
     path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
     path("users/me/", UserMeView.as_view(), name="users-me"),
     path("admin/users/", AdminUserListView.as_view(), name="admin-user-list"),
+    # Sprint 10C — owner KYC profile
+    path("accounts/owner-profile/", OwnerProfileView.as_view(), name="owner-profile"),
+    path("accounts/owner-profile/submit/", OwnerProfileSubmitView.as_view(), name="owner-profile-submit"),
+    # Sprint 10C — admin KYC review queue
+    path("admin/kyc/", AdminKYCListView.as_view(), name="admin-kyc-list"),
+    path("admin/kyc/<uuid:id>/approve/", AdminKYCApproveView.as_view(), name="admin-kyc-approve"),
+    path("admin/kyc/<uuid:id>/reject/", AdminKYCRejectView.as_view(), name="admin-kyc-reject"),
 ]

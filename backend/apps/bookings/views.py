@@ -29,32 +29,54 @@ from apps.core.models import DeparturePort
 from apps.core.pagination import SeaConnectCursorPagination
 
 from .filters import YachtFilter
-from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht
+from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtStatus
+from .permissions import IsOwnerRole, IsYachtOwner
 from .serializers import (
     AvailabilitySerializer,
     AvailabilityWriteSerializer,
     BookingCreateSerializer,
     BookingDetailSerializer,
     BookingListSerializer,
+    YachtCreateSerializer,
     YachtDetailSerializer,
     YachtListSerializer,
+    YachtUpdateSerializer,
 )
 from .services import BookingService, BookingTransitionError
 
 
 # ---------------------------------------------------------------------------
-# Sprint 2 — Yachts (public)
+# Sprint 2 / Sprint 10A — Yachts (public GET, owner POST)
 # ---------------------------------------------------------------------------
 
 
-class YachtListView(generics.ListAPIView):  # type: ignore[type-arg]
-    permission_classes = [AllowAny]
-    serializer_class = YachtListSerializer
+class YachtListCreateView(generics.ListCreateAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/yachts/ — public paginated list.
+    POST /api/v1/yachts/ — authenticated owner creates a new yacht (Sprint 10A).
+
+    Permission dispatch:
+      GET  — AllowAny (public listing, ADR-003 SSR requires no auth).
+      POST — IsAuthenticated + IsOwnerRole (role check in permission class,
+             never inline).
+
+    N+1 prevention: both methods use select_related + prefetch_related.
+    """
+
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = YachtFilter
     ordering_fields = ["price_per_day", "created_at", "capacity"]
     ordering = ["-created_at"]
 
+    def get_permissions(self):  # type: ignore[override]
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsOwnerRole()]
+        return [AllowAny()]
+
+    def get_serializer_class(self):  # type: ignore[override]
+        if self.request.method == "POST":
+            return YachtCreateSerializer
+        return YachtListSerializer
+
     def get_queryset(self):  # type: ignore[override]
         return (
             Yacht.objects.filter(status="active", is_deleted=False)
@@ -62,18 +84,123 @@ class YachtListView(generics.ListAPIView):  # type: ignore[type-arg]
             .prefetch_related("media")
         )
 
+    def perform_create(self, serializer):  # type: ignore[override]
+        """Set owner + status server-side; resolve currency from departure port region.
 
-class YachtDetailView(generics.RetrieveAPIView):  # type: ignore[type-arg]
-    permission_classes = [AllowAny]
-    serializer_class = YachtDetailSerializer
+        ADR-018: currency is sourced from the departure port's region, not from
+        the request body.  If the departure port has no region configured the
+        request-supplied currency field (validated by the serializer) is used as
+        a fallback.
+        """
+        departure_port = serializer.validated_data.get("departure_port")
+        currency = serializer.validated_data.get("currency", "")
+
+        # Attempt to resolve currency from the port's region (ADR-018).
+        if departure_port and hasattr(departure_port, "region") and departure_port.region_id:
+            region = departure_port.region
+            currency = region.currency
+        elif not currency:
+            # Last-resort: owner's own region currency.
+            owner_region = getattr(self.request.user, "region", None)
+            if owner_region:
+                currency = owner_region.currency
+
+        # Resolve region from departure port, fall back to owner's region.
+        region = None
+        if departure_port and departure_port.region_id:
+            region = departure_port.region
+        if region is None:
+            region = getattr(self.request.user, "region", None)
+
+        serializer.save(
+            owner=self.request.user,
+            status=YachtStatus.DRAFT,
+            currency=currency,
+            region=region,
+        )
+
+    def create(self, request: Request, *args, **kwargs) -> Response:  # type: ignore[override]
+        """POST creates the yacht and returns the full YachtDetailSerializer (201)."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        yacht = (
+            Yacht.objects.select_related("departure_port", "region", "owner")
+            .prefetch_related("media")
+            .get(id=serializer.instance.id)
+        )
+        return Response(
+            YachtDetailSerializer(yacht).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class YachtRetrieveUpdateView(generics.RetrieveUpdateAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/yachts/{id}/ — public detail.
+    PATCH /api/v1/yachts/{id}/ — authenticated owner partial update (Sprint 10A).
+
+    PUT is disabled: only PATCH (partial update) is supported for updates.
+
+    Permission dispatch:
+      GET   — AllowAny.
+      PATCH — IsAuthenticated + IsYachtOwner (object-level: only the yacht's
+              owner may update it; enforced via check_object_permissions).
+    """
+
+    http_method_names = ["get", "patch", "head", "options"]
     lookup_field = "id"
 
+    def get_permissions(self):  # type: ignore[override]
+        if self.request.method == "PATCH":
+            return [IsAuthenticated(), IsYachtOwner()]
+        return [AllowAny()]
+
+    def get_serializer_class(self):  # type: ignore[override]
+        if self.request.method == "PATCH":
+            return YachtUpdateSerializer
+        return YachtDetailSerializer
+
     def get_queryset(self):  # type: ignore[override]
+        """PATCH queries ALL non-deleted yachts (owner can update draft/inactive too).
+        GET queries only active, non-deleted yachts (public visibility).
+        """
+        if self.request.method == "PATCH":
+            return (
+                Yacht.objects.filter(is_deleted=False)
+                .select_related("departure_port", "region", "owner")
+                .prefetch_related("media")
+            )
         return (
             Yacht.objects.filter(status="active", is_deleted=False)
             .select_related("departure_port", "region", "owner")
             .prefetch_related("media")
         )
+
+    def get_object(self):  # type: ignore[override]
+        obj = super().get_object()
+        # Triggers IsYachtOwner.has_object_permission for PATCH.
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+    def partial_update(self, request: Request, *args, **kwargs) -> Response:  # type: ignore[override]
+        """PATCH — partial update; returns full YachtDetailSerializer (200)."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        # Refetch with all relations so the response is fully populated.
+        yacht = (
+            Yacht.objects.select_related("departure_port", "region", "owner")
+            .prefetch_related("media")
+            .get(id=instance.id)
+        )
+        return Response(YachtDetailSerializer(yacht).data, status=status.HTTP_200_OK)
+
+
+# Keep legacy aliases so any other internal code referencing the old names
+# does not break during the transition period.
+YachtListView = YachtListCreateView
+YachtDetailView = YachtRetrieveUpdateView
 
 
 # ---------------------------------------------------------------------------

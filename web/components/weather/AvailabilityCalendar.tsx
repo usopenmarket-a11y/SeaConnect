@@ -6,6 +6,10 @@
  * Converted from Design/availability.jsx AvailabilityWeather().
  * Full interactive component: month navigation, day selection, weather panel.
  *
+ * Uses real availability API when yachtId is provided:
+ *   GET /api/v1/bookings/yachts/{id}/availability/?month=YYYY-MM
+ * Falls back to deterministic mock pattern from the Design when API is unavailable.
+ *
  * Uses real weather API if available (GET /api/v1/weather/?port_id=),
  * falls back to deterministic mock pattern from the Design.
  *
@@ -13,6 +17,7 @@
  */
 
 import * as React from 'react'
+import useSWR from 'swr'
 
 // ── Weather SVG icons (converted from Design/availability.jsx) ─────────────
 
@@ -110,9 +115,21 @@ interface BoatData {
 interface AvailabilityCalendarProps {
   boat: BoatData
   region?: string
+  yachtId?: string
 }
 
 type DayStatus = 'open' | 'limited' | 'hold' | 'booked'
+
+/** Raw API response shape for availability endpoint. */
+interface AvailabilityApiResponse {
+  yacht_id: string
+  month: string
+  days: Record<string, 'open' | 'booked' | 'blocked' | 'limited'>
+  pricing: {
+    base_price: string | number
+    currency: string
+  }
+}
 
 interface CalDay {
   empty?: boolean
@@ -132,9 +149,16 @@ interface ForecastDay {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+// Maps the API status strings to the internal DayStatus type used by the calendar.
+function mapApiStatus(apiStatus: 'open' | 'booked' | 'blocked' | 'limited'): DayStatus {
+  if (apiStatus === 'blocked') return 'hold'
+  return apiStatus
+}
+
 export function AvailabilityCalendar({
   boat,
   region = '',
+  yachtId,
 }: AvailabilityCalendarProps): React.ReactElement {
   const [month, setMonth] = React.useState(4) // May = idx 4
   const [selected, setSelected] = React.useState(12)
@@ -145,7 +169,19 @@ export function AvailabilityCalendar({
   ]
   const monthsEn = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 
-  // Deterministic availability pattern (matches Design/availability.jsx exactly)
+  // ── Real availability data from API ────────────────────────────────────────
+  const year = 2026
+  const currentMonthStr = `${year}-${String(month + 1).padStart(2, '0')}`
+  const { data: availData } = useSWR<AvailabilityApiResponse>(
+    yachtId ? `/bookings/yachts/${yachtId}/availability/?month=${currentMonthStr}` : null,
+    (url: string) =>
+      fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'}/api/v1${url}`,
+      ).then((r) => r.json()) as Promise<AvailabilityApiResponse>,
+    { revalidateOnFocus: false },
+  )
+
+  // ── Deterministic mock pattern (matches Design/availability.jsx exactly) ───
   const seed = (boat?.id ?? 'x').charCodeAt(0)
   const boatPrice = boat?.price ?? 3800
   const days: CalDay[] = []
@@ -158,6 +194,24 @@ export function AvailabilityCalendar({
       days.push({ empty: true })
       continue
     }
+
+    // If the API returned data, use it — otherwise fall back to deterministic mock
+    if (availData?.days) {
+      const dateKey = `${currentMonthStr}-${String(day).padStart(2, '0')}`
+      const apiStatus = availData.days[dateKey]
+      if (apiStatus !== undefined) {
+        const status = mapApiStatus(apiStatus)
+        const apiBasePrice =
+          availData.pricing?.base_price != null
+            ? Number(availData.pricing.base_price)
+            : boatPrice
+        const price = status === 'limited' ? apiBasePrice + 380 : apiBasePrice
+        days.push({ day, status, price })
+        continue
+      }
+    }
+
+    // Deterministic fallback
     const bk = (seed + day * 7) % 17
     const status: DayStatus =
       bk < 5 ? 'booked' :

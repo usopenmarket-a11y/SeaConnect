@@ -636,3 +636,102 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:3010/ar/yachts  # → 20
 - accounts app: 50 tests — model layer + serializer layer + HTTP layer; known gap: OAuth (Google/Apple) flows not yet testable without provider mock
 - booking state machine: fully covered in existing tests; no gaps identified
 - Known untested apps: analytics, notifications (no endpoints spec'd yet in API spec)
+
+---
+
+## HANDOFF-2026-05-06-001
+
+**Status:** DONE
+**From:** notifications-agent
+**To:** sprint-9 agents, devops-agent
+**Sprint:** 9A
+**Feature:** FCM push notification — real Firebase Admin SDK integration
+
+### What Was Completed
+- `backend/requirements/base.txt` — added `firebase-admin==6.5.0`
+- `backend/apps/notifications/tasks.py` — replaced the Sprint 8 TODO stub with a real FCM implementation. Added `_get_firebase_app()` singleton (lazy-initialised once per Celery worker process). `send_push_notification` now calls `firebase_admin.messaging.send()` when Firebase is configured; falls back to dev-mode (logs + marks SENT) when `FIREBASE_CREDENTIALS_JSON` is absent. FCM errors do NOT retry — stale tokens never succeed on retry.
+- `backend/.env.example` — created with all required env vars documented, including `FIREBASE_CREDENTIALS_JSON` with base64-encoding instructions.
+- `backend/apps/notifications/tests/test_fcm_task.py` — 14 pytest tests across 5 classes. `firebase_admin` is fully mocked via `sys.modules` injection so the suite runs without the package installed. Covers: dev-mode (no Firebase config), happy path, FCM exception, missing token, idempotency guard.
+
+### Contract
+- `FIREBASE_CREDENTIALS_JSON` env var must be a base64-encoded Firebase service account JSON string: `base64 -w 0 service-account.json`
+- The `_get_firebase_app()` helper is module-private — call `send_push_notification.delay(str(notif.id))` through `apps.notifications.services.send_notification()`, never directly from views.
+- FCM errors are NOT retried. If a token goes stale, the notification is marked `failed` with the error detail in `failure_reason`. Token refresh is a separate concern (outside this sprint).
+
+### How to Test
+```bash
+# Inside Docker stack:
+docker compose exec api python manage.py check          # 0 issues
+docker compose exec api pytest apps/notifications/ -v  # 14 passed
+
+# With real Firebase credentials:
+# 1. Download service account JSON from Firebase Console.
+# 2. export FIREBASE_CREDENTIALS_JSON=$(base64 -w 0 service-account.json)
+# 3. Set the env var in backend/.env, restart the Celery worker.
+# 4. Trigger a booking.confirmed event — the owner's push should arrive on device.
+```
+
+### Build Verification
+- `python manage.py check` — PASS, 0 issues (run in Docker)
+- `pytest apps/notifications/ -v` — PASS, 14/14 tests (run in Docker)
+
+---
+
+## HANDOFF-2026-05-06-002
+
+**Status:** READY
+**From:** django-model-agent
+**To:** api-endpoint-agent, nextjs-page-agent
+**Sprint:** 10C
+**Feature:** BoatOwnerProfile KYC model, serializers, views, and tests
+
+### What Was Completed
+- `BoatOwnerProfile` and `KYCDocument` models added to `backend/apps/accounts/models.py`. `KYCStatus` TextChoices added. Both tables use UUID PKs, inherit `TimeStampedModel`, and are soft-deletable (`is_deleted`).
+- `backend/apps/accounts/migrations/0002_alter_user_groups_boatownerprofile_kycdocument_and_more.py` — generated and applied. Creates `accounts_boat_owner_profile` and `accounts_kyc_document` tables with index on `kyc_status`.
+- Serializers added to `backend/apps/accounts/serializers.py`: `KYCDocumentSerializer`, `BoatOwnerProfileSerializer` (owner read), `AdminKYCSerializer` (admin read with owner email+name), `AdminKYCRejectSerializer` (write — rejection_reason validation).
+- Views added to `backend/apps/accounts/views.py`: `OwnerProfileView` (GET — lazy create), `OwnerProfileSubmitView` (POST — NOT_STARTED/IN_PROGRESS → SUBMITTED), `AdminKYCListView` (GET — submitted only, cursor-paginated), `AdminKYCApproveView` (POST), `AdminKYCRejectView` (POST with reason).
+- URLs wired in `backend/apps/accounts/urls.py` under `/api/v1/`.
+- Admin registered in `backend/apps/accounts/admin.py`: `BoatOwnerProfileAdmin` (with `KYCDocumentInline` and bulk approve action), `KYCDocumentAdmin`.
+- `backend/apps/accounts/tests/test_kyc.py` — 25 tests across 5 classes. All 25 PASS.
+
+### Contract for api-endpoint-agent
+- `GET  /api/v1/accounts/owner-profile/` — requires JWT + owner role; returns `BoatOwnerProfileSerializer`; creates profile lazily on first call.
+- `POST /api/v1/accounts/owner-profile/submit/` — requires JWT + owner role; transitions NOT_STARTED/IN_PROGRESS → SUBMITTED; returns 409 for invalid transitions.
+- `GET  /api/v1/admin/kyc/` — requires JWT + role==admin; cursor-paginated list of SUBMITTED profiles; returns `AdminKYCSerializer`.
+- `POST /api/v1/admin/kyc/{id}/approve/` — requires JWT + role==admin; transitions SUBMITTED → APPROVED; returns updated `AdminKYCSerializer`.
+- `POST /api/v1/admin/kyc/{id}/reject/` — requires JWT + role==admin; body `{rejection_reason: string (min 10 chars)}`; transitions SUBMITTED → REJECTED; returns updated `AdminKYCSerializer`.
+- All endpoints return standard error envelope `{error: {code, message}}` on failure.
+
+### Contract for nextjs-page-agent
+- The onboarding wizard at `web/app/[locale]/owner/onboarding/PageClient.tsx` should POST to `/api/v1/accounts/owner-profile/submit/` on the final step.
+- The admin KYC queue page should poll `GET /api/v1/admin/kyc/` (cursor-paginated) and call approve/reject endpoints.
+- `completed_steps` and `total_steps` fields are available on `BoatOwnerProfileSerializer` for progress indicators.
+
+### How to Test
+```bash
+# System check:
+docker compose exec api python manage.py check   # 0 issues
+
+# KYC tests:
+docker compose exec api pytest apps/accounts/tests/test_kyc.py -v
+# 25 passed
+
+# Total collection:
+docker compose exec api pytest --collect-only   # 357 tests collected
+
+# Manual smoke (owner role):
+ACCESS=$(curl -s -X POST http://localhost:8000/api/v1/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"owner@seaconnect.local","password":"ownerpass123!"}' | jq -r .access)
+curl -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/accounts/owner-profile/
+# → 200, {kyc_status: "not_started", completed_steps: 0, total_steps: 6, ...}
+
+curl -X POST -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/accounts/owner-profile/submit/
+# → 200, {kyc_status: "submitted", ...}
+```
+
+### Build Verification (this session)
+- `python manage.py check` — PASS, 0 issues (run in Docker)
+- `pytest apps/accounts/tests/test_kyc.py -v` — PASS, 25/25 tests (run in Docker)
+- `pytest --collect-only` — 357 tests collected (269 prior + 25 new + 63 from intermediate sprints)
+- All modified Python files pass Django system check

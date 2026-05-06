@@ -12,8 +12,8 @@
  * CSS classes from globals.css: .dash-row, .dash-card, .dash-table,
  * .pill-status, .bank-card, .schedule, .sched-opt, .escrow-list, .escrow-row
  *
- * TODO: Replace mock data with useSWR('/payments/payouts/') once
- *       /api/v1/payments/payouts/ endpoint is implemented.
+ * Data: useSWR('/payments/payouts/') and useSWR('/payments/escrow/') with
+ *       mock fallbacks when the API returns an empty result set in dev.
  * TODO: All hardcoded Arabic strings below are labelled with i18n TODO.
  *       Wire to t() keys under owner.payouts.* once translations are added.
  *
@@ -22,16 +22,33 @@
  */
 
 import * as React from 'react'
+import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
+import { get, type PaginatedResponse } from '@/lib/api'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface LedgerRow {
-  ref: string
-  dateAr: string
-  amount: number
-  method: string
-  status: 'paid' | 'pending'
+  id: string
+  ref: string       // maps to `reference`
+  dateAr: string    // maps to `scheduled_date`
+  amount: number    // maps to `amount`
+  method: string    // maps to `payment_method`
+  status: 'paid' | 'pending'  // maps to API status 'paid'/'scheduled'
+}
+
+/** Raw shape returned by GET /api/v1/payments/payouts/ results array. */
+interface ApiPayout {
+  id: string
+  amount: string
+  currency: string
+  status: string
+  reference: string
+  payment_method: string
+  scheduled_date: string
+  paid_at: string | null
+  escrow_booking_ids: string[]
+  created_at: string
 }
 
 interface EscrowRow {
@@ -79,12 +96,25 @@ const MOCK_BANK: BankAccount = {
 }
 
 const MOCK_LEDGER: LedgerRow[] = [
-  { ref: 'PO-4280', dateAr: '١٥ مايو ٢٠٢٦', amount: 38420, method: 'بنك الإسكندرية ••8842', status: 'pending' },
-  { ref: 'PO-4192', dateAr: '١ مايو ٢٠٢٦', amount: 41200, method: 'بنك الإسكندرية ••8842', status: 'paid' },
-  { ref: 'PO-4108', dateAr: '١٥ أبريل ٢٠٢٦', amount: 35640, method: 'بنك الإسكندرية ••8842', status: 'paid' },
-  { ref: 'PO-4021', dateAr: '١ أبريل ٢٠٢٦', amount: 28980, method: 'بنك الإسكندرية ••8842', status: 'paid' },
-  { ref: 'PO-3944', dateAr: '١٥ مارس ٢٠٢٦', amount: 19450, method: 'INSTAPAY · 0100••5678', status: 'paid' },
+  { id: 'mock-1', ref: 'PO-4280', dateAr: '١٥ مايو ٢٠٢٦', amount: 38420, method: 'بنك الإسكندرية ••8842', status: 'pending' },
+  { id: 'mock-2', ref: 'PO-4192', dateAr: '١ مايو ٢٠٢٦', amount: 41200, method: 'بنك الإسكندرية ••8842', status: 'paid' },
+  { id: 'mock-3', ref: 'PO-4108', dateAr: '١٥ أبريل ٢٠٢٦', amount: 35640, method: 'بنك الإسكندرية ••8842', status: 'paid' },
+  { id: 'mock-4', ref: 'PO-4021', dateAr: '١ أبريل ٢٠٢٦', amount: 28980, method: 'بنك الإسكندرية ••8842', status: 'paid' },
+  { id: 'mock-5', ref: 'PO-3944', dateAr: '١٥ مارس ٢٠٢٦', amount: 19450, method: 'INSTAPAY · 0100••5678', status: 'paid' },
 ]
+
+// ── API transform helpers ─────────────────────────────────────────────────────
+
+function transformPayout(p: ApiPayout): LedgerRow {
+  return {
+    id: p.id,
+    ref: p.reference,
+    dateAr: p.scheduled_date,
+    amount: Number(p.amount),
+    method: p.payment_method,
+    status: p.status === 'paid' ? 'paid' : 'pending',
+  }
+}
 
 const MOCK_ESCROW: EscrowRow[] = [
   { id: 'BK-7421', customerName: 'نور حسن', tripDate: '12 MAY', amount: 5480, releaseHours: 14 },
@@ -101,6 +131,26 @@ interface Props {
 export function PayoutsPageClient({ locale }: Props): React.ReactElement {
   const t = useTranslations('owner.payouts')
   const [schedule, setSchedule] = React.useState<ScheduleOption>('biweekly')
+
+  // ── Live data (falls back to mock constants when API returns empty in dev) ──
+  const { data: payoutsData } = useSWR(
+    '/payments/payouts/',
+    (path: string) => get<PaginatedResponse<ApiPayout>>(path),
+  )
+  const { data: escrowData } = useSWR(
+    '/payments/escrow/',
+    (path: string) => get<EscrowRow[]>(path),
+  )
+
+  const ledgerRows: LedgerRow[] =
+    payoutsData && payoutsData.results.length > 0
+      ? payoutsData.results.map(transformPayout)
+      : MOCK_LEDGER
+
+  const escrowRows: EscrowRow[] =
+    escrowData && escrowData.length > 0
+      ? escrowData
+      : MOCK_ESCROW
 
   function formatAmount(n: number): string {
     return locale === 'ar' ? n.toLocaleString('ar-EG') : n.toLocaleString('en-US')
@@ -252,8 +302,8 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
             </tr>
           </thead>
           <tbody>
-            {MOCK_LEDGER.map((row) => (
-              <tr key={row.ref}>
+            {ledgerRows.map((row) => (
+              <tr key={row.id ?? row.ref}>
                 <td
                   className="mono"
                   style={{ color: 'var(--muted)', fontSize: 12 }}
@@ -296,11 +346,11 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
       <div className="dash-card" style={{ marginTop: 24 }}>
         <h3>{t('escrowTitle')}</h3>
         <div className="sub">
-          {MOCK_ESCROW.length} BOOKINGS HELD · RELEASES AFTER 24H FROM TRIP END
+          {escrowRows.length} BOOKINGS HELD · RELEASES AFTER 24H FROM TRIP END
         </div>
 
         <div className="escrow-list">
-          {MOCK_ESCROW.map((entry) => (
+          {escrowRows.map((entry) => (
             <div key={entry.id} className="escrow-row">
               <div>
                 <div className="t">

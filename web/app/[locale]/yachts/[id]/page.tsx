@@ -336,6 +336,7 @@ export default async function YachtDetailPage({
               name: name,
             }}
             region={(yacht.departure_port?.region?.name_en ?? 'hurghada').toLowerCase()}
+            yachtId={yacht.id}
           />
 
           {/* Reviews */}

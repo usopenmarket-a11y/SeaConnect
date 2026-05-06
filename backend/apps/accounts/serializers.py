@@ -12,7 +12,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import User, UserRole
+from .models import BoatOwnerProfile, KYCDocument, User, UserRole
 
 
 class UserSerializer(serializers.ModelSerializer[User]):
@@ -163,6 +163,113 @@ class AdminUserSerializer(serializers.ModelSerializer[User]):
         if obj.region_id and obj.region:
             return obj.region.name_en
         return None
+
+
+# ---------------------------------------------------------------------------
+# Sprint 10C: BoatOwnerProfile serializers
+# ---------------------------------------------------------------------------
+
+
+class KYCDocumentSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read serializer for KYC document uploads."""
+
+    class Meta:
+        model = KYCDocument
+        fields = ["id", "doc_type", "file", "uploaded_at"]
+        read_only_fields = fields
+
+
+class BoatOwnerProfileSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read serializer for the owner's own BoatOwnerProfile.
+
+    Exposes the full KYC state, per-step verification booleans, and
+    computed progress properties.  All fields are read-only from the
+    owner's perspective — the admin uses AdminKYCSerializer for writes.
+    """
+
+    completed_steps = serializers.IntegerField(read_only=True)
+    total_steps = serializers.IntegerField(read_only=True)
+    documents = KYCDocumentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BoatOwnerProfile
+        fields = [
+            "id",
+            "kyc_status",
+            "national_id_verified",
+            "vessel_docs_verified",
+            "captain_license_verified",
+            "insurance_verified",
+            "inspection_passed",
+            "bank_account_configured",
+            "completed_steps",
+            "total_steps",
+            "reviewed_at",
+            "rejection_reason",
+            "documents",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "kyc_status",
+            "national_id_verified",
+            "vessel_docs_verified",
+            "captain_license_verified",
+            "insurance_verified",
+            "inspection_passed",
+            "bank_account_configured",
+            "reviewed_at",
+            "rejection_reason",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class AdminKYCSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read serializer for the admin KYC queue.
+
+    Includes the owner's email and name so the admin portal can display
+    identity without a separate user lookup.
+    """
+
+    owner_email = serializers.EmailField(source="user.email", read_only=True)
+    owner_name = serializers.CharField(source="user.full_name", read_only=True)
+    completed_steps = serializers.IntegerField(read_only=True)
+    total_steps = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = BoatOwnerProfile
+        fields = [
+            "id",
+            "owner_email",
+            "owner_name",
+            "kyc_status",
+            "national_id_verified",
+            "vessel_docs_verified",
+            "captain_license_verified",
+            "insurance_verified",
+            "inspection_passed",
+            "bank_account_configured",
+            "completed_steps",
+            "total_steps",
+            "reviewed_at",
+            "rejection_reason",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+
+class AdminKYCRejectSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Write serializer for the admin reject action.
+
+    Only accepts ``rejection_reason`` — the status transition is handled
+    by the view, never delegated to a serializer.
+    """
+
+    rejection_reason = serializers.CharField(
+        min_length=10,
+        help_text="Required rejection reason (minimum 10 characters).",
+    )
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

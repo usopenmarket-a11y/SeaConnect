@@ -8,9 +8,14 @@ ADR compliance:
 The User model is the single source of truth for authentication.
 Role-specific profile data (BoatOwnerProfile, VendorProfile) lives in
 separate related models to keep this table lean.
+
+Sprint 10C additions:
+  BoatOwnerProfile — KYC state + per-step verification booleans (one-to-one with User)
+  KYCDocument      — uploaded verification documents linked to BoatOwnerProfile
 """
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
@@ -152,3 +157,130 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip() or self.email
+
+
+# ---------------------------------------------------------------------------
+# Sprint 10C: BoatOwnerProfile + KYCDocument
+# ---------------------------------------------------------------------------
+
+
+class KYCStatus(models.TextChoices):
+    NOT_STARTED = "not_started", "Not started"
+    IN_PROGRESS = "in_progress", "In progress"
+    SUBMITTED = "submitted", "Submitted"
+    APPROVED = "approved", "Approved"
+    REJECTED = "rejected", "Rejected"
+
+
+class BoatOwnerProfile(TimeStampedModel):
+    """KYC and payout setup for boat owners.
+
+    One-to-one with User (owner role only). Created lazily on first
+    access to the owner portal.
+
+    ADR compliance:
+      ADR-001 — UUID PK
+      ADR-012 — state transitions emitted as OwnerProfileEvent (append-only)
+      ADR-018 — no currency hardcoding (currency resolution deferred to payout layer)
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owner_profile",
+    )
+    kyc_status = models.CharField(
+        max_length=20,
+        choices=KYCStatus.choices,
+        default=KYCStatus.NOT_STARTED,
+        db_index=True,
+    )
+    # Step 1 — Identity
+    national_id_verified = models.BooleanField(default=False)
+    # Step 2 — Vessel documents
+    vessel_docs_verified = models.BooleanField(default=False)
+    # Step 3 — Captain licence
+    captain_license_verified = models.BooleanField(default=False)
+    # Step 4 — Insurance
+    insurance_verified = models.BooleanField(default=False)
+    # Step 5 — Physical inspection
+    inspection_passed = models.BooleanField(default=False)
+    # Step 6 — Bank / payout configuration
+    bank_account_configured = models.BooleanField(default=False)
+
+    # Admin review fields
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="kyc_reviews",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+
+    # Soft-delete so the admin portal can archive without destroying history
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "accounts_boat_owner_profile"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["kyc_status"], name="idx_owner_profile_kyc_status"),
+        ]
+
+    def __str__(self) -> str:
+        return f"OwnerProfile({self.user_id}, {self.kyc_status})"
+
+    @property
+    def completed_steps(self) -> int:
+        """Count how many of the 6 KYC steps have been completed."""
+        return sum([
+            self.national_id_verified,
+            self.vessel_docs_verified,
+            self.captain_license_verified,
+            self.insurance_verified,
+            self.inspection_passed,
+            self.bank_account_configured,
+        ])
+
+    @property
+    def total_steps(self) -> int:
+        return 6
+
+
+class KYCDocument(TimeStampedModel):
+    """Uploaded verification documents for a BoatOwnerProfile.
+
+    Each file is stored via Django's default file storage (MinIO in dev,
+    Cloudflare R2 in production). The ``doc_type`` field is a string tag
+    that matches the onboarding wizard step identifier.
+
+    ADR-001: UUID PK; ORM only.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner_profile = models.ForeignKey(
+        BoatOwnerProfile,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+    doc_type = models.CharField(
+        max_length=50,
+        help_text=(
+            "Matches an onboarding step: 'national_id', 'vessel_docs', "
+            "'captain_license', 'insurance', 'inspection', 'bank_account'."
+        ),
+    )
+    file = models.FileField(upload_to="kyc/")
+    # uploaded_at is redundant with TimeStampedModel.created_at but kept
+    # explicitly for clarity and backwards-compat with the front-end spec.
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "accounts_kyc_document"
+        ordering = ["created_at"]
+
+    def __str__(self) -> str:
+        return f"KYCDoc({self.doc_type}, profile={self.owner_profile_id})"
