@@ -1,12 +1,14 @@
-"""Marketplace views — Sprint 5."""
+"""Marketplace views — Sprint 5 + Sprint 11D vendor product management."""
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory
+from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory, ProductStatus, VendorProfile
+from .permissions import IsProductOwner, IsVendorProfileOwner, IsVendorRole
 from .serializers import (
     CartItemSerializer,
     CartSerializer,
@@ -14,6 +16,9 @@ from .serializers import (
     ProductCategorySerializer,
     ProductDetailSerializer,
     ProductListSerializer,
+    ProductWriteSerializer,
+    VendorProfileReadSerializer,
+    VendorProfileWriteSerializer,
 )
 
 
@@ -157,3 +162,147 @@ class OrderDetailView(generics.RetrieveAPIView):
             Order.objects.filter(customer=self.request.user)
             .prefetch_related("items__product")
         )
+
+
+# ---------------------------------------------------------------------------
+# Sprint 11D — Vendor product management views
+# ---------------------------------------------------------------------------
+
+
+class VendorProductListCreateView(generics.ListCreateAPIView):
+    """GET (public list) + POST (vendor create) on /api/v1/marketplace/products/.
+
+    GET is public (AllowAny) — returns active products from verified vendors.
+    POST requires IsVendorRole — creates a product owned by request.user's
+    VendorProfile. The product starts in DRAFT status; the vendor must
+    explicitly activate it.
+
+    ADR-013: CursorPagination is applied globally via DEFAULT_PAGINATION_CLASS.
+    No N+1: select_related covers vendor + category on every queryset.
+    """
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsVendorRole()]
+        return [AllowAny()]
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return ProductWriteSerializer
+        return ProductListSerializer
+
+    def get_queryset(self):
+        qs = (
+            Product.objects.filter(status=ProductStatus.ACTIVE, vendor__is_verified=True)
+            .select_related("vendor", "category")
+            .order_by("-created_at")
+        )
+        category_slug = self.request.query_params.get("category")
+        if category_slug:
+            qs = qs.filter(category__slug=category_slug)
+        return qs
+
+    def perform_create(self, serializer):
+        """Attach the authenticated vendor's VendorProfile to the new product."""
+        vendor_profile = get_object_or_404(VendorProfile, user=self.request.user)
+        serializer.save(vendor=vendor_profile, status=ProductStatus.DRAFT)
+
+
+class VendorProductDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """GET (public detail) + PATCH (vendor update) + DELETE (vendor soft-delete).
+
+    GET is public — returns any active product from a verified vendor.
+    PATCH/DELETE require IsVendorRole + IsProductOwner.
+
+    Soft-delete sets status=DISCONTINUED rather than removing the DB row,
+    preserving OrderItem history (foreign key integrity).
+    """
+
+    lookup_field = "id"
+
+    def get_permissions(self):
+        if self.request.method in ("PATCH", "PUT", "DELETE"):
+            return [IsAuthenticated(), IsVendorRole(), IsProductOwner()]
+        return [AllowAny()]
+
+    def get_serializer_class(self):
+        if self.request.method in ("PATCH", "PUT"):
+            return ProductWriteSerializer
+        return ProductDetailSerializer
+
+    def get_queryset(self):
+        if self.request.method in ("PATCH", "PUT", "DELETE"):
+            # Vendors can act on their own products regardless of status.
+            return (
+                Product.objects.select_related("vendor", "category")
+                .filter(vendor__is_verified=True)
+            )
+        # Public GET — active products only.
+        return (
+            Product.objects.filter(status=ProductStatus.ACTIVE, vendor__is_verified=True)
+            .select_related("vendor", "category")
+        )
+
+    def perform_destroy(self, instance):
+        """Soft-delete: mark product DISCONTINUED instead of removing the row."""
+        instance.status = ProductStatus.DISCONTINUED
+        instance.save(update_fields=["status", "updated_at"])
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class VendorProductInventoryView(APIView):
+    """GET /api/v1/marketplace/vendor/products/ — vendor's own product list.
+
+    Returns ALL products for the authenticated vendor regardless of status,
+    including DRAFT and DISCONTINUED. Public ProductListView only shows ACTIVE.
+
+    ADR-013: CursorPagination applied via the pagination_class attribute.
+    """
+
+    permission_classes = [IsAuthenticated, IsVendorRole]
+
+    def get(self, request):
+        vendor_profile = get_object_or_404(VendorProfile, user=request.user)
+        products = (
+            Product.objects.filter(vendor=vendor_profile)
+            .select_related("vendor", "category")
+            .order_by("-created_at")
+        )
+        from apps.core.pagination import SeaConnectCursorPagination
+        paginator = SeaConnectCursorPagination()
+        page = paginator.paginate_queryset(products, request, view=self)
+        serializer = ProductListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class VendorProfileView(APIView):
+    """GET + PATCH /api/v1/marketplace/vendor-profile/
+
+    GET: returns the authenticated vendor's profile (get_or_create is NOT
+    used here — the profile must be created explicitly or via Django admin,
+    since it requires a ``region`` FK that cannot be inferred without input).
+    Returns 404 if no profile exists yet.
+
+    PATCH: partial update of storefront text fields only. ``is_verified``
+    and ``region`` are not writable here.
+    """
+
+    permission_classes = [IsAuthenticated, IsVendorRole]
+
+    def _get_profile(self, user):
+        return get_object_or_404(VendorProfile, user=user)
+
+    def get(self, request):
+        profile = self._get_profile(request.user)
+        return Response(VendorProfileReadSerializer(profile).data)
+
+    def patch(self, request):
+        profile = self._get_profile(request.user)
+        serializer = VendorProfileWriteSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(VendorProfileReadSerializer(profile).data)

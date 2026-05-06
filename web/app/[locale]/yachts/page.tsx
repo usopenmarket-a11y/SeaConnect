@@ -13,6 +13,7 @@ import * as React from 'react'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
+import { YachtFilters } from '@/components/yachts/YachtFilters'
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
 
@@ -119,10 +120,20 @@ interface ApiYacht {
   departure_port?: { id: string; name_ar: string; name_en: string } | null
 }
 
-async function fetchYachts(locale: string): Promise<BoatCardData[]> {
+interface YachtFilterParams {
+  capacity_min?: string
+  price_max?: string
+  yacht_type?: string
+}
+
+async function fetchYachts(locale: string, filters: YachtFilterParams): Promise<BoatCardData[]> {
   const apiUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
+  const apiParams = new URLSearchParams({ ordering: '-created_at' })
+  if (filters.capacity_min) apiParams.set('capacity_min', filters.capacity_min)
+  if (filters.price_max) apiParams.set('price_max', filters.price_max)
+  if (filters.yacht_type) apiParams.set('yacht_type', filters.yacht_type)
   try {
-    const res = await fetch(`${apiUrl}/api/v1/yachts/`, {
+    const res = await fetch(`${apiUrl}/api/v1/yachts/?${apiParams.toString()}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
     })
@@ -161,14 +172,24 @@ const REGION_TYPES = [
 
 interface YachtsPageProps {
   params: { locale: string }
+  searchParams?: {
+    capacity_min?: string
+    price_max?: string
+    yacht_type?: string
+  }
 }
 
 export default async function YachtsPage({
   params: { locale },
+  searchParams,
 }: YachtsPageProps): Promise<React.ReactElement> {
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'yachts' })
-  const boats = await fetchYachts(locale)
+  const boats = await fetchYachts(locale, {
+    capacity_min: searchParams?.capacity_min,
+    price_max: searchParams?.price_max,
+    yacht_type: searchParams?.yacht_type,
+  })
 
   return (
     <>
@@ -193,6 +214,9 @@ export default async function YachtsPage({
           كل <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>القوارب</em>.
         </h1>
       </div>
+
+      {/* Advanced filters — Client Component (pushes params to URL) */}
+      <YachtFilters locale={locale} />
 
       {/* Type filter tabs */}
       <div className="pill-tabs" data-screen-label="type-tabs">

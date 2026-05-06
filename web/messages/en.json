@@ -126,7 +126,15 @@
       "label": "Filter Results",
       "type": "Boat Type",
       "capacity": "Capacity",
-      "region": "Region"
+      "region": "Region",
+      "btn": "Search",
+      "clear": "Clear",
+      "allTypes": "All Types",
+      "typeFishing": "Fishing",
+      "typeLuxury": "Luxury",
+      "typeCatamaran": "Catamaran",
+      "typeFelucca": "Felucca",
+      "priceMax": "Max Price"
     },
     "card": {
       "capacity": "passenger(s)",
@@ -430,6 +438,12 @@
       "prevStep": "← Previous step",
       "nextStep": "Save & continue →",
       "submitReview": "Submit for review →",
+      "submitting": "Submitting...",
+      "statusBanner": {
+        "submitted": "Your application has been submitted for review · UNDER REVIEW",
+        "approved": "Your application has been approved · APPROVED",
+        "rejected": "Your application was rejected · REJECTED"
+      },
       "steps": {
         "identity": "Personal identity",
         "vesselDocs": "Vessel documents",
@@ -452,6 +466,12 @@
         "captainLicense": "Certified marine driving license",
         "insuranceCert": "Valid insurance certificate",
         "technicalInspection": "Technical boat inspection (30 min)"
+      },
+      "submitting": "Submitting...",
+      "statusBanner": {
+        "submitted": "Your application has been submitted for review · UNDER REVIEW",
+        "approved": "Your application has been approved · APPROVED",
+        "rejected": "Your application was rejected · REJECTED"
       }
     },
     "listing": {
@@ -460,6 +480,10 @@
       "published": "Listing published",
       "previewAsCustomer": "Preview as customer",
       "saveChanges": "Save changes",
+      "saving": "Saving...",
+      "saved": "Saved",
+      "loadError": "Could not load listing",
+      "saveError": "Could not save changes",
       "tabs": {
         "basics": "Basics",
         "specs": "Specs",

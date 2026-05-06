@@ -1,15 +1,62 @@
+"""Marketplace URL routes — Sprint 5 + Sprint 11D.
+
+Sprint 11D additions:
+  - ProductListView replaced by VendorProductListCreateView (adds POST for vendors)
+  - ProductDetailView replaced by VendorProductDetailView (adds PATCH/DELETE for vendors)
+  - /marketplace/vendor/products/    — vendor's own product inventory (all statuses)
+  - /marketplace/vendor-profile/     — vendor storefront profile GET + PATCH
+
+Public GET routes remain unchanged so existing clients are not broken.
+"""
 from django.urls import path
 from . import views
 
 app_name = "marketplace"
 
 urlpatterns = [
-    path("marketplace/products/", views.ProductListView.as_view(), name="product-list"),
-    path("marketplace/products/<uuid:id>/", views.ProductDetailView.as_view(), name="product-detail"),
+    # -----------------------------------------------------------------------
+    # Products — public read + vendor write (Sprint 5 routes, Sprint 11D upgraded)
+    # -----------------------------------------------------------------------
+    path(
+        "marketplace/products/",
+        views.VendorProductListCreateView.as_view(),
+        name="product-list-create",
+    ),
+    path(
+        "marketplace/products/<uuid:id>/",
+        views.VendorProductDetailView.as_view(),
+        name="product-detail-update-delete",
+    ),
+
+    # -----------------------------------------------------------------------
+    # Vendor-specific — authenticated vendor only
+    # -----------------------------------------------------------------------
+    path(
+        "marketplace/vendor/products/",
+        views.VendorProductInventoryView.as_view(),
+        name="vendor-product-inventory",
+    ),
+    path(
+        "marketplace/vendor-profile/",
+        views.VendorProfileView.as_view(),
+        name="vendor-profile",
+    ),
+
+    # -----------------------------------------------------------------------
+    # Categories
+    # -----------------------------------------------------------------------
     path("marketplace/categories/", views.CategoryListView.as_view(), name="category-list"),
+
+    # -----------------------------------------------------------------------
+    # Cart
+    # -----------------------------------------------------------------------
     path("marketplace/cart/", views.CartView.as_view(), name="cart-get"),
     path("marketplace/cart/items/", views.CartItemView.as_view(), name="cart-item-add"),
     path("marketplace/cart/items/<uuid:id>/", views.CartItemDetailView.as_view(), name="cart-item-detail"),
+
+    # -----------------------------------------------------------------------
+    # Orders
+    # -----------------------------------------------------------------------
     path("marketplace/orders/", views.OrderListCreateView.as_view(), name="order-list-create"),
     path("marketplace/orders/<uuid:id>/", views.OrderDetailView.as_view(), name="order-detail"),
 ]

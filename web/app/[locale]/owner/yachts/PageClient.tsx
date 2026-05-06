@@ -7,13 +7,21 @@
  * Sticky live preview column updates as the user edits name and price.
  *
  * TODO: Replace hardcoded Arabic strings with t() calls (next-intl, ADR-015).
- * TODO: Wire save button to PATCH /api/v1/yachts/{id}/ via api.ts.
  */
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
+import useSWR from 'swr'
+import { get, patch } from '@/lib/api'
+import type { PaginatedResponse } from '@/lib/api'
 
 // ── Types ────────────────────────────────────────────────────────────────────
+
+interface YachtSummary {
+  id: string
+  name_ar: string
+  price_per_day: string
+}
 
 type TabId = 'basics' | 'specs' | 'photos' | 'pricing' | 'amenities' | 'policies'
 
@@ -576,6 +584,37 @@ export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.R
   const [price, setPrice] = React.useState(2280)
   const [selectedPolicy, setSelectedPolicy] = React.useState(1)
 
+  // Fetch the owner's first yacht to obtain the yachtId for PATCH
+  const { data: yachtsData } = useSWR<PaginatedResponse<YachtSummary>>(
+    '/yachts/?owner=me',
+    (path: string) => get<PaginatedResponse<YachtSummary>>(path),
+  )
+  const yachtId: string | undefined = yachtsData?.results[0]?.id
+
+  // Save state
+  const [saving, setSaving] = React.useState(false)
+  const [saveError, setSaveError] = React.useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = React.useState(false)
+
+  async function handleSave(): Promise<void> {
+    if (!yachtId) return
+    setSaving(true)
+    setSaveError(null)
+    setSaveSuccess(false)
+    try {
+      await patch<YachtSummary>(`/yachts/${yachtId}/`, {
+        name_ar: name,
+        price_per_day: String(price),
+      })
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : t('saveError'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Amenities: initialise from AMENITIES_INITIAL (items where on === true)
   const [amenities, setAmenities] = React.useState<Set<string>>(
     () =>
@@ -652,13 +691,27 @@ export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.R
           <span className="dot-live" />
           <strong>{t('published')}</strong>
           <span className="mono">· LAST EDIT 12 MIN AGO</span>
+          {saveError !== null && (
+            <span style={{ color: 'var(--clay)', marginInlineStart: 12, fontSize: 13 }}>
+              {saveError}
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn btn-ghost" type="button">
             {t('previewAsCustomer')}
           </button>
-          <button className="btn btn-clay" type="button">
-            {t('saveChanges')}
+          <button
+            className="btn btn-clay"
+            type="button"
+            onClick={() => void handleSave()}
+            disabled={saving || !yachtId}
+          >
+            {saving
+              ? t('saving')
+              : saveSuccess
+                ? `✓ ${t('saved')}`
+                : t('saveChanges')}
           </button>
         </div>
       </div>

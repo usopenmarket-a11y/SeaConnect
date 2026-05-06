@@ -679,6 +679,66 @@ docker compose exec api pytest apps/notifications/ -v  # 14 passed
 
 ## HANDOFF-2026-05-06-002
 
+**Status:** DONE
+**From:** api-endpoint-agent
+**To:** nextjs-page-agent (owner/yachts pages)
+**Sprint:** 10A
+**Feature:** Owner yacht create + update API endpoints
+
+### What Was Completed
+- `backend/apps/bookings/permissions.py` — added `IsOwnerRole` (user-level: role must be `owner`) and `IsYachtOwner` (object-level: `yacht.owner_id == request.user.id`). Both inherit `BasePermission`; role check never done inline in views.
+- `backend/apps/bookings/serializers.py` — added `YachtCreateSerializer` (POST — `name`, `name_ar`, `description`, `description_ar`, `capacity`, `price_per_day`, `currency`, `yacht_type`, `departure_port`; validates capacity ≥ 1 and price > 0) and `YachtUpdateSerializer` (PATCH — same fields plus `status`; all fields optional).
+- `backend/apps/bookings/views.py` — replaced `YachtListView` + `YachtDetailView` with `YachtListCreateView` (GET public / POST owner-only) and `YachtRetrieveUpdateView` (GET public / PATCH owner-only; PUT disabled via `http_method_names`). Legacy aliases `YachtListView = YachtListCreateView` and `YachtDetailView = YachtRetrieveUpdateView` kept for any existing references. `perform_create` sets `owner=request.user`, `status='draft'`, resolves `currency` from `departure_port.region.currency` (ADR-018).
+- `backend/apps/bookings/urls.py` — updated imports to use `YachtListCreateView` and `YachtRetrieveUpdateView`; URL patterns unchanged so all existing routes still resolve identically.
+- `backend/apps/bookings/tests/test_yacht_crud.py` — 18 tests across 3 classes: `TestYachtCreate` (7), `TestYachtUpdate` (7), `TestYachtListPublic` (4).
+
+### Contract
+- `POST /api/v1/yachts/` — `IsAuthenticated + IsOwnerRole`; body: `YachtCreateSerializer` fields; response: `YachtDetailSerializer` (201). `owner` and `status` are **never accepted from the request body**.
+- `PATCH /api/v1/yachts/{id}/` — `IsAuthenticated + IsYachtOwner`; body: any subset of `YachtUpdateSerializer` fields; response: `YachtDetailSerializer` (200). PUT returns 405.
+- `GET /api/v1/yachts/` — `AllowAny`, cursor-paginated (ADR-013), unchanged from Sprint 2.
+- `GET /api/v1/yachts/{id}/` — `AllowAny`, unchanged from Sprint 2.
+
+### How to Test
+```bash
+# Create yacht as owner (replace TOKEN and PORT_ID):
+curl -X POST http://localhost:8000/api/v1/yachts/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","name_ar":"تجربة","capacity":8,"price_per_day":"1500.00","yacht_type":"motorboat","departure_port":"<PORT_ID>"}'
+# → 201 with YachtDetailSerializer body; status="draft", owner=caller
+
+# Update yacht (replace YACHT_ID):
+curl -X PATCH http://localhost:8000/api/v1/yachts/$YACHT_ID/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"active"}'
+# → 200
+
+# Full test suite:
+docker compose exec api bash -c "cd /app && pytest apps/bookings/tests/test_yacht_crud.py -v --reuse-db"
+# → 18 passed
+
+# No regressions:
+docker compose exec api bash -c "cd /app && pytest --reuse-db"
+# → 357 passed
+```
+
+### Blockers / Notes for nextjs-page-agent
+- `web/app/[locale]/owner/yachts/new/PageClient.tsx` currently shows a "coming soon" toast on 404/405. Replace that fallback with a real `POST /api/v1/yachts/` call — the endpoint is now live.
+- The POST body needs `departure_port` as a UUID string. The port dropdown already uses `GET /api/v1/ports/` (Sprint 4, already shipped).
+- `currency` field is optional in the request; omit it and the server resolves it from the port's region (ADR-018). The field defaults to the owner's region currency if the port has no region.
+- Status field is writable on PATCH but NOT on POST (always created as `draft` regardless of what the client sends).
+- PATCH on a draft yacht to `status: "active"` publishes it (makes it appear in the public listing).
+
+### Build Verification (this session)
+- `python manage.py check` — PASS, 0 issues.
+- `pytest apps/bookings/tests/test_yacht_crud.py --reuse-db` — PASS, 18/18 tests.
+- `pytest --reuse-db` — PASS, 357 total tests (up from 269 before this sprint).
+
+---
+
+## HANDOFF-2026-05-06-002
+
 **Status:** READY
 **From:** django-model-agent
 **To:** api-endpoint-agent, nextjs-page-agent

@@ -126,7 +126,15 @@
       "label": "تصفية النتائج",
       "type": "نوع القارب",
       "capacity": "السعة",
-      "region": "المنطقة"
+      "region": "المنطقة",
+      "btn": "بحث",
+      "clear": "مسح",
+      "allTypes": "كل الأنواع",
+      "typeFishing": "صيد",
+      "typeLuxury": "فاخر",
+      "typeCatamaran": "كاتاماران",
+      "typeFelucca": "فلوكة",
+      "priceMax": "أقصى سعر"
     },
     "card": {
       "capacity": "راكب",
@@ -430,6 +438,12 @@
       "prevStep": "← الخطوة السابقة",
       "nextStep": "حفظ ومتابعة →",
       "submitReview": "إرسال للمراجعة ←",
+      "submitting": "جارٍ الإرسال...",
+      "statusBanner": {
+        "submitted": "تم إرسال طلبك للمراجعة · UNDER REVIEW",
+        "approved": "تم قبول طلبك · APPROVED",
+        "rejected": "تم رفض الطلب · REJECTED"
+      },
       "steps": {
         "identity": "الهوية الشخصية",
         "vesselDocs": "مستندات القارب",
@@ -460,6 +474,10 @@
       "published": "القائمة منشورة",
       "previewAsCustomer": "معاينة كعميل",
       "saveChanges": "حفظ التعديلات",
+      "saving": "جارٍ الحفظ...",
+      "saved": "تم الحفظ",
+      "loadError": "تعذّر تحميل القائمة",
+      "saveError": "تعذّر حفظ التعديلات",
       "tabs": {
         "basics": "الأساسيات",
         "specs": "المواصفات",
