@@ -795,3 +795,127 @@ curl -X POST -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/acc
 - `pytest apps/accounts/tests/test_kyc.py -v` — PASS, 25/25 tests (run in Docker)
 - `pytest --collect-only` — 357 tests collected (269 prior + 25 new + 63 from intermediate sprints)
 - All modified Python files pass Django system check
+
+---
+
+## HANDOFF-2026-05-06-001
+
+**Status:** READY
+**From:** django-api-agent
+**To:** nextjs-page-agent
+**Sprint:** 11D
+**Feature:** Vendor product creation and management API
+
+### What Was Completed
+- `POST /api/v1/marketplace/products/` — vendor creates product (starts DRAFT, vendor FK auto-set from VendorProfile)
+- `PATCH /api/v1/marketplace/products/{id}/` — vendor updates own product (partial, object-level ownership enforced)
+- `DELETE /api/v1/marketplace/products/{id}/` — vendor soft-deletes own product (sets status=DISCONTINUED, row preserved for OrderItem FK integrity)
+- `GET /api/v1/marketplace/vendor/products/` — vendor inventory of all own products (all statuses, CursorPagination)
+- `GET /api/v1/marketplace/vendor-profile/` — read vendor storefront profile
+- `PATCH /api/v1/marketplace/vendor-profile/` — update business_name, business_name_ar, description, description_ar (is_verified not writable)
+- New `apps/marketplace/permissions.py` — IsVendorRole, IsProductOwner, IsVendorProfileOwner
+- New serializers: ProductWriteSerializer (price/stock/currency validation), VendorProfileReadSerializer, VendorProfileWriteSerializer
+- No migration needed — VendorProfile model and Product.vendor FK already existed in 0001_initial.py
+
+### Contract
+- VendorProfile exists as a pre-condition for product creation. If a vendor has no VendorProfile (created by admin), POST returns 404.
+- Product.vendor is a FK to VendorProfile (not User). VendorProfile.user is OneToOne with User.
+- Public product list (GET /products/) still returns active products from verified vendors only — unchanged.
+- All write endpoints require role=vendor. Customer/owner/anonymous get 403/401.
+
+### How to Test
+```bash
+# Get vendor JWT
+ACCESS=$(curl -s -X POST http://localhost:8000/api/v1/auth/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"vendor@seaconnect.local","password":"vendorpass123!"}' | jq -r .access)
+
+# Create product
+curl -s -X POST http://localhost:8000/api/v1/marketplace/products/ \
+  -H "Authorization: Bearer $ACCESS" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Fishing Rod","name_ar":"عصا الصيد","price":"199.99","currency":"EGP","stock":10}' | jq .
+
+# View vendor inventory
+curl -s -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/marketplace/vendor/products/ | jq .
+
+# View vendor profile
+curl -s -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/marketplace/vendor-profile/ | jq .
+```
+
+### Response/Output Shape
+```json
+// POST /api/v1/marketplace/products/ → 201
+{"name": "Fishing Rod", "name_ar": "عصا الصيد", "price": "199.99", "currency": "EGP", "stock": 10, "category": null, "primary_image_url": ""}
+
+// GET /api/v1/marketplace/vendor-profile/ → 200
+{"id": "...", "business_name": "...", "business_name_ar": "...", "description": "...", "description_ar": "...", "is_verified": true, "region_name": "Egypt", "region_currency": "EGP", "created_at": "..."}
+```
+
+### Build Verification (Sprint 11D)
+- `python manage.py check` — PASS, 0 issues (run in Docker)
+- `pytest apps/marketplace/tests/test_vendor.py -v` — PASS, 33/33 tests
+- `pytest apps/marketplace/tests/test_marketplace.py -v` — PASS, 21/21 tests (regression clean)
+
+---
+
+## HANDOFF-2026-05-06-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** any-agent
+**Sprint:** 11C
+**Feature:** Payments app co-located test suite
+
+### What Was Completed
+- Created `apps/payments/tests/conftest.py` — full fixture set (owner, customer, confirmed/pending bookings, pending payment, payout) following the `_make_token` JWT pattern from `apps/bookings/tests/conftest.py`
+- Created `apps/payments/tests/test_payments.py` — 32 tests across 4 classes covering all four payment endpoints; all 32 pass on real DB
+- Coverage: 95% on `apps/payments/` (above the 80% floor)
+
+### Contract
+`03-Technical-Product/02-API-Specification.md` — `POST /api/v1/payments/initiate/`, `POST /api/v1/payments/webhook/fawry/`, `GET /api/v1/payments/payouts/`, `GET /api/v1/payments/escrow/`
+
+### How to Test
+```bash
+cd backend
+docker compose run --rm api pytest apps/payments/tests/test_payments.py -v
+# Expected: 32 passed
+docker compose run --rm api pytest apps/payments/tests/test_payments.py --cov=apps/payments --cov-report=term-missing -q
+# Expected: 95% total coverage
+```
+
+### Known Coverage Gaps
+- `fawry.py` lines 79-111 — `httpx.post` call path intentionally patched (no real network in tests; covered by `tests/test_payment_providers.py`)
+- `views.py` lines 62-66 — `PROVIDER_NOT_CONFIGURED` error path (no provider registered for non-EGP currency); low-risk Egypt-first launch
+- `views.py` lines 228-229 — non-paginated fallback in `PayoutListView` (only reached when paginator returns `None`, which does not happen with CursorPagination on a real queryset)
+- `admin.py` lines 43, 77, 81 — Django admin display methods (not exercised by API tests)
+
+---
+
+## HANDOFF-2026-05-06-003
+
+**Status:** DONE
+**From:** celery-task-agent
+**To:** any-agent
+**Sprint:** 12D
+**Feature:** Booking state-change push notifications
+
+### What Was Completed
+- `backend/apps/bookings/services.py` — wired `notify_booking_event()` into all four `BookingService` state-transition methods (`create_booking`, `confirm`, `decline`, `cancel`) via `transaction.on_commit()`. Each call is fire-and-forget: exceptions are caught and logged but never propagate to the booking transition itself.
+- `backend/apps/marketplace/views.py` — fixed pre-existing `NameError: name 'Request' is not defined` that was blocking Django startup (added missing `from rest_framework.request import Request` import).
+- `backend/apps/bookings/tests/test_booking_notifications.py` — 8 new tests: CREATED triggers owner push, CONFIRMED triggers customer push, DECLINED triggers customer push, CANCELLED triggers owner push, notification failure does not break confirm/decline/cancel, opted-out owner skips notification row.
+
+### Architecture Note
+`notify_booking_event()` already existed in `apps/notifications/services.py` with full bilingual templates for all 5 event types. The correct integration point is `BookingService` (via `transaction.on_commit`) — not views — per ADR-012. No separate `notifications.py` module in bookings was needed.
+
+### How to Test
+```bash
+docker compose run --rm api pytest apps/bookings/tests/test_booking_notifications.py -v --reuse-db
+# Expected: 8 passed
+docker compose run --rm api pytest --reuse-db
+# Expected: 445 passed, 2 pre-existing errors (test_payouts + test_booking_state_machine atomicity)
+```
+
+### Build Verification
+- `pytest apps/bookings/tests/test_booking_notifications.py -v` — PASS, 8/8 tests
+- Full suite `pytest --reuse-db` — 445 passed, 2 pre-existing errors (unrelated to this sprint)

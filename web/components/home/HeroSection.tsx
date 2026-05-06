@@ -42,10 +42,13 @@ export function HeroSection({
 }: HeroSectionProps): React.ReactElement {
   const { ref, style } = useParallax(0.35)
   const router = useRouter()
+  const [passengers, setPassengers] = React.useState(2)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    router.push(`/${locale}/yachts`)
+    const params = new URLSearchParams()
+    if (passengers > 1) params.set('capacity_min', String(passengers))
+    router.push(`/${locale}/yachts${params.size ? '?' + params.toString() : ''}`)
   }
 
   return (
@@ -113,11 +116,14 @@ export function HeroSection({
             </div>
             <div className="field">
               <label>{searchLabels.passengers}</label>
-              <select defaultValue="6">
-                <option>2 أشخاص</option>
-                <option>4 أشخاص</option>
-                <option>6 أشخاص</option>
-                <option>10 أشخاص</option>
+              <select
+                value={passengers}
+                onChange={(e) => setPassengers(Number(e.target.value))}
+              >
+                <option value={2}>2 أشخاص</option>
+                <option value={4}>4 أشخاص</option>
+                <option value={6}>6 أشخاص</option>
+                <option value={10}>10 أشخاص</option>
               </select>
             </div>
             <button type="submit" className="search-btn cta-shimmer">

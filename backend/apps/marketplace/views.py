@@ -1,9 +1,15 @@
-"""Marketplace views — Sprint 5 + Sprint 11D vendor product management."""
+"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload."""
+import os
+import uuid as uuid_module
+
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -15,6 +21,7 @@ from .serializers import (
     OrderSerializer,
     ProductCategorySerializer,
     ProductDetailSerializer,
+    ProductImageUploadSerializer,
     ProductListSerializer,
     ProductWriteSerializer,
     VendorProfileReadSerializer,
@@ -306,3 +313,66 @@ class VendorProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(VendorProfileReadSerializer(profile).data)
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — Product image upload
+# ---------------------------------------------------------------------------
+
+
+def _build_product_image_path(product_id: str, filename: str) -> str:
+    """Return a collision-resistant storage path for a product image.
+
+    Pattern: ``products/{product_id}/images/{uuid4}{ext}``
+    """
+    ext = os.path.splitext(filename)[1].lower()
+    return f"products/{product_id}/images/{uuid_module.uuid4()}{ext}"
+
+
+class ProductImageUploadView(APIView):
+    """POST /api/v1/marketplace/products/{id}/images/
+
+    Upload a primary image for a vendor product.  The caller must be an
+    authenticated vendor who owns the product.
+
+    Steps:
+      1. Validate file (type + size) via ``ProductImageUploadSerializer``.
+      2. Save to ``default_storage`` (FileSystem dev / S3-R2 prod — ADR-010).
+      3. Update ``product.primary_image_url`` with the resulting public URL.
+
+    Returns 200 with ``{"image_url": "<url>"}`` on success.
+    """
+
+    permission_classes = [IsAuthenticated, IsVendorRole]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request: Request, id) -> Response:
+        # Ownership check — vendor must own the product.
+        product = get_object_or_404(
+            Product.objects.select_related("vendor__user"),
+            id=id,
+        )
+        if product.vendor.user_id != request.user.id:
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_PERMISSION_DENIED",
+                        "message": "You do not own this product.",
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = ProductImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        file = serializer.validated_data["file"]
+
+        upload_path = _build_product_image_path(str(product.id), file.name)
+        saved_name = default_storage.save(upload_path, file)
+        file_url = default_storage.url(saved_name)
+
+        product.primary_image_url = file_url
+        product.save(update_fields=["primary_image_url", "updated_at"])
+
+        return Response({"image_url": file_url}, status=status.HTTP_200_OK)

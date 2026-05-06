@@ -129,6 +129,22 @@ class BookingService:
             send_booking_request_notification.delay(str(booking.id))
 
         transaction.on_commit(_dispatch)
+
+        # Push notification to yacht owner (fire-and-forget, post-commit).
+        # notify_booking_event is imported lazily to avoid circular imports.
+        def _push_created() -> None:
+            try:
+                from apps.notifications.services import notify_booking_event
+                from .models import BookingEventType
+
+                notify_booking_event(booking, BookingEventType.CREATED)
+            except Exception:  # noqa: BLE001
+                import logging
+                logging.getLogger(__name__).exception(
+                    "notify_booking_event CREATED failed for booking %s", booking.id,
+                )
+
+        transaction.on_commit(_push_created)
         return booking
 
     # ------------------------------------------------------------------
@@ -149,6 +165,26 @@ class BookingService:
             event_type=BookingEventType.CONFIRMED,
             actor=actor,
         )
+
+        # Push notification to customer — post-commit so the DB row is visible.
+        booking_id_str = str(booking.id)
+
+        def _push_confirmed() -> None:
+            try:
+                from apps.bookings.models import Booking as _Booking, BookingEventType as _BET
+                from apps.notifications.services import notify_booking_event
+
+                _booking = _Booking.objects.select_related("yacht__owner", "customer").get(
+                    id=booking_id_str,
+                )
+                notify_booking_event(_booking, _BET.CONFIRMED)
+            except Exception:  # noqa: BLE001
+                import logging
+                logging.getLogger(__name__).exception(
+                    "notify_booking_event CONFIRMED failed for booking %s", booking_id_str,
+                )
+
+        transaction.on_commit(_push_confirmed)
         return booking
 
     @staticmethod
@@ -167,6 +203,26 @@ class BookingService:
             actor=actor,
             notes=reason,
         )
+
+        # Push notification to customer — post-commit so the DB row is visible.
+        booking_id_str = str(booking.id)
+
+        def _push_declined() -> None:
+            try:
+                from apps.bookings.models import Booking as _Booking, BookingEventType as _BET
+                from apps.notifications.services import notify_booking_event
+
+                _booking = _Booking.objects.select_related("yacht__owner", "customer").get(
+                    id=booking_id_str,
+                )
+                notify_booking_event(_booking, _BET.DECLINED)
+            except Exception:  # noqa: BLE001
+                import logging
+                logging.getLogger(__name__).exception(
+                    "notify_booking_event DECLINED failed for booking %s", booking_id_str,
+                )
+
+        transaction.on_commit(_push_declined)
         return booking
 
     # ------------------------------------------------------------------
@@ -187,6 +243,26 @@ class BookingService:
             event_type=BookingEventType.CANCELLED,
             actor=actor,
         )
+
+        # Push notification to yacht owner — post-commit so the DB row is visible.
+        booking_id_str = str(booking.id)
+
+        def _push_cancelled() -> None:
+            try:
+                from apps.bookings.models import Booking as _Booking, BookingEventType as _BET
+                from apps.notifications.services import notify_booking_event
+
+                _booking = _Booking.objects.select_related("yacht__owner", "customer").get(
+                    id=booking_id_str,
+                )
+                notify_booking_event(_booking, _BET.CANCELLED)
+            except Exception:  # noqa: BLE001
+                import logging
+                logging.getLogger(__name__).exception(
+                    "notify_booking_event CANCELLED failed for booking %s", booking_id_str,
+                )
+
+        transaction.on_commit(_push_cancelled)
         return booking
 
     # ------------------------------------------------------------------

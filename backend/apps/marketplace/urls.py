@@ -1,10 +1,13 @@
-"""Marketplace URL routes — Sprint 5 + Sprint 11D.
+"""Marketplace URL routes — Sprint 5 + Sprint 11D + Sprint 12A.
 
 Sprint 11D additions:
   - ProductListView replaced by VendorProductListCreateView (adds POST for vendors)
   - ProductDetailView replaced by VendorProductDetailView (adds PATCH/DELETE for vendors)
   - /marketplace/vendor/products/    — vendor's own product inventory (all statuses)
   - /marketplace/vendor-profile/     — vendor storefront profile GET + PATCH
+
+Sprint 12A additions:
+  - /marketplace/products/{id}/images/ — product image upload (vendor owner only)
 
 Public GET routes remain unchanged so existing clients are not broken.
 """
@@ -26,6 +29,15 @@ urlpatterns = [
         "marketplace/products/<uuid:id>/",
         views.VendorProductDetailView.as_view(),
         name="product-detail-update-delete",
+    ),
+
+    # -----------------------------------------------------------------------
+    # Sprint 12A — Product image upload
+    # -----------------------------------------------------------------------
+    path(
+        "marketplace/products/<uuid:id>/images/",
+        views.ProductImageUploadView.as_view(),
+        name="product-image-upload",
     ),
 
     # -----------------------------------------------------------------------

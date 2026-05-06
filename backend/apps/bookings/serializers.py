@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.core.validators import validate_image_upload
+
 from .models import (
     Availability,
     Booking,
@@ -291,3 +293,65 @@ class YachtUpdateSerializer(serializers.ModelSerializer):  # type: ignore[type-a
         if value <= 0:
             raise serializers.ValidationError("price_per_day must be greater than zero.")
         return value
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — Yacht photo upload serializers
+# ---------------------------------------------------------------------------
+
+
+class YachtPhotoUploadSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Request serializer for ``POST /api/v1/yachts/{id}/photos/``.
+
+    Accepts a multipart/form-data body:
+      - ``file``      — required image file (JPEG / PNG / WebP, max 10 MB)
+      - ``caption``   — optional human-readable caption stored as ``url``
+                        metadata (future field); ignored in current model
+                        but accepted so clients can pass it without error.
+      - ``is_cover``  — if True, mark this photo as the primary image and
+                        clear the is_primary flag on all existing media for
+                        the same yacht.
+
+    Validation is input-only; the serializer does not write to the DB.
+    All DB work is done in the view to keep the service boundary clear.
+    """
+
+    file = serializers.ImageField(
+        help_text="Image file (JPEG / PNG / WebP). Max 10 MB.",
+    )
+    caption = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=500,
+        help_text="Optional caption displayed below the photo.",
+    )
+    is_cover = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Set to true to make this the primary cover image.",
+    )
+
+    def validate_file(self, value):  # type: ignore[override]
+        """Run the shared image upload validator, converting Django ValidationError to DRF."""
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_image_upload(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message) from exc
+        return value
+
+
+class YachtPhotoResponseSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Response serializer for the yacht photo upload and delete endpoints."""
+
+    is_cover = serializers.BooleanField(source="is_primary", read_only=True)
+    caption = serializers.SerializerMethodField()
+
+    class Meta:
+        model = YachtMedia
+        fields = ["id", "url", "is_cover", "caption", "order", "created_at"]
+
+    def get_caption(self, obj: YachtMedia) -> str:
+        # Caption is not a model field yet; return empty string for API stability.
+        return ""

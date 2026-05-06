@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from apps.core.validators import validate_image_upload
+
 from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory, ProductStatus, VendorProfile
 
 
@@ -176,3 +179,36 @@ class VendorProfileWriteSerializer(serializers.ModelSerializer):
         if not value.strip():
             raise serializers.ValidationError("Business name may not be blank.")
         return value
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — Product image upload serializers
+# ---------------------------------------------------------------------------
+
+
+class ProductImageUploadSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Request serializer for ``POST /api/v1/marketplace/products/{id}/images/``.
+
+    Accepts a multipart/form-data body with a single ``file`` field.
+    The view will persist the file via ``default_storage`` and update
+    ``product.primary_image_url`` with the resulting public URL.
+    """
+
+    file = serializers.ImageField(
+        help_text="Image file (JPEG / PNG / WebP). Max 10 MB.",
+    )
+
+    def validate_file(self, value):  # type: ignore[override]
+        """Run the shared image upload validator, converting Django ValidationError to DRF."""
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            validate_image_upload(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.message) from exc
+        return value
+
+
+class ProductImageResponseSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Response serializer for the product image upload endpoint."""
+
+    image_url = serializers.URLField(read_only=True)

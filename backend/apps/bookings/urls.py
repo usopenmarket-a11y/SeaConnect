@@ -10,6 +10,8 @@ from .views import (
     YachtAvailabilityView,
     YachtListCreateView,
     YachtMonthAvailabilityView,
+    YachtPhotoDeleteView,
+    YachtPhotoUploadView,
     YachtRetrieveUpdateView,
 )
 
@@ -23,6 +25,17 @@ urlpatterns = [
         "yachts/<uuid:id>/availability/",
         YachtAvailabilityView.as_view(),
         name="yacht-availability",
+    ),
+    # Sprint 12A — yacht photo upload / delete
+    path(
+        "yachts/<uuid:id>/photos/",
+        YachtPhotoUploadView.as_view(),
+        name="yacht-photo-upload",
+    ),
+    path(
+        "yachts/<uuid:id>/photos/<uuid:photo_id>/",
+        YachtPhotoDeleteView.as_view(),
+        name="yacht-photo-delete",
     ),
     # Sprint 3 — bookings
     path("bookings/", BookingListCreateView.as_view(), name="booking-list-create"),

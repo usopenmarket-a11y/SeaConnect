@@ -2,9 +2,11 @@
 
 Sprint 2 — Yacht list / detail (public).
 Sprint 3 — Booking CRUD + state transitions + per-yacht availability.
+Sprint 12A — Yacht photo upload / delete.
 
 ADR compliance:
   ADR-001 — UUID PKs, ORM only.
+  ADR-010 — File storage via default_storage (USE_S3 toggle respected).
   ADR-012 — All booking state mutations go through BookingService so the
             BookingEvent audit row is inserted in the same atomic transaction.
   ADR-013 — Cursor pagination on list endpoints.
@@ -14,11 +16,16 @@ from __future__ import annotations
 
 import calendar
 import datetime
+import os
+import uuid as uuid_module
 
+from django.core.files.storage import default_storage
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status
 from rest_framework.filters import OrderingFilter
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -29,7 +36,7 @@ from apps.core.models import DeparturePort
 from apps.core.pagination import SeaConnectCursorPagination
 
 from .filters import YachtFilter
-from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtStatus
+from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtMedia, YachtStatus
 from .permissions import IsOwnerRole, IsYachtOwner
 from .serializers import (
     AvailabilitySerializer,
@@ -40,6 +47,8 @@ from .serializers import (
     YachtCreateSerializer,
     YachtDetailSerializer,
     YachtListSerializer,
+    YachtPhotoResponseSerializer,
+    YachtPhotoUploadSerializer,
     YachtUpdateSerializer,
 )
 from .services import BookingService, BookingTransitionError
@@ -600,3 +609,138 @@ class AdminYachtListView(generics.ListAPIView):  # type: ignore[type-arg]
     def get_serializer_class(self):  # type: ignore[override]
         from apps.bookings.serializers import YachtListSerializer
         return YachtListSerializer
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — Yacht photo upload / delete
+# ---------------------------------------------------------------------------
+
+
+def _build_photo_upload_path(yacht_id: str, filename: str) -> str:
+    """Return a deterministic, collision-resistant storage path for a yacht photo.
+
+    Pattern: ``yachts/{yacht_id}/photos/{uuid4}{ext}``
+
+    The original filename is discarded to avoid path traversal and to ensure
+    uniqueness.  The file extension is preserved so the storage backend can
+    serve the correct Content-Type.
+    """
+    ext = os.path.splitext(filename)[1].lower()
+    return f"yachts/{yacht_id}/photos/{uuid_module.uuid4()}{ext}"
+
+
+class YachtPhotoUploadView(APIView):
+    """POST /api/v1/yachts/{id}/photos/
+
+    Upload a photo for a yacht.  The caller must be the yacht's owner.
+
+    Steps:
+      1. Validate the uploaded file (type + size) via ``YachtPhotoUploadSerializer``.
+      2. Save the file to ``default_storage`` (FileSystem in dev, S3/R2 in prod).
+      3. Create a ``YachtMedia`` row with the public URL.
+      4. If ``is_cover=True``, clear ``is_primary`` on all other media for this
+         yacht in the same atomic transaction.
+
+    Returns 201 with the new YachtMedia record.
+
+    ADR-010: ``default_storage.save`` is used; the storage backend is
+    determined at runtime by the ``USE_S3`` setting — views never import
+    S3Boto3Storage directly.
+    """
+
+    permission_classes = [IsAuthenticated, IsOwnerRole]
+    parser_classes = [MultiPartParser]
+
+    def post(self, request: Request, id) -> Response:
+        # Ownership check — only the yacht's owner may upload photos.
+        yacht = get_object_or_404(
+            Yacht.objects.select_related("owner"),
+            id=id,
+            is_deleted=False,
+        )
+        if yacht.owner_id != request.user.id:
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_PERMISSION_DENIED",
+                        "message": "You do not own this yacht.",
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = YachtPhotoUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        file = serializer.validated_data["file"]
+        is_cover: bool = serializer.validated_data["is_cover"]
+
+        # Save to storage backend (ADR-010 — never reference S3Boto3Storage directly).
+        upload_path = _build_photo_upload_path(str(yacht.id), file.name)
+        saved_name = default_storage.save(upload_path, file)
+        file_url = default_storage.url(saved_name)
+
+        with transaction.atomic():
+            if is_cover:
+                # Clear existing primary flags before setting the new one.
+                YachtMedia.objects.filter(yacht=yacht, is_primary=True).update(is_primary=False)
+
+            media = YachtMedia.objects.create(
+                yacht=yacht,
+                url=file_url,
+                media_type="image",
+                is_primary=is_cover,
+                order=YachtMedia.objects.filter(yacht=yacht).count(),
+            )
+
+        return Response(
+            YachtPhotoResponseSerializer(media).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class YachtPhotoDeleteView(APIView):
+    """DELETE /api/v1/yachts/{id}/photos/{photo_id}/
+
+    Hard-delete a single yacht photo.  The caller must be the yacht's owner.
+
+    Steps:
+      1. Verify yacht ownership.
+      2. Delete the file from ``default_storage`` (best-effort; does not fail
+         the request if the file is already gone from storage).
+      3. Hard-delete the ``YachtMedia`` row.
+
+    Returns 204 No Content on success.
+    """
+
+    permission_classes = [IsAuthenticated, IsOwnerRole]
+
+    def delete(self, request: Request, id, photo_id) -> Response:
+        yacht = get_object_or_404(
+            Yacht.objects.select_related("owner"),
+            id=id,
+            is_deleted=False,
+        )
+        if yacht.owner_id != request.user.id:
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_PERMISSION_DENIED",
+                        "message": "You do not own this yacht.",
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        media = get_object_or_404(YachtMedia, id=photo_id, yacht=yacht)
+
+        # Best-effort: delete from storage. If the file is already missing,
+        # we still want to remove the DB row so the client is not stuck.
+        try:
+            if default_storage.exists(media.url):
+                default_storage.delete(media.url)
+        except Exception:
+            pass
+
+        media.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
