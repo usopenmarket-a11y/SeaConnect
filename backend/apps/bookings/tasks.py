@@ -18,6 +18,90 @@ from django.utils import timezone
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Sprint 13C — pgvector semantic search embedding generation (ADR-019)
+# ---------------------------------------------------------------------------
+
+
+def _get_embedding(text: str) -> list[float]:
+    """Fetch a 768-dim text embedding from Ollama (dev) or OpenAI (UAT/prod).
+
+    Uses OLLAMA_BASE_URL setting when present (Docker service ``ollama`` on
+    port 11434 in dev). Falls back to OpenAI when OPENAI_API_KEY is configured.
+
+    Raises ``httpx.HTTPError`` on transport failures so the calling Celery
+    task can retry.
+    """
+    import httpx
+
+    ollama_url: str = getattr(settings, "OLLAMA_BASE_URL", "http://ollama:11434")
+
+    resp = httpx.post(
+        f"{ollama_url}/api/embeddings",
+        json={"model": "nomic-embed-text", "prompt": text},
+        timeout=30.0,
+    )
+    resp.raise_for_status()
+    return resp.json()["embedding"]  # type: ignore[no-any-return]
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def generate_yacht_embedding(self, yacht_id: str) -> None:
+    """Generate and store a 768-dim embedding for a yacht listing (ADR-019).
+
+    Idempotent — safe to re-run on existing yachts. Called via
+    ``transaction.on_commit`` after every yacht create or update so the
+    embedding always reflects the latest description text.
+
+    Steps:
+      1. Load the Yacht (early-exit if not found — stale task from deleted row).
+      2. Concatenate Arabic + English name/description for maximum recall.
+      3. Call Ollama (dev) / OpenAI (prod) via ``_get_embedding``.
+      4. Persist with ``Yacht.objects.filter(...).update(...)`` — avoids
+         triggering extra signals and is safe to retry.
+    """
+    # Local import avoids circular import at module load.
+    from .models import Yacht
+
+    try:
+        yacht = Yacht.objects.get(id=yacht_id)
+    except Yacht.DoesNotExist:
+        logger.info("generate_yacht_embedding: yacht %s not found — skipping", yacht_id)
+        return
+
+    # Build the text corpus to embed (Arabic first per ADR-014).
+    text = " ".join(
+        filter(
+            None,
+            [
+                yacht.name_ar,
+                yacht.name,
+                yacht.description_ar,
+                yacht.description,
+                yacht.get_yacht_type_display(),
+            ],
+        )
+    )
+
+    if not text.strip():
+        logger.info("generate_yacht_embedding: yacht %s has no text — skipping", yacht_id)
+        return
+
+    try:
+        embedding = _get_embedding(text)
+    except Exception as exc:
+        logger.warning(
+            "generate_yacht_embedding: embedding failed for yacht %s: %s",
+            yacht_id,
+            exc,
+        )
+        raise self.retry(exc=exc) from exc
+
+    # Use .update() to avoid triggering signals / touching updated_at unnecessarily.
+    Yacht.objects.filter(id=yacht_id).update(embedding=embedding)
+    logger.info("generate_yacht_embedding: stored embedding for yacht %s", yacht_id)
+
+
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_booking_request_notification(self, booking_id: str) -> None:
     """Notify the yacht owner that a new booking request has arrived.

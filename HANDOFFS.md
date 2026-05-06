@@ -919,3 +919,136 @@ docker compose run --rm api pytest --reuse-db
 ### Build Verification
 - `pytest apps/bookings/tests/test_booking_notifications.py -v` — PASS, 8/8 tests
 - Full suite `pytest --reuse-db` — 445 passed, 2 pre-existing errors (unrelated to this sprint)
+
+---
+
+## HANDOFF-2026-05-06-001
+
+**Status:** READY
+**From:** api-endpoint-agent
+**To:** nextjs-page-agent
+**Sprint:** 12A
+**Feature:** File upload endpoints — yacht photos and product images
+
+### What Was Completed
+- `POST /api/v1/yachts/{id}/photos/` — multipart upload, creates YachtMedia row, supports is_cover flag
+- `DELETE /api/v1/yachts/{id}/photos/{photo_id}/` — hard delete photo and best-effort storage cleanup
+- `POST /api/v1/marketplace/products/{id}/images/` — updates product.primary_image_url with uploaded file URL
+
+### Contract
+- All endpoints require JWT (IsAuthenticated) + role check (IsOwnerRole / IsVendorRole)
+- Validated: JPEG/PNG/WebP only, max 10 MB (settings.MAX_PHOTO_SIZE)
+- Storage via default_storage — USE_S3=False uses FileSystemStorage in dev, USE_S3=True uses S3Boto3Storage (MinIO/R2)
+- Photo upload returns: `{"id": uuid, "url": str, "is_cover": bool, "caption": str, "order": int, "created_at": str}`
+- Product image upload returns: `{"image_url": str}`
+
+### How to Test
+```bash
+docker compose run --rm api pytest apps/bookings/tests/test_photos.py -v
+# Expected: 16 passed
+docker compose run --rm api python manage.py check
+# Expected: System check identified no issues (0 silenced).
+```
+
+### New Files Created
+- `apps/core/validators.py` — shared `validate_image_upload()` function
+- `apps/bookings/tests/test_photos.py` — 16 tests (upload happy path, cover logic, type rejection, size rejection, auth/permission checks, delete)
+
+---
+
+## Sprint 13A — Admin KYC Queue: Wire to Real API
+**Status:** DONE
+**Date:** 2026-05-06
+**Agent:** admin-portal-agent
+
+### What was done
+Removed all mock data from the admin KYC pages and wired them to the real Django API endpoints from Sprint 10C.
+
+### New Files
+- `admin/lib/api.ts` — `adminGet<T>` and `adminPost<T>` typed fetch helpers that attach `Authorization: Bearer <token>` and target `NEXT_PUBLIC_API_URL`
+
+### Modified Files
+- `admin/app/[locale]/kyc/PageClient.tsx` — full rewrite: fetches `GET /api/v1/admin/kyc/` via SWR, renders live `KYCProfile` shapes (owner_name, owner_email, completed_steps/total_steps, created_at), calls `POST /api/v1/admin/kyc/{id}/approve/` and `POST /api/v1/admin/kyc/{id}/reject/` with `{ rejection_reason }`. Confirmation dialog before every approve/reject. Per-item loading/error/committed state. Empty, loading, and error states. Token-missing dev warning.
+- `admin/app/[locale]/dashboard/PageClient.tsx` — added SWR call for `/admin/kyc/` to drive the KYC queue card count; replaced hardcoded "14 PENDING" with live `results.length`; `KycQueueCard` now accepts `pendingCount + isLoading` props instead of mock items; removed `KycQueueItem` import from mockData.
+
+### Auth approach
+`localStorage.getItem('admin_token')` — internal admin portal only; Django API enforces the `admin` role server-side on every request.
+
+### TypeScript
+`npx tsc --noEmit` in `admin/` — 0 errors.
+
+---
+
+## HANDOFF-2026-05-06-001
+
+**Status:** READY
+**From:** django-api-agent
+**To:** nextjs-page-agent
+**Sprint:** 13C
+**Feature:** pgvector semantic search for yacht listings
+
+### What Was Completed
+- Added `VectorField(dimensions=768, null=True)` to `Yacht` model; migration `0005_yacht_embedding` applied (`vector` extension enabled via `VectorExtension()`).
+- `generate_yacht_embedding` Celery task in `apps/bookings/tasks.py` — calls Ollama `nomic-embed-text` (dev) with text-search fallback; wired via `transaction.on_commit` in `YachtListCreateView.perform_create` and `YachtRetrieveUpdateView.partial_update`.
+- `YachtSemanticSearchView` (`GET /api/v1/yachts/search/?q=<query>`) — cosine similarity via `pgvector.django.CosineDistance`, max 10 results, `AllowAny` (public), graceful fallback to ORM `icontains` when Ollama is unreachable.
+- 10 tests in `apps/bookings/tests/test_search.py` — all pass; 66/66 bookings tests green.
+
+### Contract
+ADR-019 (pgvector, 768 dims Ollama dev / 1536 dims OpenAI UAT) — `GET /api/v1/yachts/search/?q=`
+
+### How to Test
+```bash
+docker compose run --rm api pytest apps/bookings/tests/test_search.py -v
+curl "http://localhost:8000/api/v1/yachts/search/?q=fishing+hurghada"
+```
+
+### Response/Output Shape
+```json
+{
+  "results": [
+    {
+      "id": "uuid",
+      "name": "Fishing Dream",
+      "name_ar": "حلم الصيد",
+      "capacity": 6,
+      "price_per_day": "1200.00",
+      "currency": "EGP",
+      "yacht_type": "fishing",
+      "status": "active",
+      "departure_port": {...},
+      "region": {...},
+      "primary_image_url": "https://...",
+      "created_at": "2026-05-06T..."
+    }
+  ],
+  "next_cursor": null,
+  "has_more": false
+}
+```
+
+---
+
+## HANDOFF-2026-05-06-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** any future agent touching apps/core/
+**Sprint:** 13B
+**Feature:** Core app test suite — Sprint 13B baseline coverage
+
+### What Was Completed
+- Created `apps/core/tests/__init__.py` and `apps/core/tests/conftest.py` with `egypt_region`, `inactive_region`, `hurghada_port`, `inactive_port`, and `api_client` fixtures (all real DB, no mocks).
+- Created `apps/core/tests/test_core.py` with 52 tests across 7 test classes covering HealthCheckView, RegionListView, DeparturePortListView, SeaConnectCursorPagination, validate_image_upload, and custom_exception_handler.
+- All 52 tests pass; coverage on `apps/core` is **98%** (491 stmts, 12 missed — only migration internals and `__str__` methods).
+
+### Coverage gaps (acceptable)
+- `apps/core/migrations/0002_seed_egypt.py` lines 84-93, 106-107 — seed data RunPython forward/reverse; not test-worthy.
+- `apps/core/models.py` lines 72, 116, 156-158 — `__str__` methods on Region, DeparturePort, FeatureFlag; cosmetic, no business logic.
+
+### How to Test
+```bash
+docker compose run --rm api pytest apps/core/tests/ -v --reuse-db
+# Expected: 52 passed
+docker compose run --rm api pytest apps/core/tests/ --cov=apps.core --cov-report=term-missing --reuse-db
+# Expected: 98% TOTAL coverage, 52 passed
+```

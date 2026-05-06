@@ -13,11 +13,14 @@ from .views import (
     YachtPhotoDeleteView,
     YachtPhotoUploadView,
     YachtRetrieveUpdateView,
+    YachtSemanticSearchView,
 )
 
 app_name = "bookings"
 
 urlpatterns = [
+    # Sprint 13C — semantic search (must be before yacht-list to avoid UUID clash)
+    path("yachts/search/", YachtSemanticSearchView.as_view(), name="yacht-search"),
     # Sprint 2 / Sprint 10A — yachts (public GET, owner POST/PATCH)
     path("yachts/", YachtListCreateView.as_view(), name="yacht-list"),
     path("yachts/<uuid:id>/", YachtRetrieveUpdateView.as_view(), name="yacht-detail"),

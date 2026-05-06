@@ -15,6 +15,7 @@ Sprint 3 will add:
 import uuid
 
 from django.db import models
+from pgvector.django import VectorField
 
 from apps.accounts.models import User
 from apps.core.models import DeparturePort, Region, TimeStampedModel
@@ -104,6 +105,15 @@ class Yacht(TimeStampedModel):
     is_deleted = models.BooleanField(
         default=False,
         help_text="Soft-delete flag — never hard-delete user-facing records.",
+    )
+    # ADR-019 — pgvector semantic search. 768 dims = Ollama nomic-embed-text (dev).
+    # OpenAI text-embedding-3-small uses 1536 dims (UAT/prod).
+    # null=True so existing yachts migrate cleanly; embedding generated async via Celery.
+    embedding = VectorField(
+        dimensions=768,
+        null=True,
+        blank=True,
+        help_text="768-dim sentence embedding for semantic search (ADR-019).",
     )
 
     class Meta:

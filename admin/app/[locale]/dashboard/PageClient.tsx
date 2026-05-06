@@ -8,11 +8,11 @@ import {
   KPI_ITEMS,
   RECENT_TRANSACTIONS,
   TOP_BOATS,
-  KYC_QUEUE,
   type Transaction,
   type TopBoat,
-  type KycQueueItem,
 } from '@/lib/mockData'
+import { adminGet } from '@/lib/api'
+import type { PaginatedKYC } from '../kyc/PageClient'
 
 /** Minimal fetcher — used as placeholder until admin analytics API exists. */
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -66,34 +66,51 @@ function KpiGrid() {
 
 // ── KYC Queue Card ────────────────────────────────────
 
-function KycQueueCard({
-  items,
-  locale,
-}: {
-  items: KycQueueItem[]
+interface KycQueueCardProps {
+  pendingCount: number
   locale: string
-}) {
+  isLoading: boolean
+}
+
+function KycQueueCard({ pendingCount, locale, isLoading }: KycQueueCardProps) {
+  const countLabel = isLoading ? '—' : String(pendingCount)
   return (
     <div className="dash-card">
       <h3>تحقق KYC · قيد المراجعة</h3>
-      <div className="sub">14 PENDING · REVIEW QUEUE</div>
+      <div className="sub">{isLoading ? 'LOADING...' : `${countLabel} PENDING · REVIEW QUEUE`}</div>
 
-      {items.map((item, i) => (
-        <div key={item.id} className="kyc-item">
-          <div>
-            <div className="kyc-name">{item.name}</div>
-            <div className="kyc-meta">
-              SUBMITTED {item.submittedAgo} AGO · {item.location}
-            </div>
-          </div>
-          <a href={`/${locale}/kyc?id=${item.id}`} className="btn btn-ghost btn-sm">
-            مراجعة ←
-          </a>
-        </div>
-      ))}
+      <div
+        style={{
+          padding: '24px 0 8px',
+          textAlign: 'center',
+          fontFamily: 'var(--ff-mono)',
+          fontSize: 40,
+          fontWeight: 700,
+          color: pendingCount > 0 ? 'var(--sea)' : 'var(--muted)',
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {countLabel}
+      </div>
+      <div
+        style={{
+          textAlign: 'center',
+          fontFamily: 'var(--ff-mono)',
+          fontSize: 11,
+          letterSpacing: '0.1em',
+          color: 'var(--muted)',
+          marginBottom: 20,
+        }}
+      >
+        SUBMITTED PROFILES AWAITING REVIEW
+      </div>
 
-      <a href={`/${locale}/kyc`} className="btn btn-primary" style={{ width: '100%', marginTop: 16, display: 'flex' }}>
-        عرض القائمة كاملة (14)
+      <a
+        href={`/${locale}/kyc`}
+        className="btn btn-primary"
+        style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+      >
+        عرض القائمة كاملة ({countLabel})
       </a>
     </div>
   )
@@ -213,8 +230,7 @@ function TopBoatsTable({ boats }: { boats: TopBoat[] }) {
 export default function AdminDashboardClient({ locale }: DashboardClientProps) {
   const t = useTranslations('admin.dashboard')
 
-  // Placeholder SWR call — will swap to /api/v1/admin/analytics/ once available.
-  // We fire-and-forget; no data is rendered from this yet.
+  // Health ping — fire-and-forget; keeps the backend connection warm.
   useSWR(
     `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'}/health/`,
     fetcher,
@@ -222,10 +238,22 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
       revalidateOnFocus: false,
       shouldRetryOnError: false,
       onError: () => {
-        // Non-fatal — admin works with mock data during development
+        // Non-fatal — admin works with mock data for non-KYC sections during development
       },
     },
   )
+
+  // Read token client-side only (localStorage unavailable during SSR)
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_token') ?? '') : ''
+
+  // Real KYC pending count from the Django API
+  const { data: kycData, isLoading: kycLoading } = useSWR<PaginatedKYC>(
+    token ? (['/admin/kyc/', token] as const) : null,
+    ([path, tok]: readonly [string, string]) => adminGet<PaginatedKYC>(path, tok),
+    { revalidateOnFocus: false },
+  )
+
+  const pendingCount = kycData?.results.length ?? 0
 
   return (
     <div className="dash-layout" dir="rtl">
@@ -261,7 +289,11 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
             <RevenueChart />
           </div>
 
-          <KycQueueCard items={KYC_QUEUE} locale={locale} />
+          <KycQueueCard
+            pendingCount={pendingCount}
+            locale={locale}
+            isLoading={kycLoading}
+          />
         </div>
 
         {/* Recent transactions */}

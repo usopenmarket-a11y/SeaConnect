@@ -331,7 +331,10 @@
       "pendingBookings": "حجوزات بانتظار موافقتك",
       "activeBookings": "الحجوزات المؤكدة",
       "totalEarnings": "إجمالي الإيرادات (المكتملة)",
-      "loadError": "تعذّر تحميل البيانات"
+      "loadError": "تعذّر تحميل البيانات",
+      "pendingSectionTitle": "حجوزات بانتظار موافقتك",
+      "viewAllBookings": "عرض كل الحجوزات ←",
+      "noPendingBookings": "لا توجد حجوزات بانتظار الموافقة"
     },
     "bookings": {
       "title": "حجوزات قواربي",

@@ -331,7 +331,10 @@
       "pendingBookings": "Bookings awaiting your approval",
       "activeBookings": "Confirmed bookings",
       "totalEarnings": "Total earnings (completed)",
-      "loadError": "Could not load dashboard data"
+      "loadError": "Could not load dashboard data",
+      "pendingSectionTitle": "Bookings awaiting your approval",
+      "viewAllBookings": "View all bookings →",
+      "noPendingBookings": "No bookings awaiting approval"
     },
     "bookings": {
       "title": "Bookings on my yachts",

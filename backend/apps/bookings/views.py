@@ -20,7 +20,7 @@ import os
 import uuid as uuid_module
 
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status
@@ -128,6 +128,14 @@ class YachtListCreateView(generics.ListCreateAPIView):  # type: ignore[type-arg]
             region=region,
         )
 
+        # Trigger async embedding generation after the DB transaction commits
+        # so the Celery task always sees the persisted row (ADR-019).
+        from .tasks import generate_yacht_embedding
+        instance = serializer.instance
+        transaction.on_commit(
+            lambda: generate_yacht_embedding.delay(str(instance.id))
+        )
+
     def create(self, request: Request, *args, **kwargs) -> Response:  # type: ignore[override]
         """POST creates the yacht and returns the full YachtDetailSerializer (201)."""
         serializer = self.get_serializer(data=request.data)
@@ -197,6 +205,14 @@ class YachtRetrieveUpdateView(generics.RetrieveUpdateAPIView):  # type: ignore[t
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        # Re-generate embedding after content changes (ADR-019).
+        from .tasks import generate_yacht_embedding
+        yacht_id = str(instance.id)
+        transaction.on_commit(
+            lambda: generate_yacht_embedding.delay(yacht_id)
+        )
+
         # Refetch with all relations so the response is fully populated.
         yacht = (
             Yacht.objects.select_related("departure_port", "region", "owner")
@@ -744,3 +760,90 @@ class YachtPhotoDeleteView(APIView):
 
         media.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13C — Semantic search (ADR-019)
+# ---------------------------------------------------------------------------
+
+
+class YachtSemanticSearchView(APIView):
+    """GET /api/v1/yachts/search/?q=<query>
+
+    Returns up to 10 active yachts ranked by cosine similarity to the natural-
+    language query.  No authentication required (public listing, ADR-003).
+
+    Primary path — pgvector cosine similarity:
+      Requires the yacht to have a stored embedding (generated async by
+      ``generate_yacht_embedding`` after create/update).
+
+    Fallback path — icontains text search:
+      When Ollama is unreachable or no embeddings exist yet, falls back to
+      Django ORM ``icontains`` across name + description fields.  This ensures
+      the endpoint is always responsive during cold starts or outages.
+
+    ADR-019 compliance:
+      - 768-dim vectors (Ollama nomic-embed-text in dev).
+      - ORM-only — uses pgvector.django.CosineDistance annotation.
+      - Returns max 10 results — semantic search is not scrollable (ADR-013).
+
+    Error format (ADR):
+      {"error": "human message", "code": "SNAKE_CASE_CODE", "detail": {}}
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request: Request) -> Response:
+        query = request.query_params.get("q", "").strip()
+        if not query:
+            return Response(
+                {
+                    "error": "q parameter is required",
+                    "code": "ERR_VALIDATION",
+                    "detail": {"field": "q"},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        yachts = self._semantic_search(query)
+        serializer = YachtListSerializer(yachts, many=True)
+        return Response(
+            {"results": serializer.data, "next_cursor": None, "has_more": False}
+        )
+
+    def _semantic_search(self, query: str):
+        """Return ranked Yacht queryset — cosine similarity with text fallback."""
+        from .tasks import _get_embedding
+
+        try:
+            from pgvector.django import CosineDistance
+
+            query_embedding = _get_embedding(query)
+            return (
+                Yacht.objects.filter(
+                    status="active",
+                    is_deleted=False,
+                    embedding__isnull=False,
+                )
+                .select_related("departure_port", "region", "owner")
+                .prefetch_related("media")
+                .annotate(distance=CosineDistance("embedding", query_embedding))
+                .order_by("distance")[:10]
+            )
+        except Exception:
+            # Fallback: plain icontains — ORM only (ADR-001).
+            return (
+                Yacht.objects.filter(
+                    status="active",
+                    is_deleted=False,
+                )
+                .filter(
+                    models.Q(name__icontains=query)
+                    | models.Q(name_ar__icontains=query)
+                    | models.Q(description__icontains=query)
+                    | models.Q(description_ar__icontains=query)
+                )
+                .select_related("departure_port", "region", "owner")
+                .prefetch_related("media")
+                .order_by("-created_at")[:10]
+            )
