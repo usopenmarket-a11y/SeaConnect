@@ -5,13 +5,12 @@ import useSWR from 'swr'
 import AdminSidebar from '@/components/AdminSidebar'
 import RevenueChart from '@/components/RevenueChart'
 import {
-  KPI_ITEMS,
   RECENT_TRANSACTIONS,
   TOP_BOATS,
   type Transaction,
   type TopBoat,
 } from '@/lib/mockData'
-import { adminGet } from '@/lib/api'
+import { adminGet, type PaginatedResponse } from '@/lib/api'
 import type { PaginatedKYC } from '../kyc/PageClient'
 
 /** Minimal fetcher — used as placeholder until admin analytics API exists. */
@@ -45,18 +44,59 @@ function BoatStatusPill({ status }: { status: TopBoat['status'] }) {
 
 // ── KPI Grid ─────────────────────────────────────────
 
-function KpiGrid() {
+interface KpiGridProps {
+  /** Total registered users from /admin/users/ */
+  usersCount: number | '—'
+  /** Total active yachts from /yachts/ */
+  yachtsCount: number | '—'
+  /** KYC profiles currently pending review from /admin/kyc/ */
+  kycPendingCount: number | '—'
+}
+
+interface KpiItemDef {
+  labelEn: string
+  labelAr: string
+  value: number | string
+  unit: string
+}
+
+function KpiGrid({ usersCount, yachtsCount, kycPendingCount }: KpiGridProps) {
+  const items: KpiItemDef[] = [
+    {
+      labelEn: 'USERS',
+      labelAr: 'المستخدمون',
+      value: usersCount,
+      unit: '',
+    },
+    {
+      labelEn: 'YACHTS',
+      labelAr: 'القوارب',
+      value: yachtsCount,
+      unit: '',
+    },
+    {
+      labelEn: 'KYC PENDING',
+      labelAr: 'KYC معلّق',
+      value: kycPendingCount,
+      unit: '',
+    },
+    {
+      // Revenue / GTV deferred until the admin analytics endpoint is available.
+      labelEn: 'GTV · TOTAL VALUE',
+      labelAr: 'القيمة الإجمالية',
+      value: '—',
+      unit: 'EGP',
+    },
+  ]
+
   return (
     <div className="kpi-grid" role="list" aria-label="Platform KPIs">
-      {KPI_ITEMS.map((item) => (
+      {items.map((item) => (
         <div key={item.labelEn} className="kpi" role="listitem">
           <div className="l">{`${item.labelEn} · ${item.labelAr}`}</div>
           <div className="v num">
             {item.value}
-            {item.unit && <span className="unit">{item.unit}</span>}
-          </div>
-          <div className={`delta ${item.direction}`}>
-            {item.direction === 'up' ? '▲' : '▼'} {item.delta}
+            {item.unit && <span className="unit"> {item.unit}</span>}
           </div>
         </div>
       ))}
@@ -253,7 +293,30 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
     { revalidateOnFocus: false },
   )
 
+  // Total registered users — requires admin JWT
+  const { data: usersData } = useSWR<PaginatedResponse<{ id: string }>>(
+    token ? (['/admin/users/', token] as const) : null,
+    ([path, tok]: readonly [string, string]) =>
+      adminGet<PaginatedResponse<{ id: string }>>(path, tok),
+    { revalidateOnFocus: false },
+  )
+
+  // Total published yachts — public endpoint, no auth needed
+  const { data: yachtsData } = useSWR<PaginatedResponse<{ id: string }>>(
+    '/yachts/',
+    (path: string) =>
+      fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'}/api/v1${path}`)
+        .then((r) => r.json()) as Promise<PaginatedResponse<{ id: string }>>,
+    { revalidateOnFocus: false },
+  )
+
   const pendingCount = kycData?.results.length ?? 0
+  // Prefer server-supplied total count when available; fall back to page length.
+  const usersCount: number | '—' =
+    usersData != null ? (usersData.count ?? usersData.results.length) : '—'
+  const yachtsCount: number | '—' =
+    yachtsData != null ? (yachtsData.count ?? yachtsData.results.length) : '—'
+  const kycPendingCount: number | '—' = kycData != null ? pendingCount : '—'
 
   return (
     <div className="dash-layout" dir="rtl">
@@ -279,7 +342,11 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
         </header>
 
         {/* KPI cards */}
-        <KpiGrid />
+        <KpiGrid
+          usersCount={usersCount}
+          yachtsCount={yachtsCount}
+          kycPendingCount={kycPendingCount}
+        />
 
         {/* Revenue chart + KYC queue */}
         <div className="dash-row">

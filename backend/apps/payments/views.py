@@ -21,6 +21,7 @@ from apps.bookings.models import (
     BookingStatus,
 )
 from apps.core.pagination import SeaConnectCursorPagination
+from apps.core.throttles import PaymentThrottle
 
 from .models import Payment, PaymentProviderChoices, PaymentStatus, Payout
 from .providers.registry import get_provider  # ADR-007 — currency-driven lookup
@@ -39,9 +40,12 @@ class PaymentInitiateView(APIView):
 
     Authenticated. Customer must own a `confirmed` booking. Creates a
     `pending` Payment row and returns the provider's checkout URL.
+
+    PaymentThrottle: 20/hour base (10/hour UAT) — fraud prevention.
     """
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PaymentThrottle]
 
     def post(self, request: Request) -> Response:
         serializer = PaymentInitiateSerializer(data=request.data)

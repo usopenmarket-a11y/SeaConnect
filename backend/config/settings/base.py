@@ -172,6 +172,12 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": "60/minute",
         "user": "300/minute",
+        # Per-concern rates (apps.core.throttles)
+        "auth_anon": "10/minute",      # brute-force protection on login/register
+        "auth_user": "30/minute",      # refresh / logout rate cap
+        "payment": "20/hour",          # fraud prevention on payment initiation
+        "upload": "30/hour",           # bandwidth protection on file uploads
+        "search_anon": "120/minute",   # generous for public semantic search
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
 }

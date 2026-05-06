@@ -1052,3 +1052,36 @@ docker compose run --rm api pytest apps/core/tests/ -v --reuse-db
 docker compose run --rm api pytest apps/core/tests/ --cov=apps.core --cov-report=term-missing --reuse-db
 # Expected: 98% TOTAL coverage, 52 passed
 ```
+
+---
+
+## HANDOFF-2026-05-07-001
+
+**Status:** DONE
+**From:** api-endpoint-agent
+**To:** any-agent
+**Sprint:** 14C
+**Feature:** Production-grade rate limiting — custom throttle classes
+
+### What Was Completed
+- `backend/apps/core/throttles.py` — 5 custom throttle classes: `AuthAnonThrottle` (scope: auth_anon), `AuthUserThrottle` (scope: auth_user), `PaymentThrottle` (scope: payment), `UploadThrottle` (scope: upload), `SearchAnonThrottle` (scope: search_anon). All documented with rationale and ADR references.
+- `backend/config/settings/base.py` — added 5 per-concern scopes to `DEFAULT_THROTTLE_RATES` (auth_anon: 10/min, auth_user: 30/min, payment: 20/hour, upload: 30/hour, search_anon: 120/min).
+- `backend/config/settings/dev.py` — all 5 new scopes set to 10000/min to keep pytest suites from ever 429-ing.
+- `backend/config/settings/uat.py` — full `REST_FRAMEWORK` override with production-safe rates (auth_anon stricter at 5/min, payment stricter at 10/hour, search_anon higher at 200/min).
+- `backend/apps/accounts/views.py` — `RegisterView.throttle_classes = [AuthAnonThrottle]`; `LoginView` promoted from alias to subclass of `TokenObtainPairView` with `throttle_classes = [AuthAnonThrottle]`; `LogoutView.throttle_classes = [AuthUserThrottle]`.
+- `backend/apps/payments/views.py` — `PaymentInitiateView.throttle_classes = [PaymentThrottle]`.
+- `backend/apps/bookings/views.py` — `YachtPhotoUploadView.throttle_classes = [UploadThrottle]`; `YachtSemanticSearchView.throttle_classes = [SearchAnonThrottle]`.
+- `backend/apps/marketplace/views.py` — `ProductImageUploadView.throttle_classes = [UploadThrottle]`.
+- `backend/apps/core/tests/test_throttles.py` — 24 tests: class existence (5), scope attributes (5), base-class inheritance (5), view wiring (7), settings completeness (2). All 24 pass.
+
+### Contract
+- All throttle scopes are resolvable by DRF's `DEFAULT_THROTTLE_RATES` dict in every environment.
+- `LoginView` is now a proper subclass of `TokenObtainPairView` (not a bare alias) — URL routing unchanged; `LoginView.as_view()` in `accounts/urls.py` still works without modification.
+- No throttle changes to dev.py beyond adding the new scopes at 10000/min.
+
+### How to Test
+```bash
+docker compose run --rm api python manage.py check                          # 0 issues
+docker compose run --rm api pytest apps/core/tests/test_throttles.py -v   # 24 passed
+docker compose run --rm api pytest --reuse-db -q                           # 591+ passed, pre-existing 1 failure + 2 errors unchanged
+```

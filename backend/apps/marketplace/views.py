@@ -13,6 +13,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.throttles import UploadThrottle
+
 from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory, ProductStatus, VendorProfile
 from .permissions import IsProductOwner, IsVendorProfileOwner, IsVendorRole
 from .serializers import (
@@ -345,6 +347,7 @@ class ProductImageUploadView(APIView):
 
     permission_classes = [IsAuthenticated, IsVendorRole]
     parser_classes = [MultiPartParser]
+    throttle_classes = [UploadThrottle]
 
     def post(self, request: Request, id) -> Response:
         # Ownership check — vendor must own the product.

@@ -9,6 +9,20 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
 
+// ── Shared response shapes ────────────────────────────
+
+/**
+ * Generic paginated list response matching the Django CursorPagination shape
+ * used across all SeaConnect list endpoints.
+ */
+export interface PaginatedResponse<T> {
+  results: T[]
+  next_cursor: string | null
+  has_more: boolean
+  /** Present on some endpoints (e.g. admin/users/) as a total record count. */
+  count?: number
+}
+
 export async function adminGet<T>(path: string, token: string): Promise<T> {
   const res = await fetch(`${API_BASE}/api/v1${path}`, {
     headers: { Authorization: `Bearer ${token}` },

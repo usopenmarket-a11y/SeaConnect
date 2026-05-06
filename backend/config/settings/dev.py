@@ -62,6 +62,12 @@ EMAIL_USE_TLS = False
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {  # type: ignore[index]
     "anon": "10000/minute",
     "user": "10000/minute",
+    # Per-concern scopes — also unlimited in dev/test so pytest suites never 429.
+    "auth_anon": "10000/minute",
+    "auth_user": "10000/minute",
+    "payment": "10000/hour",
+    "upload": "10000/hour",
+    "search_anon": "10000/minute",
 }
 
 # ---------------------------------------------------------------------------

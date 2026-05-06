@@ -34,6 +34,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import UserRole
 from apps.core.models import DeparturePort
 from apps.core.pagination import SeaConnectCursorPagination
+from apps.core.throttles import SearchAnonThrottle, UploadThrottle
 
 from .filters import YachtFilter
 from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtMedia, YachtStatus
@@ -666,6 +667,7 @@ class YachtPhotoUploadView(APIView):
 
     permission_classes = [IsAuthenticated, IsOwnerRole]
     parser_classes = [MultiPartParser]
+    throttle_classes = [UploadThrottle]
 
     def post(self, request: Request, id) -> Response:
         # Ownership check — only the yacht's owner may upload photos.
@@ -792,6 +794,7 @@ class YachtSemanticSearchView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [SearchAnonThrottle]
 
     def get(self, request: Request) -> Response:
         query = request.query_params.get("q", "").strip()

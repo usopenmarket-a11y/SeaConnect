@@ -49,7 +49,7 @@ Tick each box in a copy of this file or in a GitHub issue checklist.
 - [ ] `pip install -r requirements/prod.txt` succeeds without errors
 - [ ] `python manage.py migrate --noinput` applies all migrations (0 pending)
 - [ ] `python manage.py collectstatic --noinput` succeeds; static files uploaded to R2 or served correctly
-- [ ] `python manage.py check --deploy` reports 0 issues
+- [x] `python manage.py check --deploy` reports 0 issues — VERIFIED 2026-05-07 (Sprint 14D)
 
       Expected passing conditions (all set in `config/settings/uat.py`):
       - `DEBUG = False`
@@ -61,6 +61,19 @@ Tick each box in a copy of this file or in a GitHub issue checklist.
       - `SECURE_HSTS_INCLUDE_SUBDOMAINS = True`
       - `SECURE_CONTENT_TYPE_NOSNIFF = True`
       - `X_FRAME_OPTIONS = "DENY"`
+
+      Command run:
+      ```
+      docker compose run --rm --entrypoint="" \
+        -e DJANGO_SETTINGS_MODULE=config.settings.uat \
+        -e SECRET_KEY=<random-50-char> \
+        -e ALLOWED_HOSTS=localhost \
+        -e DATABASE_URL=postgresql://seaconnect:seaconnect@db:5432/seaconnect \
+        -e REDIS_URL=redis://redis:6379/0 \
+        -e CORS_ALLOWED_ORIGINS=https://seaconnect.app \
+        api python manage.py check --deploy
+      ```
+      Output: `System check identified no issues (0 silenced).`
 
 - [ ] `FAWRY_BASE_URL` confirmed pointing to staging (`https://atfawry.fawrystaging.com`) for UAT — **do NOT use the live production URL in UAT**
 

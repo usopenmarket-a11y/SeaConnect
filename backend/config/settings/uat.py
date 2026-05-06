@@ -14,7 +14,7 @@ Deploy targets:
   Email:   Brevo free tier (300/day)          — EMAIL_HOST_USER / EMAIL_HOST_PASSWORD
 """
 from .base import *  # noqa: F401, F403
-from .base import ALLOWED_HOSTS, config
+from .base import ALLOWED_HOSTS, REST_FRAMEWORK, config
 
 # ---------------------------------------------------------------------------
 # Core
@@ -87,6 +87,26 @@ CORS_ALLOWED_ORIGINS = config(  # type: ignore[assignment]
     cast=lambda v: [s.strip() for s in v.split(",")],
 )
 CORS_ALLOW_CREDENTIALS = True
+
+# ---------------------------------------------------------------------------
+# Throttling — UAT rates: slightly stricter than base on auth/payment,
+# higher than base on generic and search (more traffic expected in UAT).
+# These override the DEFAULT_THROTTLE_RATES dict from base.py.
+# ---------------------------------------------------------------------------
+
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,  # inherit all base DRF settings
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/minute",
+        "user": "600/minute",
+        # Per-concern scopes — stricter in production than base defaults.
+        "auth_anon": "5/minute",       # tighter brute-force cap in prod
+        "auth_user": "20/minute",
+        "payment": "10/hour",          # tighter fraud prevention in prod
+        "upload": "20/hour",
+        "search_anon": "200/minute",   # search traffic is higher in UAT
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Firebase Cloud Messaging (optional — push notifications)

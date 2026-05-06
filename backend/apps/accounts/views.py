@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.core.pagination import SeaConnectCursorPagination
+from apps.core.throttles import AuthAnonThrottle, AuthUserThrottle
 
 from .models import BoatOwnerProfile, KYCStatus, User
 from .permissions import IsAdminUser as IsAdminRole
@@ -27,6 +28,7 @@ from .serializers import (
 class RegisterView(generics.CreateAPIView):  # type: ignore[type-arg]
     permission_classes = [AllowAny]
     serializer_class = RegisterSerializer
+    throttle_classes = [AuthAnonThrottle]
 
     def create(self, request: Request, *args: object, **kwargs: object) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -45,11 +47,19 @@ class RegisterView(generics.CreateAPIView):  # type: ignore[type-arg]
         )
 
 
-LoginView = TokenObtainPairView
+class LoginView(TokenObtainPairView):
+    """POST /api/v1/auth/login/ — obtain JWT tokens.
+
+    Subclasses simplejwt TokenObtainPairView solely to attach
+    AuthAnonThrottle.  All login logic remains in the parent class.
+    """
+
+    throttle_classes = [AuthAnonThrottle]
 
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AuthUserThrottle]
 
     def post(self, request: Request) -> Response:
         refresh_token = request.data.get("refresh")
