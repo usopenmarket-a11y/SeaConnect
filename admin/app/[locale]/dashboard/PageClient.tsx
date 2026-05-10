@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import AdminSidebar from '@/components/AdminSidebar'
-import RevenueChart from '@/components/RevenueChart'
+import RevenueChart, { type RevenueDataPoint } from '@/components/RevenueChart'
 import {
   RECENT_TRANSACTIONS,
   TOP_BOATS,
@@ -15,6 +15,59 @@ import type { PaginatedKYC } from '../kyc/PageClient'
 
 /** Minimal fetcher — used as placeholder until admin analytics API exists. */
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
+
+// ── Admin stats shape (GET /api/v1/analytics/stats/) ─────────────────────────
+
+interface AdminStats {
+  gtv_total: string
+  gtv_currency: string
+  revenue_total: string
+  bookings_total: number
+  active_yachts: number
+}
+
+// ── Payout record shape (GET /api/v1/payments/payouts/) ──────────────────────
+
+interface PayoutRecord {
+  id: string
+  owner: string
+  amount: string
+  currency: string
+  status: string
+  payment_method: string
+  created_at: string
+}
+
+// ── GTV formatter ─────────────────────────────────────────────────────────────
+
+function formatGTV(val: string): string {
+  const n = parseFloat(val)
+  if (Number.isNaN(n)) return '—'
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M'
+  return (n / 1_000).toFixed(0) + 'K'
+}
+
+// ── Derive month labels from ISO date string (e.g. "2026-05-10T..." → "MAY") ─
+
+const MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const
+
+function isoToMonthLabel(isoDate: string): string {
+  const monthIndex = new Date(isoDate).getUTCMonth()
+  return MONTH_ABBR[monthIndex] ?? 'UNK'
+}
+
+// ── Group payout results into per-month revenue data ─────────────────────────
+
+function buildRevenueData(payouts: PayoutRecord[]): RevenueDataPoint[] {
+  const totals: Map<string, number> = new Map()
+  for (const p of payouts) {
+    const month = isoToMonthLabel(p.created_at)
+    totals.set(month, (totals.get(month) ?? 0) + parseFloat(p.amount))
+  }
+  // Return in insertion order (payouts are ordered by created_at desc; we want asc for chart)
+  const entries = Array.from(totals.entries()).reverse()
+  return entries.map(([month, value]) => ({ month, value }))
+}
 
 interface DashboardClientProps {
   locale: string
@@ -51,6 +104,12 @@ interface KpiGridProps {
   yachtsCount: number | '—'
   /** KYC profiles currently pending review from /admin/kyc/ */
   kycPendingCount: number | '—'
+  /** Formatted GTV string (e.g. "2.84M") from /analytics/stats/ */
+  gtvValue: string
+  /** Currency code for GTV display (e.g. "EGP") from /analytics/stats/ */
+  gtvCurrency: string
+  /** Total bookings count from /analytics/stats/ */
+  bookingsTotal: number | '—'
 }
 
 interface KpiItemDef {
@@ -60,7 +119,14 @@ interface KpiItemDef {
   unit: string
 }
 
-function KpiGrid({ usersCount, yachtsCount, kycPendingCount }: KpiGridProps) {
+function KpiGrid({
+  usersCount,
+  yachtsCount,
+  kycPendingCount,
+  gtvValue,
+  gtvCurrency,
+  bookingsTotal,
+}: KpiGridProps) {
   const items: KpiItemDef[] = [
     {
       labelEn: 'USERS',
@@ -81,11 +147,30 @@ function KpiGrid({ usersCount, yachtsCount, kycPendingCount }: KpiGridProps) {
       unit: '',
     },
     {
-      // Revenue / GTV deferred until the admin analytics endpoint is available.
+      labelEn: 'BOOKINGS',
+      labelAr: 'الحجوزات',
+      value: bookingsTotal,
+      unit: '',
+    },
+    {
       labelEn: 'GTV · TOTAL VALUE',
       labelAr: 'القيمة الإجمالية',
+      value: gtvValue,
+      unit: gtvCurrency,
+    },
+    {
+      // MoM delta requires historical data — deferred to Sprint 16.
+      labelEn: 'REVENUE',
+      labelAr: 'الإيرادات',
       value: '—',
-      unit: 'EGP',
+      unit: '',
+    },
+    {
+      // Take rate requires revenue + GTV delta — deferred to Sprint 16.
+      labelEn: 'TAKE RATE',
+      labelAr: 'نسبة الأخذ',
+      value: '—',
+      unit: '%',
     },
   ]
 
@@ -310,6 +395,21 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
     { revalidateOnFocus: false },
   )
 
+  // Admin platform stats (GTV, bookings) — admin-only endpoint
+  const { data: statsData } = useSWR<AdminStats>(
+    token ? (['/analytics/stats/', token] as const) : null,
+    ([path, tok]: readonly [string, string]) => adminGet<AdminStats>(path, tok),
+    { revalidateOnFocus: false },
+  )
+
+  // Payouts for revenue chart — last 12 months of payout records
+  const { data: payoutsData } = useSWR<PaginatedResponse<PayoutRecord>>(
+    token ? (['/payments/payouts/?ordering=-created_at', token] as const) : null,
+    ([path, tok]: readonly [string, string]) =>
+      adminGet<PaginatedResponse<PayoutRecord>>(path, tok),
+    { revalidateOnFocus: false },
+  )
+
   const pendingCount = kycData?.results.length ?? 0
   // Prefer server-supplied total count when available; fall back to page length.
   const usersCount: number | '—' =
@@ -317,6 +417,15 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
   const yachtsCount: number | '—' =
     yachtsData != null ? (yachtsData.count ?? yachtsData.results.length) : '—'
   const kycPendingCount: number | '—' = kycData != null ? pendingCount : '—'
+
+  // Derive GTV display values from stats
+  const gtvValue = statsData ? formatGTV(statsData.gtv_total) : '—'
+  const gtvCurrency = statsData?.gtv_currency ?? 'EGP'
+  const bookingsTotal: number | '—' = statsData?.bookings_total ?? '—'
+
+  // Build revenue chart data from payouts
+  const revenueData: RevenueDataPoint[] | undefined =
+    payoutsData ? buildRevenueData(payoutsData.results) : undefined
 
   return (
     <div className="dash-layout" dir="rtl">
@@ -346,6 +455,9 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
           usersCount={usersCount}
           yachtsCount={yachtsCount}
           kycPendingCount={kycPendingCount}
+          gtvValue={gtvValue}
+          gtvCurrency={gtvCurrency}
+          bookingsTotal={bookingsTotal}
         />
 
         {/* Revenue chart + KYC queue */}
@@ -353,7 +465,8 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
           <div className="dash-card">
             <h3>الإيرادات · آخر ١٢ شهر</h3>
             <div className="sub">REVENUE · LAST 12 MONTHS · EGP</div>
-            <RevenueChart />
+            {/* revenueData is undefined while loading (shows mock), [] if loaded but empty (shows placeholder) */}
+            <RevenueChart data={revenueData} />
           </div>
 
           <KycQueueCard
@@ -363,7 +476,7 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
           />
         </div>
 
-        {/* Recent transactions */}
+        {/* Recent transactions — Real transaction data in Sprint 16 */}
         <TransactionsTable rows={RECENT_TRANSACTIONS} />
 
         {/* Top boats */}

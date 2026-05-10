@@ -37,6 +37,15 @@
       "topBoats": {
         "title": "Top Performing Boats",
         "sub": "TOP PERFORMING VESSELS · LAST 30 DAYS"
+      },
+      "kpi": {
+        "users": "Users",
+        "yachts": "Yachts",
+        "kycPending": "KYC Pending",
+        "bookings": "Bookings",
+        "gtv": "Gross Transaction Value",
+        "revenue": "Revenue",
+        "takeRate": "Take Rate"
       }
     },
     "kyc": {

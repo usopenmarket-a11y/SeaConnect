@@ -614,3 +614,246 @@ class TestNotificationPreferenceModel:
         """__str__ must include the user id."""
         prefs = NotificationPreference.objects.create(user=customer_user)
         assert str(customer_user.id) in str(prefs)
+
+
+# ---------------------------------------------------------------------------
+# TestSendNotificationPushEmailDispatch — covers lines 98, 100 in services.py
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestSendNotificationPushEmailDispatch:
+    """Cover the Celery task dispatch branches in send_notification().
+
+    The .delay() method is patched (not the DB) so no broker is required.
+    Patching .delay() is patching a network/queue call, not the DB layer —
+    this is consistent with the project's ADR (which forbids DB mocking only).
+    """
+
+    def test_happy_push_channel_dispatches_push_task(self, customer_user: User):
+        """send_notification() with channel=PUSH must call send_push_notification.delay()."""
+        from unittest.mock import patch
+
+        with patch(
+            "apps.notifications.tasks.send_push_notification.delay"
+        ) as mock_push_delay:
+            result = send_notification(
+                recipient=customer_user,
+                notification_type=NotificationType.BOOKING_CONFIRMED,
+                channel=NotificationChannel.PUSH,
+                title_ar="تأكيد",
+                title_en="Confirmation",
+                body_ar="تم التأكيد.",
+                body_en="Confirmed.",
+            )
+        assert result is not None
+        mock_push_delay.assert_called_once_with(str(result.id))
+
+    def test_happy_email_channel_dispatches_email_task(self, customer_user: User):
+        """send_notification() with channel=EMAIL must call send_email_notification.delay()."""
+        from unittest.mock import patch
+
+        with patch(
+            "apps.notifications.tasks.send_email_notification.delay"
+        ) as mock_email_delay:
+            result = send_notification(
+                recipient=customer_user,
+                notification_type=NotificationType.PAYMENT_RECEIVED,
+                channel=NotificationChannel.EMAIL,
+                title_ar="تأكيد الدفع",
+                title_en="Payment Confirmed",
+                body_ar="تم الدفع.",
+                body_en="Payment received.",
+            )
+        assert result is not None
+        mock_email_delay.assert_called_once_with(str(result.id))
+
+    def test_happy_in_app_channel_does_not_dispatch_any_task(
+        self, customer_user: User
+    ):
+        """IN_APP channel must not dispatch any Celery task — row is already stored."""
+        from unittest.mock import patch
+
+        with patch(
+            "apps.notifications.tasks.send_push_notification.delay"
+        ) as mock_push, patch(
+            "apps.notifications.tasks.send_email_notification.delay"
+        ) as mock_email:
+            result = send_notification(
+                recipient=customer_user,
+                notification_type=NotificationType.BOOKING_CONFIRMED,
+                channel=NotificationChannel.IN_APP,
+                title_ar="إشعار",
+                title_en="Notice",
+                body_ar="نص.",
+                body_en="Body.",
+            )
+        assert result is not None
+        mock_push.assert_not_called()
+        mock_email.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# TestNotifyBookingEvent — covers notify_booking_event() in services.py
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestNotifyBookingEvent:
+    """Tests for notify_booking_event() which wraps send_notification().
+
+    Uses a simple Python object to duck-type the booking argument — the
+    function only accesses .customer, .yacht.owner, .yacht.name_ar,
+    .yacht.name, and .id. No bookings DB table is needed for these tests.
+    """
+
+    def _make_booking_stub(self, customer, owner, booking_id=None):
+        """Return a duck-typed booking stub with the fields services.py needs."""
+        import types
+        yacht = types.SimpleNamespace(
+            owner=owner,
+            name_ar="يخت الاختبار",
+            name="Test Yacht",
+        )
+        return types.SimpleNamespace(
+            id=booking_id or uuid.uuid4(),
+            customer=customer,
+            yacht=yacht,
+        )
+
+    def test_happy_booking_created_notifies_owner(
+        self, customer_user: User, other_user: User
+    ):
+        """CREATED event must send a PUSH notification to the owner."""
+        from apps.bookings.models import BookingEventType
+        from unittest.mock import patch
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, BookingEventType.CREATED)
+
+        # Owner should have a push notification created
+        owner_notifications = Notification.objects.filter(
+            recipient=other_user,
+            channel=NotificationChannel.PUSH,
+            notification_type=NotificationType.BOOKING_CREATED,
+        )
+        assert owner_notifications.exists()
+
+    def test_happy_booking_confirmed_notifies_customer(
+        self, customer_user: User, other_user: User
+    ):
+        """CONFIRMED event must send a PUSH notification to the customer."""
+        from apps.bookings.models import BookingEventType
+        from unittest.mock import patch
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, BookingEventType.CONFIRMED)
+
+        customer_notifications = Notification.objects.filter(
+            recipient=customer_user,
+            channel=NotificationChannel.PUSH,
+            notification_type=NotificationType.BOOKING_CONFIRMED,
+        )
+        assert customer_notifications.exists()
+
+    def test_happy_booking_declined_notifies_customer(
+        self, customer_user: User, other_user: User
+    ):
+        """DECLINED event must send a PUSH notification to the customer."""
+        from apps.bookings.models import BookingEventType
+        from unittest.mock import patch
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, BookingEventType.DECLINED)
+
+        customer_notifications = Notification.objects.filter(
+            recipient=customer_user,
+            notification_type=NotificationType.BOOKING_DECLINED,
+        )
+        assert customer_notifications.exists()
+
+    def test_happy_booking_cancelled_notifies_owner(
+        self, customer_user: User, other_user: User
+    ):
+        """CANCELLED event must send a PUSH notification to the owner."""
+        from apps.bookings.models import BookingEventType
+        from unittest.mock import patch
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, BookingEventType.CANCELLED)
+
+        owner_notifications = Notification.objects.filter(
+            recipient=other_user,
+            notification_type=NotificationType.BOOKING_CANCELLED,
+        )
+        assert owner_notifications.exists()
+
+    def test_happy_payment_received_notifies_customer(
+        self, customer_user: User, other_user: User
+    ):
+        """PAYMENT_RECEIVED event must send a PUSH notification to the customer."""
+        from apps.bookings.models import BookingEventType
+        from unittest.mock import patch
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, BookingEventType.PAYMENT_RECEIVED)
+
+        customer_notifications = Notification.objects.filter(
+            recipient=customer_user,
+            notification_type=NotificationType.PAYMENT_RECEIVED,
+        )
+        assert customer_notifications.exists()
+
+    def test_sad_unknown_event_type_does_nothing(
+        self, customer_user: User, other_user: User
+    ):
+        """An unknown event_type must result in no notification rows created."""
+        from unittest.mock import patch
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+        before_count = Notification.objects.count()
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, "completely_unknown_event_xyz")
+
+        assert Notification.objects.count() == before_count
+
+    def test_sad_push_disabled_owner_gets_no_notification(
+        self, customer_user: User, other_user: User
+    ):
+        """When the owner has push disabled, CREATED event creates no notification row."""
+        from apps.bookings.models import BookingEventType
+        from unittest.mock import patch
+
+        prefs, _ = NotificationPreference.objects.get_or_create(user=other_user)
+        prefs.push_enabled = False
+        prefs.save(update_fields=["push_enabled"])
+
+        booking = self._make_booking_stub(customer=customer_user, owner=other_user)
+
+        with patch("apps.notifications.tasks.send_push_notification.delay"):
+            from apps.notifications.services import notify_booking_event
+            notify_booking_event(booking, BookingEventType.CREATED)
+
+        # Owner has push disabled — no row should be created for them
+        owner_notifications = Notification.objects.filter(
+            recipient=other_user,
+            notification_type=NotificationType.BOOKING_CREATED,
+        )
+        assert not owner_notifications.exists()

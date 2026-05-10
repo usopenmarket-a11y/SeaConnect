@@ -313,6 +313,42 @@
     "storeOrders": "store orders",
     "points": "points"
   },
+  "vendor": {
+    "guard": {
+      "checking": "Checking permissions...",
+      "notVendor": "This page is for vendors only"
+    },
+    "nav": {
+      "products": "My Products",
+      "dashboard": "Dashboard"
+    },
+    "products": {
+      "title": "Product Management",
+      "empty": "No products yet",
+      "addProduct": "Add product",
+      "loadError": "Could not load products",
+      "name": "Name",
+      "nameAr": "Name (Arabic)",
+      "price": "Price",
+      "stock": "Stock",
+      "status": "Status",
+      "image": "Image",
+      "actions": "Actions",
+      "uploadImage": "Upload image",
+      "uploading": "Uploading...",
+      "uploadSuccess": "Image uploaded",
+      "uploadError": "Could not upload image",
+      "create": "Create product",
+      "creating": "Creating...",
+      "createSuccess": "Product created",
+      "createError": "Could not create product",
+      "statusLabel": {
+        "active": "Active",
+        "draft": "Draft",
+        "out_of_stock": "Out of stock"
+      }
+    }
+  },
   "owner": {
     "nav": {
       "dashboard": "Dashboard",

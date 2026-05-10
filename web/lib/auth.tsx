@@ -20,7 +20,7 @@ import { post, get, setAccessToken, getAccessToken } from '@/lib/api'
 // Types
 // ---------------------------------------------------------------------------
 
-export type UserRole = 'customer' | 'owner' | 'admin'
+export type UserRole = 'customer' | 'owner' | 'admin' | 'vendor'
 
 export interface AuthUser {
   id: string

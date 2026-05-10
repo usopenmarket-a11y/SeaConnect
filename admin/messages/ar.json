@@ -37,6 +37,15 @@
       "topBoats": {
         "title": "أفضل القوارب أداءً",
         "sub": "TOP PERFORMING VESSELS · LAST 30 DAYS"
+      },
+      "kpi": {
+        "users": "المستخدمون",
+        "yachts": "القوارب",
+        "kycPending": "KYC معلّق",
+        "bookings": "الحجوزات",
+        "gtv": "القيمة الإجمالية",
+        "revenue": "الإيرادات",
+        "takeRate": "نسبة الأخذ"
       }
     },
     "kyc": {

@@ -2,11 +2,79 @@
 
 import { REVENUE_PATH, REVENUE_MONTHS } from '@/lib/mockData'
 
+export interface RevenueDataPoint {
+  month: string
+  value: number
+}
+
+/**
+ * Compute SVG line + area paths from an array of data points.
+ * Renders into a 600×180 viewBox with 10px top/bottom padding.
+ */
+function buildSvgPaths(data: RevenueDataPoint[]): {
+  line: string
+  area: string
+  dots: [number, number][]
+} {
+  if (data.length < 2) {
+    return { line: '', area: '', dots: [] }
+  }
+
+  const maxVal = Math.max(...data.map((d) => d.value))
+  // Guard against all-zero data
+  const scale = maxVal > 0 ? maxVal : 1
+
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * 600
+    const y = 180 - (d.value / scale) * 160 + 10
+    return [x, y] as [number, number]
+  })
+
+  const lineParts = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`)
+  const linePath = lineParts.join(' ')
+  const lastX = points[points.length - 1][0]
+  const areaPath = `${linePath} L${lastX.toFixed(1)} 180 L0 180 Z`
+
+  return { line: linePath, area: areaPath, dots: points }
+}
+
+interface RevenueChartProps {
+  /** Live data from the payouts API grouped by month. When omitted, static mock data is shown. */
+  data?: RevenueDataPoint[]
+}
+
 /**
  * SVG area line chart for 12-month revenue — mirrors Design/dashboards.jsx.
+ * Accepts optional live `data` prop; falls back to static mock paths when not provided.
  * Uses CSS variables for color to stay in sync with the design system.
  */
-export default function RevenueChart() {
+export default function RevenueChart({ data }: RevenueChartProps) {
+  const isLive = data !== undefined && data.length >= 2
+
+  const paths = isLive ? buildSvgPaths(data) : REVENUE_PATH
+  const months = isLive ? data.map((d) => d.month) : REVENUE_MONTHS
+
+  if (!isLive && data !== undefined) {
+    // data was provided but has fewer than 2 points — show placeholder
+    return (
+      <div
+        className="revenue-chart"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 180,
+          fontFamily: 'var(--ff-mono)',
+          fontSize: 12,
+          color: 'var(--muted)',
+          letterSpacing: '0.1em',
+        }}
+      >
+        LOADING...
+      </div>
+    )
+  }
+
   return (
     <div className="revenue-chart" role="img" aria-label="Revenue trend last 12 months">
       <svg viewBox="0 0 600 180" preserveAspectRatio="none">
@@ -31,18 +99,18 @@ export default function RevenueChart() {
         ))}
 
         {/* Area fill */}
-        <path d={REVENUE_PATH.area} fill="url(#rev-area-grad)" />
+        <path d={paths.area} fill="url(#rev-area-grad)" />
 
         {/* Line */}
         <path
-          d={REVENUE_PATH.line}
+          d={paths.line}
           fill="none"
           stroke="oklch(0.20 0.045 235)"
           strokeWidth="2"
         />
 
         {/* Data points */}
-        {REVENUE_PATH.dots.map(([x, y], i) => (
+        {paths.dots.map(([x, y], i) => (
           <circle key={i} cx={x} cy={y} r="3.5" fill="var(--clay)" />
         ))}
       </svg>
@@ -61,7 +129,7 @@ export default function RevenueChart() {
         }}
         aria-hidden="true"
       >
-        {REVENUE_MONTHS.map((m) => (
+        {months.map((m) => (
           <span key={m}>{m}</span>
         ))}
       </div>

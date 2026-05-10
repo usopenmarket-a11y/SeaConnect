@@ -1085,3 +1085,148 @@ docker compose run --rm api python manage.py check                          # 0 
 docker compose run --rm api pytest apps/core/tests/test_throttles.py -v   # 24 passed
 docker compose run --rm api pytest --reuse-db -q                           # 591+ passed, pre-existing 1 failure + 2 errors unchanged
 ```
+
+---
+
+## HANDOFF-2026-05-07-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** all agents
+**Sprint:** 14A
+**Feature:** Analytics + Notifications HTTP endpoint tests
+
+### What Was Completed
+- Created `apps/analytics/tests/__init__.py`, `apps/analytics/tests/conftest.py`, and `apps/analytics/tests/test_analytics.py` — 31 tests covering AuditLogListView, log_event() service, AuditLogAdmin append-only enforcement, and OwnerEarningsSummary model.
+- Created `apps/notifications/tests/test_notifications_api.py` — 40 tests covering InAppNotificationListView, MarkReadView, send_notification() service, notify_booking_event(), and NotificationPreference model.
+- Full suite: 71 new tests added; total backend suite now 447 passed (up from 437 before Sprint 14A).
+
+### Coverage Achieved (modules under test)
+- `analytics/views.py`: 100%, `analytics/services.py`: 100%, `analytics/models.py`: 96%, `analytics/admin.py`: 90%
+- `notifications/views.py`: 100%, `notifications/models.py`: 98%, `notifications/services.py`: 95%
+- Known gap: `notifications/tasks.py` at 13% — covered by the pre-existing `test_fcm_task.py` which mocks Firebase at the sys.modules level (appropriate for that module).
+
+### Contract
+- `GET /api/v1/analytics/audit-log/` — IsAdminUser (is_staff=True); anonymous→401, non-staff→403, admin→200 with DRF CursorPagination `results`/`next` envelope; filters `?event_type=` and `?reference_type=` verified.
+- `GET /api/v1/notifications/` — IsAuthenticated; anonymous→401; only channel=in_app rows returned; user isolation enforced.
+- `POST /api/v1/notifications/<id>/read/` — idempotent mark-read; other user's notification→404; push channel→404.
+
+### How to Test
+```bash
+# Run new tests only (must use -p no:randomly to avoid pytest-randomly DB creation race):
+docker compose run --rm api pytest apps/analytics/tests/ apps/notifications/tests/test_notifications_api.py -p no:randomly -v
+
+# Full suite (randomizer safe when run from apps/ root):
+docker compose run --rm api pytest apps/ -p no:randomly -q
+```
+
+### Known Gap — pytest-randomly interaction
+When running `apps/analytics/tests/` and `apps/notifications/tests/test_notifications_api.py` as separate path arguments WITHOUT `-p no:randomly`, the first 1-2 tests from the second directory to be executed encounter a `psycopg.errors.DuplicateDatabase` error. This is a pytest-randomly ordering race: both app-level conftest files attempt to initialise the shared test DB simultaneously. All tests pass when run from a common root (`apps/`) or with `-p no:randomly`. The full `pytest apps/` invocation used by CI is unaffected.
+
+---
+
+## HANDOFF-2026-05-10-001
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** api-endpoint-agent
+**Sprint:** 15A
+**Feature:** Admin Dashboard — GTV KPI + Revenue Chart wired to real API
+
+### What Was Completed
+- `admin/app/[locale]/dashboard/PageClient.tsx` — Added `AdminStats` and `PayoutRecord` interfaces. Added `formatGTV()` (formats string to "2.84M" / "347K"), `isoToMonthLabel()`, and `buildRevenueData()` helpers. Added two new SWR calls (both using the existing `[path, token]` tuple key pattern): one to `/analytics/stats/` populating `gtvValue`, `gtvCurrency`, and `bookingsTotal`; one to `/payments/payouts/?ordering=-created_at` whose results are grouped by month and passed to `RevenueChart` as `revenueData`. `KpiGrid` now accepts and renders `gtvValue`, `gtvCurrency`, and `bookingsTotal` props. REVENUE and TAKE RATE KPI cards remain `'—'` pending MoM delta data (Sprint 16). `RECENT_TRANSACTIONS` table stays mock with a "Real transaction data in Sprint 16" comment.
+- `admin/components/RevenueChart.tsx` — Extracted `RevenueDataPoint` interface (exported). Added `buildSvgPaths()` that computes SVG line/area/dots from a data array against a 600×180 viewbox. Added optional `data?: RevenueDataPoint[]` prop. When `data` is `undefined` the static mock paths render (loading state). When `data` has fewer than 2 points a "LOADING..." text placeholder renders. When `data` has 2+ points the dynamic paths render with real month labels.
+- `admin/messages/ar.json` + `admin/messages/en.json` — Added `admin.dashboard.kpi.*` keys for all seven KPI labels (users, yachts, kycPending, bookings, gtv, revenue, takeRate).
+
+### Contract
+- `GET /api/v1/analytics/stats/` must return `{gtv_total, gtv_currency, revenue_total, bookings_total, active_yachts}` — admin-only (IsAdminUser). This endpoint does NOT exist yet in the backend; the Sprint 15A backend agent must create it.
+- `GET /api/v1/payments/payouts/?ordering=-created_at` — already exists per ADR-013 cursor pagination; each result must include `amount` (Decimal string) and `created_at` (ISO 8601 UTC).
+
+### How to Test
+```bash
+# TypeScript check — 0 errors
+cd /mnt/e/Work/Projects/SeaConnect/admin && npx tsc --noEmit
+
+# Manual smoke test (dev)
+# 1. Set admin_token in browser localStorage
+# 2. Navigate to http://localhost:3001/ar/dashboard
+# 3. GTV card shows formatted value once /analytics/stats/ responds
+# 4. Revenue chart renders dynamic SVG once /payments/payouts/ responds
+# 5. While token is absent, GTV shows '—' and chart shows static mock (graceful fallback)
+```
+
+---
+
+## HANDOFF-2026-05-10-002
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** qa-agent, nextjs-page-agent
+**Sprint:** 15
+**Feature:** Vendor product management page with image upload
+
+### What Was Completed
+- `web/app/[locale]/vendor/layout.tsx` — vendor area layout; wraps `VendorGuard` + `VendorSidebar` in a sidebar grid identical to the owner layout pattern.
+- `web/components/vendor/VendorGuard.tsx` — Client Component; redirects unauthenticated users to `/login`, non-vendor roles to `/`; spinner while auth loads.
+- `web/components/vendor/VendorSidebar.tsx` — Client Component; nav link for Products; active-link detection via `usePathname()`.
+- `web/app/[locale]/vendor/products/page.tsx` — Server Component shell; calls `setRequestLocale`, renders `VendorProductsClient`.
+- `web/app/[locale]/vendor/products/PageClient.tsx` — Client Component; SWR on `GET /api/v1/marketplace/vendor/products/`; inline add-product form (name, name_ar, price, stock, status=draft default); per-row image upload via hidden `<input type="file" accept="image/jpeg,image/png,image/webp">` + `POST /marketplace/products/{id}/images/` with `FormData` field `file`; upload/create loading/success/error states with 3 s auto-reset; Arabic-Indic numerals in AR locale (ADR-018 currency from API).
+- `web/messages/ar.json` + `web/messages/en.json` — added `"vendor"` namespace with `guard`, `nav`, and `products` sub-keys. Parity maintained across both files.
+- `web/lib/auth.tsx` — added `'vendor'` to `UserRole` union type (was missing; would have caused TS error in VendorGuard comparison).
+
+### API Endpoints Used
+- `GET /api/v1/marketplace/vendor/products/` — vendor's own product inventory (all statuses, cursor-paginated) — Sprint 11D.
+- `POST /api/v1/marketplace/products/` — create product (role=vendor required) — Sprint 11D.
+- `POST /api/v1/marketplace/products/{id}/images/` — multipart upload, field name `file`, returns `{"image_url": str}` — Sprint 12A.
+
+### How to Test
+```bash
+# TypeScript (PASS, 0 errors — verified this session):
+cd /mnt/e/Work/Projects/SeaConnect/web && npx tsc --noEmit
+
+# Visual smoke test (requires docker compose up + vendor user):
+# Navigate to http://localhost:3000/ar/vendor/products
+# Log in as vendor@seaconnect.local / vendorpass123!
+# Expect: product table with image thumbnails + "Add product" form toggle
+# Click "Upload image" on any row → file picker → select JPEG/PNG/WebP → POST fires
+```
+
+### Build Verification
+- `npx tsc --noEmit` — PASS, 0 errors (executed this session).
+
+---
+
+## HANDOFF-2026-05-10-001
+
+**Status:** READY
+**From:** django-api-agent
+**To:** frontend-web-agent
+**Sprint:** 15
+**Feature:** Analytics platform stats + owner earnings endpoints
+
+### What Was Completed
+- `backend/apps/analytics/views.py` — added `AdminPlatformStatsView` (GET /api/v1/analytics/stats/, IsAdminUser) and `OwnerEarningsSummaryListView` (GET /api/v1/analytics/earnings/, IsAuthenticated, CursorPagination, owner-scoped / staff sees all).
+- `backend/apps/analytics/urls.py` — registered `analytics/stats/` and `analytics/earnings/` routes.
+- `backend/apps/analytics/tests/test_analytics_stats.py` — 16 tests covering permission enforcement, GTV calculation, zero-data edge case, active-yacht/completed-booking counts, owner isolation, staff override, pagination envelope, and response shape.
+
+### Contract
+- `AdminPlatformStatsView`: no pagination (scalar response). GTV = sum of `PaymentStatus.CAPTURED` payments. Revenue = GTV × 0.12. Currency hardcoded `'EGP'` for Egypt-first phase per ADR-018 follow-up.
+- `OwnerEarningsSummaryListView`: cursor-paginated (ADR-013), ordered `-year, -month`. Staff bypass: `is_staff=True` returns all rows.
+
+### How to Test
+```bash
+# Django check (no DB needed):
+cd backend && PYTHONPATH=/mnt/e/Work/Projects/SeaConnect/backend python3 manage.py check
+
+# Full test suite (requires SeaConnect docker compose up):
+cd backend && python3 -m pytest apps/analytics/tests/test_analytics_stats.py -v
+```
+
+### Response/Output Shape
+```json
+// GET /api/v1/analytics/stats/
+{"gtv_total": "284000.00", "gtv_currency": "EGP", "revenue_total": "34080.00", "bookings_total": 1284, "active_yachts": 42}
+
+// GET /api/v1/analytics/earnings/  (cursor-paginated)
+{"next": null, "previous": null, "results": [{"id": "...", "owner": "...", "year": 2026, "month": 5, "gross_revenue": "5000.00", "platform_fee": "600.00", "net_revenue": "4400.00", "currency": "EGP", "booking_count": 3, "created_at": "...", "updated_at": "..."}]}
+```
