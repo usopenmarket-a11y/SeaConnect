@@ -22,7 +22,14 @@
     "login": "Log In",
     "logout": "Log Out",
     "yachts": "Yachts",
-    "listYourBoat": "List Your Boat"
+    "listYourBoat": "List Your Boat",
+    "tournaments": "Tournaments",
+    "ariaLabel": "Main navigation",
+    "logoAriaLabel": "SeaConnect — Home",
+    "cartAriaLabel": "Shopping cart",
+    "accountAriaLabel": "My account",
+    "langAriaLabel": "Change language",
+    "cartItems": "{count} items in cart"
   },
   "home": {
     "hero": {
@@ -33,6 +40,7 @@
       "kicker": "EGYPT'S MARITIME LEISURE PLATFORM",
       "line1": "The sea is closer",
       "line2em": "than you think",
+      "line2connector": "than",
       "sub": "Book a fishing boat or luxury yacht along Egypt's coastline, source gear from certified vendors, and register for tournaments — all in one trusted place."
     },
     "search": {
@@ -40,7 +48,18 @@
       "date": "Date",
       "duration": "Duration",
       "passengers": "Passengers",
-      "btn": "Search"
+      "btn": "Search",
+      "optHurghada": "Hurghada · Red Sea",
+      "optAlex": "Alexandria · Mediterranean",
+      "optSharm": "Sharm El Sheikh",
+      "optLuxor": "Luxor · Nile",
+      "optHalf": "Half day · 6 hrs",
+      "optFull": "Full day · 10 hrs",
+      "optMulti": "Multiple days",
+      "opt2pax": "2 passengers",
+      "opt4pax": "4 passengers",
+      "opt6pax": "6 passengers",
+      "opt10pax": "10 passengers"
     },
     "featured": {
       "heading1": "Featured",
@@ -85,6 +104,16 @@
       "body": "List your boat for free. 0% commission for the first 3 months. Manage bookings, schedules, and payments — from one dashboard.",
       "primaryBtn": "Start listing for free",
       "secondaryBtn": "How does the platform work?"
+    },
+    "regions": {
+      "all": "All coasts",
+      "hurghada": "Hurghada",
+      "alex": "Alexandria",
+      "sharm": "Sharm El Sheikh",
+      "dahab": "Dahab",
+      "portsaid": "Port Said",
+      "luxor": "Luxor — Nile",
+      "aswan": "Aswan — Nile"
     }
   },
   "auth": {
@@ -139,7 +168,8 @@
     "card": {
       "capacity": "passenger(s)",
       "perDay": "/day",
-      "viewDetails": "View Details"
+      "viewDetails": "View Details",
+      "with": "with"
     },
     "detail": {
       "description": "Description",
@@ -283,6 +313,7 @@
   },
   "competitions": {
     "title": "Tournaments",
+    "titleEm": "& Events",
     "subtitle": "Egypt's full fishing tournament calendar — from amateur clubs to pro events. Register, track the leaderboard, and show your catch.",
     "empty": "No open tournaments right now",
     "emptyHint": "NO OPEN TOURNAMENTS · CHECK BACK SOON",
@@ -399,6 +430,27 @@
     "orderError": "Could not place order, please try again",
     "cartEmpty": "Cart is empty — add products first",
     "loadError": "Could not load cart"
+  },
+  "footer": {
+    "brand": "SeaConnect",
+    "tagline": "Connecting Egypt to its coastlines — since 2026.",
+    "platform": "Platform",
+    "explore": "Explore boats",
+    "store": "Gear store",
+    "tournaments": "Tournaments",
+    "becomeOwner": "Become a boat owner",
+    "becomeVendor": "Become a vendor",
+    "company": "Company",
+    "about": "About us",
+    "press": "Press",
+    "careers": "Careers",
+    "contact": "Contact us",
+    "trust": "Trust & Safety",
+    "guarantee": "Booking guarantee",
+    "terms": "Terms of use",
+    "privacy": "Privacy policy",
+    "refund": "Refund policy",
+    "copyright": "© 2026 SEACONNECT LLC · Registered in Cairo, Egypt"
   },
   "owner": {
     "nav": {

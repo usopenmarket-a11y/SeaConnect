@@ -14,6 +14,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { ScrollProgress } from '@/components/layout/ScrollProgress'
 import { get } from '@/lib/api'
@@ -30,14 +31,15 @@ interface NavProps {
 }
 
 const NAV_LINKS = [
-  { id: 'home', ar: 'الرئيسية', href: '' },
-  { id: 'yachts', ar: 'القوارب واليخوت', href: '/yachts' },
-  { id: 'marketplace', ar: 'متجر العدد', href: '/marketplace' },
-  { id: 'competitions', ar: 'البطولات', href: '/competitions' },
-  { id: 'profile', ar: 'حسابي', href: '/profile' },
+  { id: 'home',         tKey: 'home',        href: '' },
+  { id: 'yachts',       tKey: 'yachts',      href: '/yachts' },
+  { id: 'marketplace',  tKey: 'marketplace', href: '/marketplace' },
+  { id: 'competitions', tKey: 'tournaments', href: '/competitions' },
+  { id: 'profile',      tKey: 'account',     href: '/profile' },
 ] as const
 
 export function Nav({ locale }: NavProps): React.ReactElement {
+  const t = useTranslations('nav')
   const pathname = usePathname()
   // Cart badge — silently fails when user is not logged in (data is undefined)
   const { data: cartData } = useSWR<CartBadgeData>(
@@ -66,12 +68,11 @@ export function Nav({ locale }: NavProps): React.ReactElement {
   return (
     <>
       <ScrollProgress />
-      <nav className="nav" role="navigation" aria-label="التنقل الرئيسي" data-screen-label="nav">
+      <nav className="nav" role="navigation" aria-label={t('ariaLabel')} data-screen-label="nav">
         {/* Logo */}
-        <Link href={`/${locale}`} className="nav-logo" aria-label="سي كونكت — الرئيسية">
+        <Link href={`/${locale}`} className="nav-logo" aria-label={t('logoAriaLabel')}>
           <span className="mark" aria-hidden="true">س</span>
-          سي كونكت
-          <span className="en-tag">/ SeaConnect</span>
+          سي كونكت / SeaConnect
         </Link>
 
         {/* Primary links */}
@@ -82,7 +83,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
               href={`/${locale}${link.href}`}
               className={`nav-link${isActive(link.href) ? ' active' : ''}`}
             >
-              {link.ar}
+              {t(link.tKey)}
             </Link>
           ))}
         </div>
@@ -92,7 +93,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
           {/* Cart icon with item count badge */}
           <Link
             href={`/${locale}/cart`}
-            aria-label="السلة"
+            aria-label={t('cartAriaLabel')}
             style={{
               position: 'relative',
               display: 'inline-flex',
@@ -123,7 +124,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
             {/* Badge — only shown when cart has items */}
             {cartCount > 0 && (
               <span
-                aria-label={`${cartCount} منتج في السلة`}
+                aria-label={t('cartItems', { count: cartCount })}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -151,7 +152,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
           <Link
             href={otherLocalePath}
             className="lang"
-            aria-label="تغيير اللغة"
+            aria-label={t('langAriaLabel')}
           >
             {locale === 'ar' ? 'AR / EN' : 'EN / AR'}
           </Link>
@@ -160,12 +161,12 @@ export function Nav({ locale }: NavProps): React.ReactElement {
             className="btn btn-ghost"
             style={{ padding: '8px 14px', fontSize: 13 }}
           >
-            إدراج قاربك
+            {t('listYourBoat')}
           </Link>
           <Link
             href={`/${locale}/login`}
             className="avatar"
-            aria-label="حسابي"
+            aria-label={t('accountAriaLabel')}
           >
             ن
           </Link>

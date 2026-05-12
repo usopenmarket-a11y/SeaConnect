@@ -22,7 +22,14 @@
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج",
     "yachts": "القوارب",
-    "listYourBoat": "إدراج قاربك"
+    "listYourBoat": "إدراج قاربك",
+    "tournaments": "البطولات",
+    "ariaLabel": "التنقل الرئيسي",
+    "logoAriaLabel": "سي كونكت — الرئيسية",
+    "cartAriaLabel": "السلة",
+    "accountAriaLabel": "حسابي",
+    "langAriaLabel": "تغيير اللغة",
+    "cartItems": "{count} منتج في السلة"
   },
   "home": {
     "hero": {
@@ -33,6 +40,7 @@
       "kicker": "EGYPT'S MARITIME LEISURE PLATFORM",
       "line1": "البحر أقرب",
       "line2em": "تتخيّل",
+      "line2connector": "مما",
       "sub": "احجز قارب صيد أو يخت فاخر على طول ساحل مصر، اقتن أدواتك من بائعين معتمدين، وسجّل في البطولات — كل ذلك في مكان واحد موثوق."
     },
     "search": {
@@ -40,7 +48,18 @@
       "date": "التاريخ",
       "duration": "المدة",
       "passengers": "المسافرون",
-      "btn": "ابحث"
+      "btn": "ابحث",
+      "optHurghada": "الغردقة · البحر الأحمر",
+      "optAlex": "الإسكندرية · المتوسط",
+      "optSharm": "شرم الشيخ",
+      "optLuxor": "الأقصر · النيل",
+      "optHalf": "نصف يوم · 6 س",
+      "optFull": "يوم كامل · 10 س",
+      "optMulti": "أيام متعددة",
+      "opt2pax": "2 مسافرين",
+      "opt4pax": "4 مسافرين",
+      "opt6pax": "6 مسافرين",
+      "opt10pax": "10 مسافرين"
     },
     "featured": {
       "heading1": "قوارب",
@@ -85,6 +104,16 @@
       "body": "أدرج قاربك مجاناً. 0% عمولة في الأشهر الثلاثة الأولى. إدارة حجوزات، مواعيد، ومدفوعات — من لوحة تحكم واحدة.",
       "primaryBtn": "ابدأ الإدراج مجاناً",
       "secondaryBtn": "كيف تعمل المنصة؟"
+    },
+    "regions": {
+      "all": "كل السواحل",
+      "hurghada": "الغردقة",
+      "alex": "الإسكندرية",
+      "sharm": "شرم الشيخ",
+      "dahab": "دهب",
+      "portsaid": "بورسعيد",
+      "luxor": "الأقصر — النيل",
+      "aswan": "أسوان — النيل"
     }
   },
   "auth": {
@@ -139,7 +168,8 @@
     "card": {
       "capacity": "راكب",
       "perDay": "يوم/",
-      "viewDetails": "عرض التفاصيل"
+      "viewDetails": "عرض التفاصيل",
+      "with": "مع"
     },
     "detail": {
       "description": "الوصف",
@@ -283,6 +313,7 @@
   },
   "competitions": {
     "title": "البطولات",
+    "titleEm": "والأحداث",
     "subtitle": "تقويم كل بطولات الصيد في مصر — من أندية الهواة إلى البطولات الاحترافية. سجّل، تابع اللوحة، اعرض صيدك.",
     "empty": "لا توجد بطولات مفتوحة حالياً",
     "emptyHint": "NO OPEN TOURNAMENTS · CHECK BACK SOON",
@@ -399,6 +430,27 @@
     "orderError": "تعذّر إتمام الطلب، حاول مرة أخرى",
     "cartEmpty": "السلة فارغة — أضف منتجات أولاً",
     "loadError": "تعذّر تحميل السلة"
+  },
+  "footer": {
+    "brand": "سي كونكت",
+    "tagline": "نربط مصر بسواحلها — منذ ٢٠٢٦.",
+    "platform": "المنصة",
+    "explore": "استكشاف القوارب",
+    "store": "متجر العدد",
+    "tournaments": "البطولات",
+    "becomeOwner": "كن مالك قارب",
+    "becomeVendor": "كن بائعاً",
+    "company": "الشركة",
+    "about": "من نحن",
+    "press": "الصحافة",
+    "careers": "وظائف",
+    "contact": "اتصل بنا",
+    "trust": "الثقة والأمان",
+    "guarantee": "ضمان الحجز",
+    "terms": "شروط الاستخدام",
+    "privacy": "الخصوصية",
+    "refund": "سياسة الاسترجاع",
+    "copyright": "© 2026 SEACONNECT LLC · مسجلة في القاهرة، مصر"
   },
   "owner": {
     "nav": {

@@ -6,22 +6,23 @@
  * Converted from Design/home.jsx Home() region-strip section.
  * Maintains active chip state client-side.
  * Client Component required for useState.
+ *
+ * ADR-015: region labels are passed pre-translated from the Server Component
+ * parent via the `label` field — no hardcoded strings here.
  */
 
 import * as React from 'react'
 
 interface Region {
-  ar: string
-  en: string
+  label: string
   count: number
 }
 
 interface RegionStripProps {
   regions: Region[]
-  locale: string
 }
 
-export function RegionStrip({ regions, locale }: RegionStripProps): React.ReactElement {
+export function RegionStrip({ regions }: RegionStripProps): React.ReactElement {
   const [activeRegion, setActiveRegion] = React.useState(0)
 
   return (
@@ -32,7 +33,7 @@ export function RegionStrip({ regions, locale }: RegionStripProps): React.ReactE
           className={`region-chip${activeRegion === i ? ' active' : ''}`}
           onClick={() => setActiveRegion(i)}
         >
-          <span>{locale === 'ar' ? r.ar : r.en}</span>
+          <span>{r.label}</span>
           <span className="count">{r.count}</span>
         </button>
       ))}

@@ -26,8 +26,6 @@ interface YachtSummary {
 type TabId = 'basics' | 'specs' | 'photos' | 'pricing' | 'amenities' | 'policies'
 
 interface TabDef {
-  ar: string
-  en: string
   id: TabId
 }
 
@@ -46,12 +44,12 @@ interface FieldProps {
 // ── Tabs config ──────────────────────────────────────────────────────────────
 
 const TABS: TabDef[] = [
-  { ar: 'الأساسيات', en: 'BASICS', id: 'basics' },
-  { ar: 'المواصفات', en: 'SPECS', id: 'specs' },
-  { ar: 'الصور', en: 'PHOTOS', id: 'photos' },
-  { ar: 'التسعير', en: 'PRICING', id: 'pricing' },
-  { ar: 'الخدمات', en: 'AMENITIES', id: 'amenities' },
-  { ar: 'السياسات', en: 'POLICIES', id: 'policies' },
+  { id: 'basics' },
+  { id: 'specs' },
+  { id: 'photos' },
+  { id: 'pricing' },
+  { id: 'amenities' },
+  { id: 'policies' },
 ]
 
 // ── Pricing matrix data ──────────────────────────────────────────────────────
@@ -639,15 +637,14 @@ export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.R
     <div dir="rtl">
       {/* Tab bar */}
       <div className="seller-tabs">
-        {TABS.map(({ ar, en, id }) => (
+        {TABS.map(({ id }) => (
           <button
             key={id}
             className={`stab${tab === id ? ' active' : ''}`}
             onClick={() => setTab(id)}
             type="button"
           >
-            <span className="ar">{ar}</span>
-            <span className="en">{en}</span>
+            {t(`tabs.${id}`)}
           </button>
         ))}
       </div>

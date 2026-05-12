@@ -13,12 +13,16 @@ interface Props {
   locale: string
 }
 
-function formatDate(dateStr: string): { day: string; month: string } {
+function getMonthName(monthIndex: number, locale: string): string {
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'long' })
+    .format(new Date(2026, monthIndex, 1))
+}
+
+function formatDate(dateStr: string, locale: string): { day: string; month: string } {
   const d = new Date(dateStr)
-  const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
   return {
     day: String(d.getDate()),
-    month: months[d.getMonth()] ?? '',
+    month: getMonthName(d.getMonth(), locale),
   }
 }
 
@@ -94,7 +98,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
           § TOURNAMENTS · FISHING CALENDAR 2026
         </div>
         <h1 className="display" style={{ fontSize: 72, lineHeight: 0.95, letterSpacing: '-0.02em', fontWeight: 700 }}>
-          {t('title')} <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>والأحداث</em>.
+          {t('title')} <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>{t('titleEm')}</em>.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--ink-2)', maxWidth: '52ch', marginTop: 14 }}>
           {t('subtitle')}
@@ -111,7 +115,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
         ) : (
           <div style={{ border: '1px solid var(--rule)' }}>
             {competitions.map((c) => {
-              const { day, month } = formatDate(c.start_date)
+              const { day, month } = formatDate(c.start_date, locale)
               return (
                 <div key={c.id} className="comp-row">
                   <div className="date">

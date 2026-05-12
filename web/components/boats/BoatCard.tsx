@@ -1,3 +1,5 @@
+'use client'
+
 /**
  * BoatCard — individual yacht/boat card for grid listings.
  *
@@ -11,6 +13,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 export interface BoatCardData {
   /** UUID from API, or mock id like 'b1' */
@@ -47,6 +50,7 @@ interface BoatCardProps {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export function BoatCard({ boat, locale }: BoatCardProps): React.ReactElement {
+  const t = useTranslations('yachts.card')
   const imgSrc =
     boat.img ??
     boat.primary_image_url ??
@@ -87,7 +91,7 @@ export function BoatCard({ boat, locale }: BoatCardProps): React.ReactElement {
         <div className="name">{boat.name}</div>
         {boat.captEn && (
           <div className="capt">
-            مع <em>{boat.captEn}</em>
+            {t('with')} <em>{boat.captEn}</em>
           </div>
         )}
         <div className="specs">

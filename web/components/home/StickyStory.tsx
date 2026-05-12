@@ -9,43 +9,55 @@
  * The section has height: 320vh so it occupies enough scroll distance.
  *
  * Client Component required for useScrollProgress().
+ * ADR-015: strings via useTranslations('home.trust').
  */
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { useScrollProgress } from '@/hooks/useScrollProgress'
 
-const STEPS = [
-  {
-    img: 'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=1600&q=80',
-    tag: '§ TRUST · STEP 01 — INSPECTION',
-    h1: 'كل قارب،',
-    h2em: 'مُعاين',
-    h3: ' شخصياً.',
-    p: 'فريقنا يصعد على متن كل سفينة قبل اعتمادها. نتحقق من رخصة خفر السواحل، ومعدات السلامة، وحالة المحرك، وعدد سترات النجاة. لا نوافق على أي قارب لا يستوفي ٢٧ نقطة فحص.',
-  },
-  {
-    img: 'https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?auto=format&fit=crop&w=1600&q=80',
-    tag: '§ TRUST · STEP 02 — ESCROW',
-    h1: 'دفعك في ',
-    h2em: 'ضمان',
-    h3: '،\nحتى الإبحار.',
-    p: 'مدفوعاتك محفوظة في حساب ضمان موثوق. لا تذهب للربان إلا بعد ٢٤ ساعة من انتهاء الرحلة. إذا حدث أي خلل — إلغاء، أعطال، عدم مطابقة — تُعاد أموالك كاملة دون سؤال.',
-  },
-  {
-    img: 'https://images.unsplash.com/photo-1606251801-3e21d6e3a8b6?auto=format&fit=crop&w=1600&q=80',
-    tag: '§ TRUST · STEP 03 — INSURANCE',
-    h1: 'تأمين شامل',
-    h2em: 'على كل رحلة',
-    h3: '.',
-    p: 'كل حجز يأتي معه تأمين سفر بقيمة تصل إلى ١٠٠,٠٠٠ EGP لكل مسافر. إصابات، فقدان معدات، أو تأخير في العودة — كل ذلك مغطى. لأن الثقة لا تكفي وحدها.',
-  },
+const STEP_IMAGES = [
+  'https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&w=1600&q=80',
+  'https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?auto=format&fit=crop&w=1600&q=80',
+  'https://images.unsplash.com/photo-1606251801-3e21d6e3a8b6?auto=format&fit=crop&w=1600&q=80',
+]
+
+const STEP_TAGS = [
+  '§ TRUST · STEP 01 — INSPECTION',
+  '§ TRUST · STEP 02 — ESCROW',
+  '§ TRUST · STEP 03 — INSURANCE',
 ]
 
 export function StickyStory(): React.ReactElement {
+  const t = useTranslations('home.trust')
   const { ref, progress } = useScrollProgress()
 
   // Three windows of progress: 0-0.40, 0.40-0.65, 0.65-0.90
   const active = progress < 0.40 ? 0 : progress < 0.65 ? 1 : 2
+
+  const steps = [
+    {
+      tag: STEP_TAGS[0],
+      h1: t('step1.line1'),
+      h2em: t('step1.line2em'),
+      h3: t('step1.line3'),
+      p: t('step1.body'),
+    },
+    {
+      tag: STEP_TAGS[1],
+      h1: t('step2.line1'),
+      h2em: t('step2.line2em'),
+      h3: t('step2.line3'),
+      p: t('step2.body'),
+    },
+    {
+      tag: STEP_TAGS[2],
+      h1: t('step3.line1'),
+      h2em: t('step3.line2em'),
+      h3: '',
+      p: t('step3.body'),
+    },
+  ]
 
   return (
     <section
@@ -57,12 +69,12 @@ export function StickyStory(): React.ReactElement {
         <div className="sticky-story-stage">
           {/* Image stack — crossfades between steps */}
           <div className="sticky-img-stack">
-            {STEPS.map((s, i) => (
+            {STEP_IMAGES.map((img, i) => (
               <div
                 key={i}
                 className={`pane${i === active ? ' on' : ''}`}
                 style={{
-                  backgroundImage: `url(${s.img})`,
+                  backgroundImage: `url(${img})`,
                   transform: i === active ? 'scale(1.04)' : 'scale(1)',
                 }}
               />
@@ -81,7 +93,7 @@ export function StickyStory(): React.ReactElement {
 
           {/* Text stack — each step fades in independently */}
           <div className="sticky-text-stack">
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <div key={i} className={`sticky-step${i === active ? ' on' : ''}`}>
                 <div className="num-tag">{s.tag}</div>
                 <h2>
@@ -105,7 +117,7 @@ export function StickyStory(): React.ReactElement {
 
           {/* Step progress dots */}
           <div className="sticky-progress">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <div key={i} className={`dot${i === active ? ' on' : ''}`} />
             ))}
           </div>

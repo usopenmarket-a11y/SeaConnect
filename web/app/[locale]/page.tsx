@@ -29,14 +29,14 @@ interface HomePageProps {
 // ── Static mock data (matches Design/data.jsx) ────────────────────────────────
 
 const REGIONS = [
-  { ar: 'كل السواحل', en: 'All coasts', count: 183 },
-  { ar: 'الغردقة', en: 'Hurghada', count: 68 },
-  { ar: 'الإسكندرية', en: 'Alexandria', count: 42 },
-  { ar: 'شرم الشيخ', en: 'Sharm El Sheikh', count: 31 },
-  { ar: 'دهب', en: 'Dahab', count: 14 },
-  { ar: 'بورسعيد', en: 'Port Said', count: 12 },
-  { ar: 'الأقصر — النيل', en: 'Luxor — Nile', count: 9 },
-  { ar: 'أسوان — النيل', en: 'Aswan — Nile', count: 7 },
+  { id: 'all',      count: 183 },
+  { id: 'hurghada', count: 68 },
+  { id: 'alex',     count: 42 },
+  { id: 'sharm',    count: 31 },
+  { id: 'dahab',    count: 14 },
+  { id: 'portsaid', count: 12 },
+  { id: 'luxor',    count: 9 },
+  { id: 'aswan',    count: 7 },
 ] as const
 
 const GEAR = [
@@ -161,6 +161,7 @@ export default async function HomePage({
 }: HomePageProps): Promise<React.ReactElement> {
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'home' })
+  const tComps = await getTranslations({ locale, namespace: 'competitions' })
   const boats = await fetchFeaturedBoats(locale)
 
   return (
@@ -171,6 +172,7 @@ export default async function HomePage({
         kicker={t('hero.kicker')}
         line1={t('hero.line1')}
         line2em={t('hero.line2em')}
+        line2connector={t('hero.line2connector')}
         sub={t('hero.sub')}
         searchLabels={{
           destination: t('search.destination'),
@@ -182,7 +184,12 @@ export default async function HomePage({
       />
 
       {/* ── Region chips strip (Client Component — active state) ────────── */}
-      <RegionStrip regions={[...REGIONS]} locale={locale} />
+      <RegionStrip
+        regions={REGIONS.map((r) => ({
+          label: t(`regions.${r.id}`),
+          count: r.count,
+        }))}
+      />
 
       {/* ── Marquee band ─────────────────────────────────────────────────── */}
       <MarqueeBand />
@@ -284,13 +291,13 @@ export default async function HomePage({
                 </div>
                 <div className="meta">
                   <span className="n num">{c.participants}</span>
-                  <span className="l">مشارك</span>
+                  <span className="l">{tComps('participants')}</span>
                 </div>
                 <div className="meta">
                   <span className="n num">{c.prize}</span>
-                  <span className="l">جوائز EGP</span>
+                  <span className="l">{tComps('prizes')}</span>
                 </div>
-                <button className="cta">سجّل · {c.fee} EGP</button>
+                <button className="cta">{tComps('register')} · {c.fee} EGP</button>
               </div>
             </Reveal>
           ))}

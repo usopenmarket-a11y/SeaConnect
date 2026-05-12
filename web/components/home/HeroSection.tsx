@@ -14,6 +14,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useParallax } from '@/hooks/useParallax'
 import { Reveal } from '@/components/ui/Reveal'
 
@@ -22,6 +23,7 @@ interface HeroSectionProps {
   kicker: string
   line1: string
   line2em: string
+  line2connector: string
   sub: string
   searchLabels: {
     destination: string
@@ -37,12 +39,19 @@ export function HeroSection({
   kicker,
   line1,
   line2em,
+  line2connector,
   sub,
   searchLabels,
 }: HeroSectionProps): React.ReactElement {
+  const tSearch = useTranslations('home.search')
   const { ref, style } = useParallax(0.35)
   const router = useRouter()
   const [passengers, setPassengers] = React.useState(2)
+
+  const todayLabel = new Date().toLocaleDateString(
+    locale === 'ar' ? 'ar-EG' : 'en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' },
+  )
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -81,7 +90,7 @@ export function HeroSection({
           <h1 className="hero-title">
             {line1}
             <br />
-            مما <em>{line2em}</em>.
+            {line2connector} <em>{line2em}</em>.
           </h1>
         </Reveal>
 
@@ -96,22 +105,22 @@ export function HeroSection({
             <div className="field">
               <label>{searchLabels.destination}</label>
               <select defaultValue="hurghada">
-                <option value="hurghada">الغردقة · البحر الأحمر</option>
-                <option value="alex">الإسكندرية · المتوسط</option>
-                <option value="sharm">شرم الشيخ</option>
-                <option value="luxor">الأقصر · النيل</option>
+                <option value="hurghada">{tSearch('optHurghada')}</option>
+                <option value="alex">{tSearch('optAlex')}</option>
+                <option value="sharm">{tSearch('optSharm')}</option>
+                <option value="luxor">{tSearch('optLuxor')}</option>
               </select>
             </div>
             <div className="field">
               <label>{searchLabels.date}</label>
-              <input defaultValue="12 مايو 2026" readOnly />
+              <input defaultValue={todayLabel} readOnly />
             </div>
             <div className="field">
               <label>{searchLabels.duration}</label>
               <select defaultValue="full">
-                <option value="half">نصف يوم · 6 س</option>
-                <option value="full">يوم كامل · 10 س</option>
-                <option value="multi">أيام متعددة</option>
+                <option value="half">{tSearch('optHalf')}</option>
+                <option value="full">{tSearch('optFull')}</option>
+                <option value="multi">{tSearch('optMulti')}</option>
               </select>
             </div>
             <div className="field">
@@ -120,10 +129,10 @@ export function HeroSection({
                 value={passengers}
                 onChange={(e) => setPassengers(Number(e.target.value))}
               >
-                <option value={2}>2 أشخاص</option>
-                <option value={4}>4 أشخاص</option>
-                <option value={6}>6 أشخاص</option>
-                <option value={10}>10 أشخاص</option>
+                <option value={2}>{tSearch('opt2pax')}</option>
+                <option value={4}>{tSearch('opt4pax')}</option>
+                <option value={6}>{tSearch('opt6pax')}</option>
+                <option value={10}>{tSearch('opt10pax')}</option>
               </select>
             </div>
             <button type="submit" className="search-btn cta-shimmer">
