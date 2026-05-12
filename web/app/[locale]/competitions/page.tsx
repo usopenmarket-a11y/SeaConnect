@@ -37,5 +37,5 @@ export default async function Page({ params }: Props): Promise<React.ReactElemen
     // fall through — empty state rendered below
   }
 
-  return <CompetitionsPage competitions={competitions} />
+  return <CompetitionsPage competitions={competitions} locale={params.locale} />
 }

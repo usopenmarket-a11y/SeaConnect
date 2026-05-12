@@ -16,8 +16,12 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { mutate } from 'swr'
 import { useAuth } from '@/lib/auth'
 import { getAccessToken } from '@/lib/api'
+
+/** SWR key that matches the cart fetch key used by the cart page and nav badge. */
+const CART_KEY = '/marketplace/cart/'
 
 interface AddToCartButtonProps {
   productId: string
@@ -82,6 +86,8 @@ export function AddToCartButton({
       }
 
       setState('success')
+      // Invalidate the cart SWR cache so the nav badge and cart page update
+      void mutate(CART_KEY)
       setTimeout(() => setState('idle'), 3000)
     } catch {
       setState('error')

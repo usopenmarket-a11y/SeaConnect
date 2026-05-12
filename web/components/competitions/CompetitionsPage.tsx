@@ -2,11 +2,15 @@
 
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth'
+import { getAccessToken } from '@/lib/api'
 
 import type { Competition } from '@/app/[locale]/competitions/page'
 
 interface Props {
   competitions: Competition[]
+  locale: string
 }
 
 function formatDate(dateStr: string): { day: string; month: string } {
@@ -25,8 +29,62 @@ function formatPrize(amount: string): string {
   return n.toLocaleString('en')
 }
 
-export function CompetitionsPage({ competitions }: Props): React.ReactElement {
+export function CompetitionsPage({ competitions, locale }: Props): React.ReactElement {
   const t = useTranslations('competitions')
+  const router = useRouter()
+  const { user } = useAuth()
+
+  const [registeringId, setRegisteringId] = React.useState<string | null>(null)
+  const [registeredIds, setRegisteredIds] = React.useState<Set<string>>(new Set())
+  const [errorId, setErrorId] = React.useState<string | null>(null)
+
+  async function handleRegister(competitionId: string): Promise<void> {
+    if (!user) {
+      router.push(`/${locale}/login`)
+      return
+    }
+
+    setRegisteringId(competitionId)
+    setErrorId(null)
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
+      const token = getAccessToken()
+      const res = await fetch(
+        `${apiUrl}/api/v1/competitions/${competitionId}/enter/`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        },
+      )
+
+      if (res.status === 201) {
+        setRegisteredIds((prev) => new Set(prev).add(competitionId))
+        return
+      }
+
+      if (res.status === 400) {
+        const body = await res.json().catch(() => ({}))
+        if (body?.error?.code === 'ALREADY_ENTERED') {
+          setRegisteredIds((prev) => new Set(prev).add(competitionId))
+          return
+        }
+      }
+
+      // Any other non-success status
+      setErrorId(competitionId)
+      setTimeout(() => setErrorId(null), 4000)
+    } catch {
+      setErrorId(competitionId)
+      setTimeout(() => setErrorId(null), 4000)
+    } finally {
+      setRegisteringId(null)
+    }
+  }
 
   return (
     <div dir="rtl">
@@ -72,8 +130,30 @@ export function CompetitionsPage({ competitions }: Props): React.ReactElement {
                     <span className="n num">{formatPrize(c.prize_pool)}</span>
                     <span className="l">{t('prizes')}</span>
                   </div>
-                  <button className="cta">
-                    {t('register')} · {Number(c.entry_fee).toLocaleString('en')} EGP
+                  {errorId === c.id && (
+                    <span
+                      className="mono"
+                      style={{ fontSize: 11, color: 'var(--clay)', alignSelf: 'center' }}
+                    >
+                      {t('registerError')}
+                    </span>
+                  )}
+                  <button
+                    className="cta"
+                    onClick={() => { void handleRegister(c.id) }}
+                    disabled={registeredIds.has(c.id) || registeringId === c.id}
+                    aria-busy={registeringId === c.id}
+                    style={
+                      registeredIds.has(c.id)
+                        ? { opacity: 0.7, cursor: 'default', color: 'var(--sea)' }
+                        : undefined
+                    }
+                  >
+                    {registeredIds.has(c.id)
+                      ? t('registered')
+                      : registeringId === c.id
+                        ? t('registering')
+                        : `${t('register')} · ${Number(c.entry_fee).toLocaleString('en')} EGP`}
                   </button>
                 </div>
               )

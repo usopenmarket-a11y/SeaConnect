@@ -32,7 +32,9 @@
       },
       "transactions": {
         "title": "أحدث المعاملات",
-        "sub": "RECENT TRANSACTIONS · LIVE"
+        "sub": "RECENT TRANSACTIONS · LIVE",
+        "empty": "لا توجد معاملات بعد",
+        "noData": "—"
       },
       "topBoats": {
         "title": "أفضل القوارب أداءً",

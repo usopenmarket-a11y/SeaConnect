@@ -1230,3 +1230,70 @@ cd backend && python3 -m pytest apps/analytics/tests/test_analytics_stats.py -v
 // GET /api/v1/analytics/earnings/  (cursor-paginated)
 {"next": null, "previous": null, "results": [{"id": "...", "owner": "...", "year": 2026, "month": 5, "gross_revenue": "5000.00", "platform_fee": "600.00", "net_revenue": "4400.00", "currency": "EGP", "booking_count": 3, "created_at": "...", "updated_at": "..."}]}
 ```
+
+---
+
+## HANDOFF-2026-05-12-001
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** api-endpoint-agent
+**Sprint:** 15
+**Feature:** Vendor Dashboard root page (`/vendor/`)
+
+### What Was Completed
+- `web/app/[locale]/vendor/page.tsx` — Server Component shell, calls `setRequestLocale` and renders `VendorDashboardClient`
+- `web/app/[locale]/vendor/DashboardClient.tsx` — Client Component with 3 KPI stat cards (products listed, active products, pending orders), profile banner (logo + store name + verified badge, or "complete profile" prompt), recent orders table (last 5, columns: Order ID, Items, Total, Status, Date)
+- `web/components/vendor/VendorSidebar.tsx` — Added "Dashboard" nav item pointing to `/${locale}/vendor` with `exact: true` matching so it does not light up when on `/vendor/products`
+- `web/messages/ar.json` + `web/messages/en.json` — Added `vendor.dashboard.*` namespace (15 keys each, parity 0 diff)
+
+### Contract
+- `GET /api/v1/marketplace/vendor/products/` — cursor-paginated product list; fields: `id, name, name_ar, price, currency, stock, status, image_url`
+- `GET /api/v1/marketplace/orders/` — cursor-paginated vendor orders; fields: `id, status, total_amount, currency, created_at, items[]`
+- `GET /api/v1/marketplace/vendor-profile/` — single object; fields: `id, store_name, store_name_ar, description, description_ar, logo_url, is_verified`
+
+### How to Test
+```bash
+# With docker stack running:
+curl -H "Authorization: Bearer <token>" http://localhost:8010/api/v1/marketplace/vendor-profile/
+# → {id, store_name, store_name_ar, logo_url, is_verified}
+
+# Browser: log in as a vendor user, navigate to /ar/vendor — should show the dashboard (not 404)
+```
+
+### Response/Output Shape
+```json
+// GET /api/v1/marketplace/vendor-profile/
+{"id": "uuid", "store_name": "Sea Gear Co.", "store_name_ar": "شركة معدات البحر", "logo_url": null, "is_verified": false}
+```
+
+---
+
+## HANDOFF-2026-05-12-001
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** nextjs-page-agent, backend-api-agent
+**Sprint:** 15 → 16
+**Feature:** Marketplace cart page + checkout flow + nav cart badge
+
+### What Was Completed
+- `web/app/[locale]/cart/page.tsx` — Client Component: SWR fetch of cart, editable quantity (debounced PATCH), delete, empty state, subtotal sidebar, link to checkout. Includes `loading.tsx` and `error.tsx`.
+- `web/app/[locale]/checkout/page.tsx` — Client Component: two-step flow (shipping address form → POST /marketplace/orders/ → confirmation screen with order ID and items list). Includes `loading.tsx` and `error.tsx`.
+- `web/components/marketplace/AddToCartButton.tsx` — added `mutate('/marketplace/cart/')` after successful add so nav badge and cart page update reactively.
+- `web/components/layout/Nav.tsx` — added cart icon link (`/${locale}/cart`) with item count badge sourced from `useSWR('/marketplace/cart/')`. Badge uses `insetInlineEnd` (ADR-014 compliant). Badge hidden when count is 0.
+- `web/messages/ar.json` + `web/messages/en.json` — added `cart` and `checkout` namespaces (13 keys each, AR=EN=441 total, diff=0).
+
+### Contract
+- `GET /api/v1/marketplace/cart/` — `{id, items: [{id, product: {id, name, name_ar, image_url, price, currency}, quantity, line_total}], item_count}`
+- `PATCH /api/v1/marketplace/cart/items/{id}/` — body `{quantity}`, 200
+- `DELETE /api/v1/marketplace/cart/items/{id}/` — 204
+- `POST /api/v1/marketplace/orders/` — body `{shipping_address}`, 201 returns `{id, status, total_amount, currency, items}`
+
+### How to Test
+```bash
+# Logged-in customer adds a product from /ar/marketplace/{id}
+# Nav badge increments
+# /ar/cart shows item, change quantity → PATCH called after 500ms debounce
+# Click "متابعة الدفع" → /ar/checkout, fill address, "تأكيد الطلب" → confirmation screen
+```

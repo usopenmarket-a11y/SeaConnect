@@ -32,7 +32,9 @@
       },
       "transactions": {
         "title": "Recent Transactions",
-        "sub": "RECENT TRANSACTIONS · LIVE"
+        "sub": "RECENT TRANSACTIONS · LIVE",
+        "empty": "No transactions yet",
+        "noData": "—"
       },
       "topBoats": {
         "title": "Top Performing Boats",

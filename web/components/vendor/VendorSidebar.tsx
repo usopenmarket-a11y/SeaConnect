@@ -20,11 +20,15 @@ interface Props {
 }
 
 interface NavItem {
+  /** Path segment appended to /${locale}/ — empty string for the section root. */
   hrefSegment: string
+  /** Whether to match exactly (true) or with startsWith (false). */
+  exact?: boolean
   labelKey: 'products' | 'dashboard'
 }
 
 const items: NavItem[] = [
+  { hrefSegment: 'vendor', exact: true, labelKey: 'dashboard' },
   { hrefSegment: 'vendor/products', labelKey: 'products' },
 ]
 
@@ -39,7 +43,9 @@ export function VendorSidebar({ locale }: Props): React.ReactElement {
     >
       {items.map((item) => {
         const href = `/${locale}/${item.hrefSegment}`
-        const active = pathname.startsWith(href)
+        const active = item.exact
+          ? pathname === href
+          : pathname.startsWith(href)
         return (
           <Link
             key={item.hrefSegment}

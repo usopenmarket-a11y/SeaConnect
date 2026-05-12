@@ -288,7 +288,13 @@
     "emptyHint": "NO OPEN TOURNAMENTS · CHECK BACK SOON",
     "participants": "participants",
     "prizes": "prizes EGP",
-    "register": "Register"
+    "register": "Register",
+    "registered": "Registered ✓",
+    "registering": "Registering...",
+    "registerError": "Registration failed, please try again",
+    "registerLoginRequired": "Log in to register",
+    "full": "Competition full",
+    "closed": "Registration closed"
   },
   "profile": {
     "tabs": {
@@ -322,6 +328,23 @@
       "products": "My Products",
       "dashboard": "Dashboard"
     },
+    "dashboard": {
+      "title": "Vendor Dashboard",
+      "productsListed": "Products listed",
+      "activeProducts": "Active products",
+      "pendingOrders": "Pending orders",
+      "recentOrders": "Recent orders",
+      "noOrders": "No orders yet",
+      "profileBanner": "Store profile",
+      "completeProfile": "Complete your store profile",
+      "verified": "Verified ✓",
+      "loadError": "Could not load dashboard data",
+      "orderId": "Order ID",
+      "items": "Items",
+      "total": "Total",
+      "status": "Status",
+      "date": "Date"
+    },
     "products": {
       "title": "Product Management",
       "empty": "No products yet",
@@ -348,6 +371,34 @@
         "out_of_stock": "Out of stock"
       }
     }
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "emptyHint": "Browse the marketplace and add products",
+    "browseShopping": "Browse marketplace",
+    "product": "Product",
+    "quantity": "Qty",
+    "unitPrice": "Unit price",
+    "lineTotal": "Total",
+    "remove": "Remove",
+    "subtotal": "Subtotal",
+    "proceedCheckout": "Proceed to checkout",
+    "loadError": "Could not load cart",
+    "updateError": "Could not update quantity"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shippingAddress": "Shipping address",
+    "shippingPlaceholder": "City, street, postal code",
+    "placeOrder": "Place order",
+    "placing": "Placing order...",
+    "successTitle": "Order confirmed!",
+    "orderRef": "Order reference",
+    "continueShopping": "Continue shopping",
+    "orderError": "Could not place order, please try again",
+    "cartEmpty": "Cart is empty — add products first",
+    "loadError": "Could not load cart"
   },
   "owner": {
     "nav": {

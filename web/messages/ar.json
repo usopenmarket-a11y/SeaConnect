@@ -288,7 +288,13 @@
     "emptyHint": "NO OPEN TOURNAMENTS · CHECK BACK SOON",
     "participants": "مشارك",
     "prizes": "جوائز EGP",
-    "register": "سجّل"
+    "register": "سجّل",
+    "registered": "مسجّل ✓",
+    "registering": "جاري التسجيل...",
+    "registerError": "تعذّر التسجيل، حاول مرة أخرى",
+    "registerLoginRequired": "سجّل دخولك للمشاركة",
+    "full": "المسابقة ممتلئة",
+    "closed": "التسجيل مغلق"
   },
   "profile": {
     "tabs": {
@@ -322,6 +328,23 @@
       "products": "منتجاتي",
       "dashboard": "لوحة التحكم"
     },
+    "dashboard": {
+      "title": "لوحة تحكم البائع",
+      "productsListed": "المنتجات المدرجة",
+      "activeProducts": "المنتجات النشطة",
+      "pendingOrders": "الطلبات المعلّقة",
+      "recentOrders": "أحدث الطلبات",
+      "noOrders": "لا توجد طلبات بعد",
+      "profileBanner": "ملفك التجاري",
+      "completeProfile": "أكمل ملفك التجاري",
+      "verified": "موثّق ✓",
+      "loadError": "تعذّر تحميل البيانات",
+      "orderId": "رقم الطلب",
+      "items": "المنتجات",
+      "total": "الإجمالي",
+      "status": "الحالة",
+      "date": "التاريخ"
+    },
     "products": {
       "title": "إدارة المنتجات",
       "empty": "لا توجد منتجات بعد",
@@ -348,6 +371,34 @@
         "out_of_stock": "نفد المخزون"
       }
     }
+  },
+  "cart": {
+    "title": "سلة المشتريات",
+    "empty": "سلة المشتريات فارغة",
+    "emptyHint": "تصفّح المتجر وأضف منتجات",
+    "browseShopping": "تصفّح المتجر",
+    "product": "المنتج",
+    "quantity": "الكمية",
+    "unitPrice": "سعر الوحدة",
+    "lineTotal": "الإجمالي",
+    "remove": "حذف",
+    "subtotal": "المجموع الفرعي",
+    "proceedCheckout": "متابعة الدفع",
+    "loadError": "تعذّر تحميل السلة",
+    "updateError": "تعذّر تحديث الكمية"
+  },
+  "checkout": {
+    "title": "إتمام الطلب",
+    "shippingAddress": "عنوان الشحن",
+    "shippingPlaceholder": "المدينة، الشارع، الرقم البريدي",
+    "placeOrder": "تأكيد الطلب",
+    "placing": "جاري التأكيد...",
+    "successTitle": "تم تأكيد طلبك!",
+    "orderRef": "رقم الطلب",
+    "continueShopping": "متابعة التسوق",
+    "orderError": "تعذّر إتمام الطلب، حاول مرة أخرى",
+    "cartEmpty": "السلة فارغة — أضف منتجات أولاً",
+    "loadError": "تعذّر تحميل السلة"
   },
   "owner": {
     "nav": {

@@ -5,9 +5,7 @@ import useSWR from 'swr'
 import AdminSidebar from '@/components/AdminSidebar'
 import RevenueChart, { type RevenueDataPoint } from '@/components/RevenueChart'
 import {
-  RECENT_TRANSACTIONS,
   TOP_BOATS,
-  type Transaction,
   type TopBoat,
 } from '@/lib/mockData'
 import { adminGet, type PaginatedResponse } from '@/lib/api'
@@ -35,6 +33,18 @@ interface PayoutRecord {
   currency: string
   status: string
   payment_method: string
+  created_at: string
+}
+
+// ── Transaction row shape (GET /api/v1/analytics/audit-log/?event_type=payment_received) ──
+
+interface TransactionRow {
+  id: string
+  actor_email: string | null
+  reference_id: string
+  amount: string
+  currency: string
+  event_type: string
   created_at: string
 }
 
@@ -69,19 +79,25 @@ function buildRevenueData(payouts: PayoutRecord[]): RevenueDataPoint[] {
   return entries.map(([month, value]) => ({ month, value }))
 }
 
+// ── Relative time formatter ───────────────────────────────────────────────────
+
+function relativeTime(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins} MIN AGO`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs} HR AGO`
+  return `${Math.floor(hrs / 24)} DAYS AGO`
+}
+
 interface DashboardClientProps {
   locale: string
 }
 
-// ── Transaction status pill ──────────────────────────
+// ── Transaction status pill (audit-log payment entries are always successful) ──
 
-function TxStatusPill({ status }: { status: Transaction['status'] }) {
-  const labels: Record<Transaction['status'], string> = {
-    ok: '✓ CONFIRMED',
-    warn: '⚠ REVIEW',
-    pending: '⏱ PENDING',
-  }
-  return <span className={`pill-status ${status}`}>{labels[status]}</span>
+function TxStatusPill() {
+  return <span className="pill-status ok">&#10003; OK</span>
 }
 
 // ── Boat status pill ─────────────────────────────────
@@ -243,7 +259,7 @@ function KycQueueCard({ pendingCount, locale, isLoading }: KycQueueCardProps) {
 
 // ── Transactions Table ────────────────────────────────
 
-function TransactionsTable({ rows }: { rows: Transaction[] }) {
+function TransactionsTable({ rows }: { rows: TransactionRow[] }) {
   return (
     <div className="dash-card" style={{ marginBottom: 32 }}>
       <h3>أحدث المعاملات</h3>
@@ -254,31 +270,40 @@ function TransactionsTable({ rows }: { rows: Transaction[] }) {
             <tr>
               <th scope="col">ID</th>
               <th scope="col">العميل</th>
-              <th scope="col">القارب</th>
               <th scope="col">المبلغ</th>
-              <th scope="col">الدفع</th>
               <th scope="col">الحالة</th>
               <th scope="col">الوقت</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((tx) => (
-              <tr key={tx.id}>
-                <td className="num" style={{ color: 'var(--muted)', fontSize: 12 }}>
-                  {tx.id}
-                </td>
-                <td>{tx.user}</td>
-                <td>{tx.boat}</td>
-                <td className="num">{tx.amount.toLocaleString('en')} EGP</td>
-                <td className="num">{tx.method}</td>
-                <td>
-                  <TxStatusPill status={tx.status} />
-                </td>
-                <td className="num" style={{ color: 'var(--muted)', fontSize: 12 }}>
-                  {tx.time}
+            {rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  style={{ textAlign: 'center', color: 'var(--muted)', padding: '24px 0' }}
+                >
+                  لا توجد معاملات بعد
                 </td>
               </tr>
-            ))}
+            ) : (
+              rows.map((tx) => (
+                <tr key={tx.id}>
+                  <td className="num" style={{ color: 'var(--muted)', fontSize: 12 }}>
+                    {tx.reference_id.slice(0, 8)}
+                  </td>
+                  <td>{tx.actor_email ?? '—'}</td>
+                  <td className="num">
+                    {tx.amount} {tx.currency}
+                  </td>
+                  <td>
+                    <TxStatusPill />
+                  </td>
+                  <td className="num" style={{ color: 'var(--muted)', fontSize: 12 }}>
+                    {relativeTime(tx.created_at)}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -410,6 +435,16 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
     { revalidateOnFocus: false },
   )
 
+  // Recent payment transactions from audit log
+  const { data: txData } = useSWR<PaginatedResponse<TransactionRow>>(
+    token
+      ? (['/analytics/audit-log/?event_type=payment_received&ordering=-created_at', token] as const)
+      : null,
+    ([path, tok]: readonly [string, string]) =>
+      adminGet<PaginatedResponse<TransactionRow>>(path, tok),
+    { revalidateOnFocus: false },
+  )
+
   const pendingCount = kycData?.results.length ?? 0
   // Prefer server-supplied total count when available; fall back to page length.
   const usersCount: number | '—' =
@@ -476,8 +511,8 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
           />
         </div>
 
-        {/* Recent transactions — Real transaction data in Sprint 16 */}
-        <TransactionsTable rows={RECENT_TRANSACTIONS} />
+        {/* Recent transactions — wired to audit-log API */}
+        <TransactionsTable rows={txData?.results ?? []} />
 
         {/* Top boats */}
         <TopBoatsTable boats={TOP_BOATS} />
