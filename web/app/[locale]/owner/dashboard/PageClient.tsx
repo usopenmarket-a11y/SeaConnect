@@ -1,30 +1,10 @@
 'use client'
 
-/**
- * Owner dashboard — KPI overview + pending bookings list.
- *
- * Fetches three filtered booking lists in parallel:
- *   - pending_owner  → pending count KPI
- *   - confirmed      → active count KPI
- *   - completed      → total earnings KPI + currency
- *
- * Each request uses page_size=100 so KPI counts are accurate for owners
- * with up to 100 bookings per status.  A dedicated count endpoint can be
- * added in a future sprint to remove the page-size limit.
- *
- * ADR-009 — JWT attached by get() from @/lib/api (never in localStorage).
- * ADR-013 — cursor pagination; we read results[] length, not a count field.
- * ADR-014 — logical CSS only.
- * ADR-015 — all strings via t().
- */
-
 import * as React from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 
-import { Card } from '@/components/ui/Card'
-import { StatCard } from '@/components/owner/StatCard'
 import { get, type PaginatedResponse } from '@/lib/api'
 
 interface BookingSummary {
@@ -43,9 +23,7 @@ interface Props {
   params: { locale: string }
 }
 
-export function OwnerDashboardPage({
-  params: { locale },
-}: Props): React.ReactElement {
+export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactElement {
   const t = useTranslations('owner.dashboard')
   const tCommon = useTranslations('common')
 
@@ -73,135 +51,119 @@ export function OwnerDashboardPage({
     )
 
   const isLoading = pendingLoading || confirmedLoading || completedLoading
-  const hasError = !!pendingError
 
-  // Derived KPI values — fall back to 0 while loading
   const pendingCount = pendingData?.results.length ?? 0
   const activeCount = confirmedData?.results.length ?? 0
   const totalEarnings =
-    completedData?.results.reduce(
-      (sum, b) => sum + Number(b.total_amount),
-      0,
-    ) ?? 0
-  const earningsCurrency = completedData?.results[0]?.currency ?? ''
+    completedData?.results.reduce((sum, b) => sum + Number(b.total_amount), 0) ?? 0
+  const earningsCurrency = completedData?.results[0]?.currency ?? 'EGP'
 
-  function formatNumber(n: number): string {
-    return locale === 'ar'
-      ? n.toLocaleString('ar-EG')
-      : n.toLocaleString('en-US')
+  function fmt(n: number): string {
+    return locale === 'ar' ? n.toLocaleString('ar-EG') : n.toLocaleString('en-US')
   }
 
-  function formatDate(iso: string): string {
+  function fmtDate(iso: string): string {
     try {
       return new Date(iso).toLocaleDateString(
         locale === 'ar' ? 'ar-EG' : 'en-GB',
         { day: 'numeric', month: 'short', year: 'numeric' },
       )
-    } catch {
-      return iso
-    }
+    } catch { return iso }
   }
 
   const pendingBookings = pendingData?.results ?? []
 
   return (
-    <section>
-      <h1 className="mb-6 font-display text-2xl font-bold text-ink">
-        {t('title')}
-      </h1>
-
-      {isLoading && (
-        <p className="py-8 text-center text-ink/50">{tCommon('loading')}</p>
-      )}
-
-      {hasError && (
-        <Card>
-          <Card.Body>
-            <p role="alert" className="py-6 text-center text-red-600">
-              {t('loadError')}
-            </p>
-          </Card.Body>
-        </Card>
-      )}
-
-      {/* KPI cards — visible once at least one dataset has loaded */}
-      {!isLoading && !hasError && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard
-            label={t('pendingBookings')}
-            value={formatNumber(pendingCount)}
-          />
-          <StatCard
-            label={t('activeBookings')}
-            value={formatNumber(activeCount)}
-          />
-          <StatCard
-            label={t('totalEarnings')}
-            value={
-              <>
-                {formatNumber(totalEarnings)}{' '}
-                <span className="text-base font-normal text-ink/60">
-                  {earningsCurrency}
-                </span>
-              </>
-            }
-          />
+    <div className="dash-wrap">
+      <header className="dash-head">
+        <div>
+          <div className="num-tag">§ OWNER · {locale.toUpperCase()} · DASHBOARD</div>
+          <h1>{t('title').split(' ')[0]} <em>{t('title').split(' ').slice(1).join(' ')}</em></h1>
         </div>
-      )}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link href={`/${locale}/owner/yachts`} className="btn btn-ghost">{t('viewAllBookings')}</Link>
+        </div>
+      </header>
 
-      {/* Pending bookings list */}
-      {!isLoading && !hasError && (
-        <div className="mt-8">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold text-ink">
-              {t('pendingSectionTitle')}
-            </h2>
-            <Link
-              href={`/${locale}/owner/bookings`}
-              className="text-sm text-sea hover:underline"
-            >
-              {t('viewAllBookings')}
-            </Link>
+      {/* KPI grid */}
+      <div className="kpi-grid" role="list" aria-label="Owner KPIs">
+        <div className="kpi" role="listitem">
+          <div className="l">PENDING · {t('pendingBookings')}</div>
+          <div className="v num">{isLoading ? '—' : fmt(pendingCount)}</div>
+        </div>
+        <div className="kpi" role="listitem">
+          <div className="l">ACTIVE · {t('activeBookings')}</div>
+          <div className="v num">{isLoading ? '—' : fmt(activeCount)}</div>
+        </div>
+        <div className="kpi" role="listitem">
+          <div className="l">EARNINGS · {t('totalEarnings')}</div>
+          <div className="v num">
+            {isLoading ? '—' : fmt(totalEarnings)}
+            <span className="unit">{earningsCurrency}</span>
           </div>
-
-          {pendingBookings.length === 0 ? (
-            <Card>
-              <Card.Body>
-                <p className="py-6 text-center text-ink/50">
-                  {t('noPendingBookings')}
-                </p>
-              </Card.Body>
-            </Card>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {pendingBookings.map((booking) => (
-                <Card key={booking.id} hoverable>
-                  <Card.Body>
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-mono text-sm font-medium text-ink">
-                          #{booking.id.slice(0, 8).toUpperCase()}
-                        </p>
-                        <p className="mt-0.5 text-xs text-ink/60">
-                          {formatDate(booking.start_date)}
-                          {' — '}
-                          {formatDate(booking.end_date)}
-                        </p>
-                      </div>
-                      <p className="font-mono text-sm font-semibold text-ink">
-                        {formatNumber(Number(booking.total_amount))}{' '}
-                        <span className="font-normal text-ink/60">
-                          {booking.currency}
-                        </span>
-                      </p>
-                    </div>
-                  </Card.Body>
-                </Card>
-              ))}
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* Error state */}
+      {pendingError && (
+        <p role="alert" style={{ color: 'var(--clay)', fontFamily: 'var(--ff-mono)', fontSize: 13, marginBottom: 24 }}>
+          {t('loadError')}
+        </p>
       )}
-    </section>
+
+      {/* Pending bookings card */}
+      <div className="dash-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+          <h3>{t('pendingSectionTitle')}</h3>
+          <Link
+            href={`/${locale}/owner/bookings`}
+            style={{ fontFamily: 'var(--ff-mono)', fontSize: 11, letterSpacing: '0.05em', color: 'var(--sea)' }}
+          >
+            {t('viewAllBookings')} →
+          </Link>
+        </div>
+        <div className="sub">PENDING APPROVAL · {pendingCount} {tCommon('loading').replace('...', '')}</div>
+
+        {isLoading && (
+          <p style={{ textAlign: 'center', color: 'var(--muted)', fontFamily: 'var(--ff-mono)', fontSize: 13, padding: '24px 0' }}>
+            {tCommon('loading')}
+          </p>
+        )}
+
+        {!isLoading && pendingBookings.length === 0 && (
+          <p style={{ textAlign: 'center', color: 'var(--muted)', fontFamily: 'var(--ff-mono)', fontSize: 13, padding: '24px 0' }}>
+            {t('noPendingBookings')}
+          </p>
+        )}
+
+        {!isLoading && pendingBookings.length > 0 && (
+          <table className="dash-table">
+            <thead>
+              <tr>
+                <th>REF</th>
+                <th>{t('pendingSectionTitle')}</th>
+                <th>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingBookings.map((booking) => (
+                <tr key={booking.id}>
+                  <td className="num">#{booking.id.slice(0, 8).toUpperCase()}</td>
+                  <td>
+                    <span className="num" style={{ fontSize: 13 }}>
+                      {fmtDate(booking.start_date)} — {fmtDate(booking.end_date)}
+                    </span>
+                  </td>
+                  <td className="num">
+                    {fmt(Number(booking.total_amount))}{' '}
+                    <span style={{ opacity: 0.5, fontSize: 12 }}>{booking.currency}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
   )
 }

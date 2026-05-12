@@ -26,10 +26,8 @@ export default function OwnerLayout({
 }: Props): React.ReactElement {
   return (
     <OwnerGuard locale={locale}>
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-8 lg:grid-cols-[14rem_1fr]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <OwnerSidebar locale={locale} />
-        </aside>
+      <div className="dash-layout">
+        <OwnerSidebar locale={locale} />
         <main>{children}</main>
       </div>
     </OwnerGuard>

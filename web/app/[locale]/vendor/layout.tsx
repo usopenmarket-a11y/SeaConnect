@@ -27,10 +27,8 @@ export default function VendorLayout({
 }: Props): React.ReactElement {
   return (
     <VendorGuard locale={locale}>
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-8 lg:grid-cols-[14rem_1fr]">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
-          <VendorSidebar locale={locale} />
-        </aside>
+      <div className="dash-layout">
+        <VendorSidebar locale={locale} />
         <main>{children}</main>
       </div>
     </VendorGuard>
