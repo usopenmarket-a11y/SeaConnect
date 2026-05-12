@@ -1297,3 +1297,110 @@ curl -H "Authorization: Bearer <token>" http://localhost:8010/api/v1/marketplace
 # /ar/cart shows item, change quantity → PATCH called after 500ms debounce
 # Click "متابعة الدفع" → /ar/checkout, fill address, "تأكيد الطلب" → confirmation screen
 ```
+
+---
+
+## HANDOFF-2026-05-12-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** any-agent
+**Sprint:** 15+
+**Feature:** E2E workflow tests — competitions lifecycle + payment/webhook flow
+
+### What Was Completed
+- `backend/tests/test_workflow_competitions.py` — 25 tests covering full competition lifecycle (register, catch, leaderboard, capacity guard, closed guard, my-entries, permission guards)
+- `backend/tests/test_workflow_payments.py` — 23 tests covering Fawry webhook HMAC → payment captured → BookingEvent inserted; payout list owner isolation; escrow 24h window
+
+### Contract
+- Competitions: `apps/competitions/views.py` (CompetitionEnterView, CatchLogCreateView, LeaderboardView, MyEntriesView)
+- Payments: `apps/payments/views.py` (FawryWebhookView, PayoutListView, EscrowListView)
+- ADR-012 — BookingEvent append-only log verified on webhook capture
+- ADR-009 — 401/403 guards verified on all authenticated endpoints
+
+### How to Test
+```bash
+docker compose run --rm api pytest tests/test_workflow_competitions.py tests/test_workflow_payments.py -v
+```
+
+### Coverage
+- 25/25 competition workflow tests pass
+- 23/23 payment workflow tests pass
+- 48/48 total pass, 0 failures
+- Known gap: no AuditLog entry tested for webhook (FawryWebhookView writes BookingEvent only, not AuditLog — confirmed by reading views.py)
+
+---
+
+## HANDOFF-2026-05-12-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** qa-agent, api-endpoint-agent
+**Sprint:** 15
+**Feature:** End-to-end booking workflow integration tests
+
+### What Was Completed
+- `backend/tests/test_workflow_booking.py` — 25 tests covering the full boat booking lifecycle across 6 test classes
+- Happy path: customer creates → owner confirms → payment captured (Payment row) → service completes → AuditLog written → earnings endpoint 200
+- Decline path: owner declines with reason stored in BookingEvent.notes and Booking.decline_reason; state conflict 409 on confirm-after-decline
+- Cancellation path: customer cancels confirmed or pending booking; double-cancel returns 409
+- Permission guards: anonymous → 401, wrong owner → 404, customer-on-confirm → 404, owner-on-cancel → 404
+- Audit trail: event count accumulates (never overwrites), actors recorded, created-event metadata has amount+currency (ADR-012/ADR-018)
+
+### Contract
+- ADR-012 — BookingEvent append-only log verified on every transition
+- ADR-018 — currency copied from yacht/region, never hardcoded (asserted in test_booking_currency_matches_yacht_region)
+- `apps/bookings/services.py` — BookingService.complete() called directly (no /complete/ HTTP route exists)
+- `apps/analytics/services.py` — log_event() called explicitly in complete step (mirroring production pattern)
+
+### How to Test
+```bash
+docker compose run --rm api pytest tests/test_workflow_booking.py -v
+# Expected: 25 passed
+```
+
+### Coverage
+- 25/25 tests pass, 0 failures, 0 errors
+- Production code coverage (this test file alone):
+  - apps/bookings/models.py: 95%
+  - apps/bookings/serializers.py: 81%
+  - apps/bookings/services.py: 66% (on_commit notification callbacks not exercised — expected; notifications fire post-commit which does not trigger in test transactions)
+  - apps/bookings/views.py: 44% (only booking CRUD/transition views covered; photo upload, semantic search, admin yacht views not hit)
+  - apps/analytics/models.py: 95%
+  - apps/analytics/services.py: 75%
+  - apps/payments/models.py: 96%
+
+---
+
+## HANDOFF-2026-05-12-001
+
+**Status:** DONE
+**From:** test-engineer-agent
+**To:** django-api-agent
+**Sprint:** 15+
+**Feature:** Marketplace workflow end-to-end tests
+
+### What Was Completed
+- Created `/mnt/e/Work/Projects/SeaConnect/backend/tests/test_workflow_marketplace.py` with 33 tests (32 pass, 1 xfail)
+- Covers: purchase lifecycle, cart management, vendor inventory, permission guards, VendorProfile requirement guards
+- One deliberate `xfail(strict=True)`: stock-limit guard on CartItemView is not yet implemented — test will auto-promote to passing once the guard is added
+
+### Known Gaps
+- `ProductListView` (lines 40-48 in views.py) is dead code — replaced by `VendorProductListCreateView` in Sprint 11D but class not removed; cannot be reached via URL
+- `ProductImageUploadView` (lines 354-381) not covered — requires multipart file upload; out of scope for workflow tests
+- `IsVendorProfileOwner` permission class (permissions.py line 57) not exercised — no view uses it via `check_object_permissions` yet
+- `seed_marketplace.py` management command (0% coverage) — data tooling, not business logic
+
+### How to Test
+```bash
+docker compose run --rm api pytest tests/test_workflow_marketplace.py -v -p no:randomly
+# Expected: 32 passed, 1 xfailed
+docker compose run --rm api pytest --cov=apps.marketplace --cov-report=term-missing tests/test_workflow_marketplace.py apps/marketplace/tests/ -q
+# Expected: 92% TOTAL coverage across apps/marketplace/
+```
+
+### Coverage
+- 32/32 active tests pass (1 xfail for unimplemented stock guard)
+- Combined with existing app-level tests: 92% coverage on apps/marketplace/
+- This test file alone: views.py 78%, serializers.py 88%, models.py 93%, permissions.py 94%
+- Known gaps: BookingService notification on_commit callbacks (lines 127-143, 173-183, etc.) — these dispatch Celery tasks post-commit; not testable without transaction=True + real Celery worker. Yacht create/update/photo/search views not exercised by this workflow file (covered by apps/bookings/tests/).
