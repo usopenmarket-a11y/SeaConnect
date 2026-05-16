@@ -16,7 +16,7 @@ export default function PublicLayout({
     <>
       <TopStrip />
       <Nav locale={locale} />
-      <main id="main-content" style={{ flex: 1 }}>
+      <main id="main-content" className="page-glass" style={{ flex: 1 }}>
         {children}
       </main>
       <Footer />

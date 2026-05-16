@@ -45,27 +45,27 @@ function SeaScene() {
     const lerpHsl = (a, b, t) => `hsl(${lerp(a[0], b[0], t)}, ${lerp(a[1], b[1], t)}%, ${lerp(a[2], b[2], t)}%)`;
 
     // sky stops keyed to scroll (0 -> 1)
-    // [hue, sat, lightness]
+    // Calmer, lighter palette per reference: pale sky → warm noon → coral dusk → indigo night
     const skyTop = [
-      { at: 0,    c: [205, 60, 78] },   // morning soft blue
-      { at: 0.30, c: [200, 55, 70] },   // mid morning
-      { at: 0.55, c: [30,  85, 72] },   // golden hour
-      { at: 0.78, c: [340, 60, 52] },   // dusk pink
-      { at: 1,    c: [240, 45, 18] },   // night
+      { at: 0,    c: [210, 70, 88] },   // pale dawn sky
+      { at: 0.30, c: [205, 75, 82] },   // soft mid-day blue
+      { at: 0.55, c: [35,  88, 80] },   // golden hour warmth
+      { at: 0.78, c: [18,  78, 64] },   // coral dusk
+      { at: 1,    c: [240, 50, 18] },   // deep indigo night
     ];
     const skyBot = [
-      { at: 0,    c: [195, 75, 88] },
-      { at: 0.30, c: [195, 70, 82] },
-      { at: 0.55, c: [25,  90, 80] },
-      { at: 0.78, c: [15,  75, 60] },
-      { at: 1,    c: [220, 60, 24] },
+      { at: 0,    c: [200, 80, 92] },
+      { at: 0.30, c: [200, 80, 88] },
+      { at: 0.55, c: [30,  92, 86] },
+      { at: 0.78, c: [12,  85, 72] },
+      { at: 1,    c: [220, 65, 26] },
     ];
     const seaC = [
-      { at: 0,    c: [200, 55, 50] },
-      { at: 0.30, c: [205, 58, 42] },
-      { at: 0.55, c: [205, 55, 35] },
-      { at: 0.78, c: [225, 55, 25] },
-      { at: 1,    c: [225, 60, 12] },
+      { at: 0,    c: [205, 60, 56] },   // luminous teal-blue
+      { at: 0.30, c: [208, 62, 46] },
+      { at: 0.55, c: [210, 60, 38] },
+      { at: 0.78, c: [222, 60, 26] },
+      { at: 1,    c: [228, 65, 14] },
     ];
 
     const sample = (stops, p) => {

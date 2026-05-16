@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SeaConnect · سي كونكت</title>
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -24,6 +24,12 @@
   <script type="text/babel" src="seller-pages.jsx"></script>
   <script type="text/babel" src="dashboards.jsx"></script>
   <script type="text/babel" src="availability.jsx"></script>
+  <script type="text/babel" src="system-pages.jsx"></script>
+  <script type="text/babel" src="owner-flows.jsx"></script>
+  <script type="text/babel" src="weather-fishing.jsx"></script>
+  <script type="text/babel" src="payment-flows.jsx"></script>
+  <script type="text/babel" src="reviews.jsx"></script>
+  <script type="text/babel" src="map-view.jsx"></script>
 
   <script type="text/babel">
     const { useState, useEffect } = React;
@@ -68,32 +74,156 @@
         );
       }
 
+      // Owner flows (accessible from seller role or direct nav)
+      if (page === 'listing-wizard') {
+        return (
+          <div className="app-shell" data-screen-label="17 Listing Wizard">
+            <SeaScene />
+            <TopStrip />
+            <ScrollProgress />
+            <Nav currentPage={page} onNavigate={nav} />
+            <ListingWizard onNavigate={nav} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+      if (page === 'owner-bookings') {
+        return (
+          <div className="app-shell" data-screen-label="18 Owner Booking Requests">
+            <SeaScene />
+            <TopStrip />
+            <ScrollProgress />
+            <Nav currentPage={page} onNavigate={nav} />
+            <OwnerBookingRequests onNavigate={nav} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+      if (page === 'owner-earnings') {
+        return (
+          <div className="app-shell" data-screen-label="19 Owner Earnings">
+            <SeaScene />
+            <TopStrip />
+            <ScrollProgress />
+            <Nav currentPage={page} onNavigate={nav} />
+            <OwnerEarnings onNavigate={nav} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+
+      // Payment flow pages (fullscreen, no footer)
+      if (page === 'payment') {
+        return (
+          <div className="app-shell" data-screen-label="20 Payment">
+            <SeaScene />
+            <TopStrip />
+            <ScrollProgress />
+            <Nav currentPage={page} onNavigate={nav} />
+            <PaymentPage boat={boat} onNavigate={nav} onBack={() => setPage('book')} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+      if (page === 'pay-processing') {
+        return (
+          <div className="app-shell" data-screen-label="21 Payment Processing">
+            <SeaScene />
+            <TopStrip />
+            <Nav currentPage={page} onNavigate={nav} />
+            <PayProcessing onNavigate={nav} />
+          </div>
+        );
+      }
+      if (page === 'pay-done') {
+        return (
+          <div className="app-shell" data-screen-label="22 Payment Success">
+            <SeaScene />
+            <TopStrip />
+            <Nav currentPage={page} onNavigate={nav} />
+            <PaySuccess boat={boat} onNavigate={nav} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+      if (page === 'pay-fail') {
+        return (
+          <div className="app-shell" data-screen-label="23 Payment Failed">
+            <SeaScene />
+            <TopStrip />
+            <Nav currentPage={page} onNavigate={nav} />
+            <PayFailed onNavigate={nav} onBack={() => setPage('payment')} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+
+      // System pages: fullscreen, no nav/footer chrome
+      if (page === 'login') {
+        return (
+          <div className="app-shell" data-screen-label="11 Login · Signup">
+            <SeaScene />
+            <LoginPage onNavigate={nav} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+      if (page === 'kyc') {
+        return (
+          <div className="app-shell" data-screen-label="12 KYC · Verification">
+            <SeaScene />
+            <TopStrip />
+            <Nav currentPage={page} onNavigate={nav} />
+            <KYCPage onNavigate={nav} />
+            <RoleSwitcher role={role} setRole={setRole} />
+          </div>
+        );
+      }
+
       return (
         <div className="app-shell" data-screen-label={
-          page === 'home' ? '01 Home' :
-          page === 'boats' ? '02 Boats' :
-          page === 'detail' ? '03 Boat detail' :
-          page === 'book' ? '04 Booking flow' :
-          page === 'confirm' ? '05 Confirmation' :
-          page === 'market' ? '06 Marketplace' :
-          page === 'comps' ? '07 Competitions' :
-          page === 'profile' ? '08 Profile' : page
+          page === 'home'          ? '01 Home'              :
+          page === 'boats'         ? '02 Boats'             :
+          page === 'detail'        ? '03 Boat detail'       :
+          page === 'book'          ? '04 Booking flow'      :
+          page === 'confirm'       ? '05 Confirmation'      :
+          page === 'market'        ? '06 Marketplace'       :
+          page === 'comps'         ? '07 Competitions'      :
+          page === 'profile'       ? '08 Profile'           :
+          page === 'notifications' ? '13 Notifications'     :
+          page === 'settings'      ? '14 Settings'          :
+          page === 'search'        ? '15 Search & Filters'  :
+          page === 'vendor'        ? '16 Vendor Storefront' :
+          page === 'weather'       ? '24 Weather'           :
+          page === 'fishing-guide' ? '25 Fishing Guide'     :
+          page === 'reviews'       ? '26 Reviews'           :
+          page === 'write-review'  ? '27 Write Review'      :
+          page === 'map'           ? '28 Map View'          : page
         }>
           <SeaScene />
           <TopStrip />
           <ScrollProgress />
           <Nav currentPage={page} onNavigate={nav} />
 
-          {page === 'home' && <Home onNavigate={nav} onOpenBoat={openBoat} />}
-          {page === 'boats' && <BoatsPage onOpenBoat={openBoat} />}
-          {page === 'detail' && <BoatDetail boat={boat} onBook={(b) => { setBoat(b); setPage('book'); }} onNavigate={nav} />}
-          {page === 'book' && <BookingFlow boat={boat} onBack={() => setPage('detail')} onConfirm={() => setPage('confirm')} />}
-          {page === 'confirm' && <Confirmation boat={boat} onHome={() => setPage('home')} />}
-          {page === 'market' && <Marketplace onNavigate={nav} />}
-          {page === 'comps' && <CompsPage />}
-          {page === 'profile' && <Profile onNavigate={nav} onOpenBoat={openBoat} />}
+          {page === 'home'          && <Home onNavigate={nav} onOpenBoat={openBoat} />}
+          {page === 'boats'         && <BoatsPage onOpenBoat={openBoat} />}
+          {page === 'detail'        && <BoatDetail boat={boat} onBook={(b) => { setBoat(b); setPage('book'); }} onNavigate={nav} />}
+          {page === 'book'          && <BookingFlow boat={boat} onBack={() => setPage('detail')} onConfirm={() => setPage('confirm')} />}
+          {page === 'confirm'       && <Confirmation boat={boat} onHome={() => setPage('home')} />}
+          {page === 'market'        && <Marketplace onNavigate={nav} />}
+          {page === 'comps'         && <CompsPage />}
+          {page === 'profile'       && <Profile onNavigate={nav} onOpenBoat={openBoat} />}
+          {page === 'notifications' && <NotificationsPage onNavigate={nav} />}
+          {page === 'settings'      && <SettingsPage onNavigate={nav} />}
+          {page === 'search'        && <SearchPage onOpenBoat={openBoat} />}
+          {page === 'vendor'        && <VendorPage onNavigate={nav} />}
+          {page === 'weather'       && <WeatherPage onNavigate={nav} />}
+          {page === 'fishing-guide' && <FishingGuidePage onNavigate={nav} />}
+          {page === 'reviews'       && <ReviewsPage boat={boat} onNavigate={nav} />}
+          {page === 'write-review'  && <WriteReviewPage boat={boat} onNavigate={nav} />}
+          {page === 'map'           && <MapView onNavigate={nav} onOpenBoat={openBoat} />}
 
-          <Footer />
+          {!['notifications','settings','search','vendor','weather','fishing-guide','reviews','write-review','map'].includes(page) && <Footer />}
           <RoleSwitcher role={role} setRole={setRole} />
           <TweaksPanel density={density} setDensity={setDensity} />
         </div>

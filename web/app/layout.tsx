@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { SeaScene } from '@/components/layout/SeaScene'
 import '@/globals.css'
 
 export const metadata: Metadata = {
@@ -35,7 +36,10 @@ export default function RootLayout({
 }): React.ReactElement {
   return (
     <html suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <SeaScene />
+        {children}
+      </body>
     </html>
   )
 }

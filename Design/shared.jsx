@@ -46,11 +46,13 @@ function ScrollProgress() {
 
 function Nav({ currentPage, onNavigate }) {
   const links = [
-    { id: 'home', ar: 'الرئيسية', en: 'Home' },
-    { id: 'boats', ar: 'القوارب واليخوت', en: 'Boats' },
-    { id: 'market', ar: 'متجر العدد', en: 'Gear' },
-    { id: 'comps', ar: 'البطولات', en: 'Competitions' },
-    { id: 'profile', ar: 'حسابي', en: 'Account' },
+    { id: 'home',   ar: 'الرئيسية',        en: 'Home'         },
+    { id: 'boats',  ar: 'القوارب واليخوت',  en: 'Boats'        },
+    { id: 'search', ar: 'بحث',             en: 'Search'       },
+    { id: 'market', ar: 'متجر العدد',       en: 'Gear'         },
+    { id: 'vendor', ar: 'المتجر',           en: 'Store'        },
+    { id: 'comps',  ar: 'البطولات',         en: 'Competitions' },
+    { id: 'profile',ar: 'حسابي',           en: 'Account'      },
   ];
   return (
     <div className="nav">
@@ -63,7 +65,12 @@ function Nav({ currentPage, onNavigate }) {
         {links.map(l => (
           <button
             key={l.id}
-            className={`nav-link ${currentPage === l.id || (currentPage === 'detail' && l.id === 'boats') || (currentPage === 'book' && l.id === 'boats') || (currentPage === 'confirm' && l.id === 'boats') ? 'active' : ''}`}
+            className={`nav-link ${currentPage === l.id
+              || (currentPage === 'detail'  && l.id === 'boats')
+              || (currentPage === 'book'    && l.id === 'boats')
+              || (currentPage === 'confirm' && l.id === 'boats')
+              || (currentPage === 'cart'    && l.id === 'vendor')
+              ? 'active' : ''}`}
             onClick={() => onNavigate(l.id)}
           >
             {l.ar}
@@ -72,8 +79,28 @@ function Nav({ currentPage, onNavigate }) {
       </div>
       <div className="nav-right">
         <span className="lang">AR / EN</span>
-        <button className="btn btn-ghost" style={{ padding: '8px 14px', fontSize: 13 }}>إدراج قاربك</button>
-        <div className="avatar">ن</div>
+        <button
+          className="btn btn-ghost"
+          style={{ padding: '8px 14px', fontSize: 13 }}
+          onClick={() => onNavigate('kyc')}
+        >إدراج قاربك</button>
+        <button
+          onClick={() => onNavigate('notifications')}
+          style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '4px 6px', lineHeight: 1 }}
+          title="الإشعارات"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span style={{ position: 'absolute', top: 1, insetInlineEnd: 1, width: 7, height: 7, background: 'var(--clay)', borderRadius: '50%' }} />
+        </button>
+        <button
+          onClick={() => onNavigate('settings')}
+          style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+          title="الإعدادات"
+        >
+          <div className="avatar">ن</div>
+        </button>
       </div>
     </div>
   );

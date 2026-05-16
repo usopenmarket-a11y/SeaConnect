@@ -210,7 +210,8 @@ html { scroll-behavior: auto; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
-  background: var(--pearl);
+  /* transparent — SeaScene canvas (z-index:0, position:fixed) shows through */
+  background: transparent;
   color: var(--ink);
   font-family: var(--ff-sans);
   font-size: 15px;
@@ -221,10 +222,9 @@ html, body {
 }
 
 .app-shell {
-  background:
-    radial-gradient(1200px 600px at 85% -10%, oklch(0.88 0.04 210 / 0.35) 0%, transparent 60%),
-    radial-gradient(1000px 500px at 10% 40%, oklch(0.85 0.03 40 / 0.25) 0%, transparent 55%),
-    var(--pearl);
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 #root { min-height: 100vh; }
@@ -247,7 +247,6 @@ img { display: block; max-width: 100%; }
 /* ── top chrome / nav ──────────────────────────── */
 .app-shell {
   min-height: 100vh;
-  background: var(--sand);
 }
 
 .top-strip {
@@ -378,7 +377,8 @@ img { display: block; max-width: 100%; }
   position: relative;
   height: 640px;
   overflow: hidden;
-  background: var(--abyss);
+  /* transparent — lets SeaScene canvas show as the hero backdrop */
+  background: transparent;
 }
 .hero-lottie {
   position: absolute;
@@ -506,9 +506,22 @@ img { display: block; max-width: 100%; }
 }
 .search-bar .search-btn:hover { background: var(--ink); }
 
+/* ── sea-theme glass utility — applied to full-page containers on non-home pages */
+.page-glass {
+  background: oklch(0.97 0.008 210 / 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
 /* ── section headers ───────────────────────────── */
 .section {
   padding: calc(var(--pad-lg) * 2.2) 48px;
+  background: oklch(0.97 0.008 210 / 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .section-head {
   display: flex;
@@ -551,7 +564,9 @@ img { display: block; max-width: 100%; }
   padding: 20px 48px;
   border-bottom: 1px solid var(--rule);
   overflow-x: auto;
-  background: var(--sand);
+  background: oklch(0.955 0.015 85 / 0.80);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .region-chip {
   display: inline-flex;
@@ -989,7 +1004,19 @@ img { display: block; max-width: 100%; }
 .sidebar-dash .nav-item.active { background: oklch(1 0 0 / 0.10); border-inline-end: 2px solid var(--clay); }
 .sidebar-dash .nav-item .n { font-family: var(--ff-mono); font-size: 10px; margin-inline-start: auto; opacity: 0.55; direction: ltr; }
 
-.dash-layout { display: grid; grid-template-columns: 240px 1fr; }
+.dash-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  /* dashboards are fully opaque — sea canvas stays behind public pages only */
+  background: var(--abyss);
+  position: relative;
+  z-index: 1;
+}
+.dash-layout > main {
+  background: var(--pearl);
+  min-height: 100vh;
+}
 
 .success-lottie-slot { width: 180px; height: 180px; margin: -10px auto 10px; }
 
