@@ -19,6 +19,24 @@ import useSWR from 'swr'
 import { ScrollProgress } from '@/components/layout/ScrollProgress'
 import { get } from '@/lib/api'
 
+/** Returns true once the page has scrolled past the hero (≥80px). */
+function useScrolledPastHero(): boolean {
+  const [scrolled, setScrolled] = React.useState(false)
+
+  React.useEffect(() => {
+    function handleScroll() {
+      setScrolled(window.scrollY > 80)
+    }
+    // Passive listener — no layout thrash
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    // Set initial value in case page loads mid-scroll
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return scrolled
+}
+
 // Minimal cart shape — only need item_count for the badge
 interface CartBadgeData {
   item_count: number
@@ -41,6 +59,8 @@ const NAV_LINKS = [
 export function Nav({ locale }: NavProps): React.ReactElement {
   const t = useTranslations('nav')
   const pathname = usePathname()
+  const scrolledPastHero = useScrolledPastHero()
+
   // Cart badge — silently fails when user is not logged in (data is undefined)
   const { data: cartData } = useSWR<CartBadgeData>(
     CART_KEY,
@@ -68,7 +88,13 @@ export function Nav({ locale }: NavProps): React.ReactElement {
   return (
     <>
       <ScrollProgress />
-      <nav className="nav" role="navigation" aria-label={t('ariaLabel')} data-screen-label="nav">
+      <nav
+        className="nav"
+        role="navigation"
+        aria-label={t('ariaLabel')}
+        data-screen-label="nav"
+        data-scrolled={scrolledPastHero ? 'true' : 'false'}
+      >
         {/* Logo */}
         <Link href={`/${locale}`} className="nav-logo" aria-label={t('logoAriaLabel')}>
           <span className="mark" aria-hidden="true">س</span>
