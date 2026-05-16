@@ -65,7 +65,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
     capt: 'الربان إبراهيم الغرباوي', captEn: 'Capt. Ibrahim Gharbawi',
     region: 'الإسكندرية', regionEn: 'Alexandria', coords: '31.2001°N · 29.9187°E',
     length: 28, pax: 6, year: 2019, price: 1800, rating: 4.81, reviews: 92,
-    img: 'https://images.unsplash.com/photo-1540946485063-a40da27545f8?auto=format&fit=crop&w=1400&q=80',
+    img: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1400&q=80',
     tagEn: 'TOP BOOKED',
   },
   {
@@ -83,7 +83,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
     capt: 'الربان أحمد العربي', captEn: 'Capt. Ahmed Al Araby',
     region: 'الأقصر', regionEn: 'Luxor', coords: '25.6872°N · 32.6396°E',
     length: 32, pax: 10, year: 2018, price: 950, rating: 4.88, reviews: 304,
-    img: 'https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1400&q=80',
+    img: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=1400&q=80',
     tagEn: 'NILE',
   },
   {
@@ -92,7 +92,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
     capt: 'الربان يوسف منصور', captEn: 'Capt. Youssef Mansour',
     region: 'الغردقة', regionEn: 'Hurghada', coords: '27.2579°N · 33.8116°E',
     length: 56, pax: 16, year: 2023, price: 8900, rating: 4.97, reviews: 76,
-    img: 'https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=1400&q=80',
+    img: 'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?auto=format&fit=crop&w=1400&q=80',
     tagEn: 'FEATURED',
   },
   {
@@ -101,7 +101,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
     capt: 'الربان سامي حسن', captEn: 'Capt. Samy Hassan',
     region: 'دهب', regionEn: 'Dahab', coords: '28.5091°N · 34.5136°E',
     length: 22, pax: 4, year: 2020, price: 1200, rating: 4.79, reviews: 56,
-    img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=80',
+    img: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1400&q=80',
     tagEn: 'VERIFIED',
   },
 ]

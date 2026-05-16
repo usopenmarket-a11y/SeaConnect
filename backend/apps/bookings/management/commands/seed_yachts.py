@@ -32,7 +32,7 @@ YACHTS = [
         "capacity": 6,
         "price_per_day": "1800.00",
         "port_name": "Alexandria Marina",
-        "img": "https://images.unsplash.com/photo-1540946485063-a40da27545f8?auto=format&fit=crop&w=1400&q=80",
+        "img": "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1400&q=80",
     },
     {
         "name": "Reeh Al Bahr",
@@ -54,7 +54,7 @@ YACHTS = [
         "capacity": 16,
         "price_per_day": "8900.00",
         "port_name": "Hurghada Marina",
-        "img": "https://images.unsplash.com/photo-1569263979104-865ab7cd8d13?auto=format&fit=crop&w=1400&q=80",
+        "img": "https://images.unsplash.com/photo-1605281317010-fe5ffe798166?auto=format&fit=crop&w=1400&q=80",
     },
     {
         "name": "Felucca Al Nil",
@@ -65,7 +65,7 @@ YACHTS = [
         "capacity": 10,
         "price_per_day": "950.00",
         "port_name": "Luxor Nile Port",
-        "img": "https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=1400&q=80",
+        "img": "https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=1400&q=80",
     },
     {
         "name": "Sayyad Al Sobh",
@@ -76,7 +76,7 @@ YACHTS = [
         "capacity": 4,
         "price_per_day": "1200.00",
         "port_name": "Dahab Marina",
-        "img": "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1400&q=80",
+        "img": "https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1400&q=80",
     },
 ]
 
