@@ -52,6 +52,11 @@ interface YachtDetail {
   year_built?: number
   media: YachtMedia[]
   departure_port: DeparturePort | null
+  captain_name?: string
+  captain_name_ar?: string
+  coordinates?: string
+  rating?: number
+  review_count?: number
 }
 
 // ── Static fallback gallery images ───────────────────────────────────────────
@@ -194,6 +199,14 @@ export default async function YachtDetailPage({
   const portEnName = yacht.departure_port?.name_en ?? 'HURGHADA MARINA'
   const regionEnName = yacht.departure_port?.region?.name_en ?? 'RED SEA'
 
+  const captainName = locale === 'ar'
+    ? (yacht.captain_name_ar ?? yacht.captain_name ?? 'الربان')
+    : (yacht.captain_name ?? 'Captain')
+
+  const displayRating = yacht.rating ?? 4.92
+  const displayReviewCount = yacht.review_count ?? 148
+  const coordsDisplay = yacht.coordinates ?? '27.2579°N · 33.8116°E'
+
   return (
     <div className="page-glass">
       {/* ── Gallery ───────────────────────────────────────────────────────── */}
@@ -271,6 +284,14 @@ export default async function YachtDetailPage({
                 <span className="v">{yacht.year_built}</span>
               </div>
             )}
+            <div className="item">
+              <span className="l">CAPT</span>
+              <span className="v">{captainName}</span>
+            </div>
+            <div className="item">
+              <span className="l">COORDS</span>
+              <span className="v">{coordsDisplay}</span>
+            </div>
           </div>
 
           {/* Description prose */}
@@ -341,7 +362,7 @@ export default async function YachtDetailPage({
 
           {/* Reviews */}
           <div className="subhead" id="reviews">
-            التقييمات · 4.92 / 5 (148 تقييم)
+            التقييمات · {displayRating.toFixed(2)} / 5 ({displayReviewCount} تقييم)
           </div>
           {REVIEWS.map((r, i) => (
             <div key={i} className="review">
@@ -359,7 +380,7 @@ export default async function YachtDetailPage({
             </div>
           ))}
           <button className="btn btn-ghost" style={{ marginTop: 20 }}>
-            عرض كل 148 تقييم ←
+            عرض كل {displayReviewCount} تقييم ←
           </button>
 
           {/* Location map placeholder */}
@@ -410,7 +431,7 @@ export default async function YachtDetailPage({
                 direction: 'ltr',
               }}
             >
-              {portEnName} · BERTH 42
+              {portEnName} · {coordsDisplay}
             </div>
           </div>
         </div>
@@ -423,8 +444,8 @@ export default async function YachtDetailPage({
               <span className="unit"> {currency} / يوم</span>
             </div>
             <div className="rating">
-              <div className="v">★ 4.92</div>
-              <div>148 REVIEWS</div>
+              <div className="v">★ {displayRating.toFixed(2)}</div>
+              <div>{displayReviewCount} REVIEWS</div>
             </div>
           </div>
 
@@ -484,7 +505,7 @@ export default async function YachtDetailPage({
 
           <Link
             href={`/${locale}/yachts/${yacht.id}/book`}
-            className="btn btn-clay btn-lg"
+            className="btn btn-clay btn-lg cta-shimmer"
             style={{ width: '100%', marginTop: 18, display: 'flex', justifyContent: 'center' }}
           >
             {t('detail.bookNow')} ←

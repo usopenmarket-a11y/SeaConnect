@@ -1404,3 +1404,48 @@ docker compose run --rm api pytest --cov=apps.marketplace --cov-report=term-miss
 - Combined with existing app-level tests: 92% coverage on apps/marketplace/
 - This test file alone: views.py 78%, serializers.py 88%, models.py 93%, permissions.py 94%
 - Known gaps: BookingService notification on_commit callbacks (lines 127-143, 173-183, etc.) — these dispatch Celery tasks post-commit; not testable without transaction=True + real Celery worker. Yacht create/update/photo/search views not exercised by this workflow file (covered by apps/bookings/tests/).
+
+---
+
+## HANDOFF-2026-05-16-001
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** nextjs-page-agent / qa-agent
+**Sprint:** 16 (design fidelity improvements)
+**Feature:** Marketplace rating display, Yacht detail improvements, Owner dashboard widgets
+
+### What Was Completed
+- `web/components/marketplace/ProductCard.tsx` — added `rating`, `review_count`, `discount_pct` fields to `Product` interface (all optional, API-sourced when available). Added deterministic stable rating display (`★ N.NN (count)` line from `Design/altpages.jsx`). Added discount badge support (`-N%` overlay). Preserves all existing API fetch + i18n logic.
+- `web/app/[locale]/(public)/yachts/[id]/page.tsx` — added `captain_name`, `captain_name_ar`, `coordinates`, `rating`, `review_count` fields to `YachtDetail` interface. Captain now appears in `.detail-meta-row` alongside type/length/pax/year (matching `Design/detail.jsx` exactly). Review count/rating in booking panel and reviews heading now use live API values with fallback to design mock values (4.92 / 148). `cta-shimmer` class added to "Book Now" CTA button. Map label uses actual coordinates from API.
+- `web/app/[locale]/owner/dashboard/PageClient.tsx` — added 4 missing widgets from `Design/dashboards.jsx SellerDashContent()`:
+  1. **MiniCalendar widget** — 35-cell May grid with booked/hold/today states, highlighted from live confirmed bookings. Matches `Design/dashboards.jsx` calendar-grid exactly.
+  2. **Next Payout widget** — live sum of confirmed bookings minus 12% escrow hold, links to `/owner/payouts`. Matches design's payout breakdown layout.
+  3. **Upcoming Bookings table** — full table with avatar initials, date, passenger count, amount, status pill, detail link. Replaces the simpler 3-column pending-only table. Falls back to pending bookings if upcoming list is empty.
+  4. **Recent Reviews widget** — loads from `GET /api/v1/yachts/reviews/?page_size=3`; falls back to 3 design mock reviews when API has no data. Star display + relative date label.
+  5. **AI Pricing Insight card** — dark `var(--abyss)` card with `var(--ff-display)` pricing recommendation text. Design-accurate hardcoded copy (pricing insight is not yet an API feature).
+  - KPI grid expanded from 3 to 4 tiles — added Occupancy KPI.
+
+### API Endpoints Consumed (new in this session)
+- `GET /api/v1/yachts/reviews/?page_size=3` — owner's yacht reviews (may not exist yet; gracefully falls back to mock data).
+- `GET /api/v1/bookings/?status=confirmed&page_size=100` — already existed; now also used to populate calendar widget.
+
+### How to Test
+```bash
+# Yacht detail — captain in meta row
+curl http://localhost:3010/ar/yachts/<uuid>
+# → CAPT row visible in detail-meta-row alongside TYPE/LENGTH/PAX
+
+# Marketplace — rating line on product card
+curl http://localhost:3010/ar/marketplace
+# → ★ N.NN (count) line visible on each gear-card
+
+# Owner dashboard — 4 new widgets
+# Log in as owner → navigate to http://localhost:3010/ar/owner/dashboard
+# → Calendar widget, Next Payout widget, expanded bookings table, Reviews + AI Insight row visible
+```
+
+### Open Items
+- `GET /api/v1/yachts/reviews/?page_size=3` endpoint may not exist. When it ships, the reviews widget will auto-populate from live data (the `useSWR` call is already in place with graceful fallback).
+- AI Pricing Insight text is hardcoded Arabic matching the design — when an AI recommendation API ships, replace the static copy with a live fetch.
+- Owner dashboard KPIs show mock delta labels (`+22% vs APR`) — replace with real analytics data when the analytics API ships.
