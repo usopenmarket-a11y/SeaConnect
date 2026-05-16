@@ -34,7 +34,10 @@ test.describe('Login page', () => {
   test('register link navigates to /register', async ({ page }) => {
     const registerLink = page.locator('a[href*="/register"]')
     await expect(registerLink).toBeVisible()
-    await registerLink.click()
+    await Promise.all([
+      page.waitForURL(/\/register/, { timeout: 10_000 }),
+      registerLink.click(),
+    ])
     await expect(page).toHaveURL(/\/register/)
   })
 
