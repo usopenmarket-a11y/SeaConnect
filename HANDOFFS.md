@@ -1578,3 +1578,137 @@ for y in d['results']: print(y['name'], '->', y.get('primary_image_url','none'))
 curl -s "http://localhost:3010/ar/yachts" | grep -o "photo-[0-9a-f-]*" | sort | uniq
 # Should NOT contain: 1502680390469, 1533473359331, 1540946485063, 1569263979104
 ```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** api-endpoint-agent
+**To:** nextjs-page-agent
+**Sprint:** 9C
+**Feature:** Yacht availability calendar endpoint
+
+### What Was Completed
+- Verified `BlockedDate` model exists in `backend/apps/bookings/models.py` with UUID PK, `yacht` FK, `date` DateField, `reason` CharField, `unique_together=[['yacht','date']]`, `db_table='bookings_blocked_date'`.
+- Verified migration `0003_blockeddate.py` exists and is correctly wired (depends on `0002_availability_booking_bookingevent`).
+- Verified `YachtMonthAvailabilityView(APIView)` exists in `backend/apps/bookings/views.py` — public (`AllowAny`), handles `GET /api/v1/bookings/yachts/{yacht_id}/availability/?month=YYYY-MM`, returns `{yacht_id, month, days: {YYYY-MM-DD: open|booked|blocked|limited}, pricing: {base_price, currency}}`. Currency is resolved from `departure_port.region.currency` then `yacht.currency` (ADR-018 compliant, no hardcoded 'EGP' in logic path).
+- Verified URL `bookings/yachts/<uuid:yacht_id>/availability/` is registered in `backend/apps/bookings/urls.py` under `api/v1/` via `config/urls.py`.
+- Verified `BlockedDateAdmin` is registered in `backend/apps/bookings/admin.py` with `list_display=['yacht','date','reason']`.
+- Verified 14 tests exist in `backend/apps/bookings/tests/test_availability.py` covering happy path, 404 for unknown/deleted yacht, no-auth (public), default month fallback, booking status logic (confirmed booked, pending_owner booked, cancelled open), blocked date priority, limited status, and currency resolution.
+- `python3 manage.py check` passes with 0 issues.
+
+### Contract
+`GET /api/v1/bookings/yachts/{yacht_id}/availability/?month=YYYY-MM`
+Response:
+```json
+{
+  "yacht_id": "uuid-string",
+  "month": "2026-05",
+  "days": {
+    "2026-05-01": "open",
+    "2026-05-15": "booked"
+  },
+  "pricing": {
+    "base_price": "1500.00",
+    "currency": "EGP"
+  }
+}
+```
+Day status values: `open` | `booked` | `blocked` | `limited`
+
+### How to Test
+```bash
+# With docker compose running:
+YACHT_ID=$(curl -s http://localhost:8000/api/v1/yachts/ | python3 -c "import json,sys; print(json.load(sys.stdin)['results'][0]['id'])")
+curl -s "http://localhost:8000/api/v1/bookings/yachts/${YACHT_ID}/availability/?month=2026-06" | python3 -m json.tool
+
+# Run test suite (requires postgres container):
+docker exec seaconnect-api-1 python3 -m pytest apps/bookings/tests/test_availability.py -v
+```
+
+---
+
+## HANDOFF-2026-05-17-002
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** api-endpoint-agent
+**Sprint:** 9
+**Feature:** Marketplace filters + Owner dashboard visual polish
+
+### What Was Completed
+- `web/components/marketplace/MarketplaceFilters.tsx` — new Client Component: 7 static category pill tabs (All, Rods & Reels, Lures, Tackle Boxes, Clothing, Safety, Electronics), price min/max inputs, rating select (any / ★4+ / ★4.5+), "showing N results" count. Pushes all params to URL searchParams. Matches Design/altpages.jsx Marketplace() pill-tabs row exactly.
+- `web/app/[locale]/(public)/marketplace/page.tsx` — updated: `fetchProducts()` now forwards `price_min`, `price_max`, `rating` to API. `<MarketplaceFilters>` rendered above product grid. Header h1 now uses i18n keys. Removed unused `Link` import and unused `categories` destructuring.
+- `web/globals.css` — added `.marketplace-filter-bar` and `.mfb-right` CSS classes (frosted glass pattern matching `.pill-tabs` / `.yacht-filters`).
+- `web/app/[locale]/owner/dashboard/PageClient.tsx` — visual polish: (1) dash-head now shows vessel status subtitle line matching SellerDashContent design; (2) header buttons use i18n; (3) KPI tile 4 changed from total earnings to RATING (avg of loaded reviews) matching design; (4) all hardcoded Arabic strings in calendar, payout card, bookings table headers, reviews, AI insight card replaced with `t()` calls; (5) `MiniCalendar` refactored to accept translated legend strings and weekday abbreviations as props.
+- `web/messages/ar.json` + `web/messages/en.json` — added `marketplace.heading1/headingEm/heading2`, `marketplace.filters.*` (17 keys), `owner.dashboard.*` (31 new keys including KPI labels, table headers, calendar weekdays, payout breakdown, AI insight text).
+
+### Contract
+- `GET /api/v1/marketplace/products/?price_min=N&price_max=N&rating=N` — new query params needed on API. Existing endpoint at `GET /api/v1/marketplace/products/?category=slug` already exists.
+- Category slugs used: `rods-reels`, `lures`, `tackle-boxes`, `clothing`, `safety`, `electronics`
+
+### How to Test
+```bash
+# Marketplace with filters
+curl "http://localhost:3000/ar/marketplace?category=safety&price_max=500"
+# → 200, pill "سلامة" active, price filter visible
+
+# Owner dashboard widgets
+curl "http://localhost:3000/ar/owner/dashboard"
+# → 200, KPI tile 4 shows RATING, AI insight card in dark (--abyss) background
+```
+```
+
+---
+
+## Sprint 9D + Carry-over i18n & Register
+
+**Status:** DONE
+**Agent:** next-js-agent (claude-sonnet-4-6)
+**Date:** 2026-05-17
+
+### What was built
+
+#### Task 1 — Checkout i18n (9D)
+`web/app/[locale]/(public)/yachts/[id]/book/PageClient.tsx` — all hardcoded Arabic/English strings replaced with `useTranslations('booking.checkout')`:
+- Step sub-component signatures updated to accept `t` prop (Step1TripDetails, Step2PersonalInfo, Step3Payment)
+- All form labels, select options, placeholders, validation messages, payment method descriptions, confirmation screen rows, ticket labels, and navigation buttons now use i18n keys
+- New keys added under `booking.checkout.*` in both message files: `tripDate`, `guestsCount`, `departureTime`, `returnTime`, `tripTypes.*`, `time.*`, `specialRequestsPlaceholder`, `fullNamePlaceholder`, `phone`, `email`, `idTypes.*`, `idNumberPlaceholder`, `emergencyName`, `emergencyNamePlaceholder`, `emergencyPhone`, `payment.*` (18 keys), `confirm.*` (7 keys), `ticket.*` (16 keys), `validation.*` (7 keys), `summary.with`, `summary.passenger`, `summary.passengers`, `backHome`, `cancel`, `previous`, `loading`, `yachtNotFound`
+
+#### Task 2 — Yachts detail page i18n
+`web/app/[locale]/(public)/yachts/[id]/page.tsx`:
+- `AMENITIES` array replaced with `AMENITY_KEYS` — 10 const keys rendered via `tDetail('amenities.KEY')`
+- `REVIEWS` mock data restructured with `nameAr`/`nameEn` + `excerptKey`/`bodyKey` — locale-correct name shown, excerpts/bodies read from message files
+- All booking panel strings replaced: price-per-day unit, form labels, select options, line-item labels, guarantee text
+- Gallery overlay, amenities heading, reviews heading (with interpolated rating/count), "view all reviews" button now use `tDetail()`
+- `defaultDescription`, `defaultPort`, `defaultCaptain` fallbacks now via i18n
+- New keys added under `yachts.detail.*` in both message files: `amenitiesTitle`, `amenities.*` (10 keys), `reviewsHeading`, `viewAllReviews`, `review1Excerpt`, `review1Body`, `review2Excerpt`, `review2Body`, `morePhotos`, `defaultPort`, `defaultCaptain`, `defaultDescription`, `perDay`, `reviews`, `tripDate`, `tripDatePlaceholder`, `departure`, `return`, `time0600am`, `time0400pm`, `duration`, `durationFullDay`, `passengers`, `passengersDefault`, `oneDay`, `serviceFee`, `tripInsurance`, `total`, `guarantee1`, `guarantee2`, `guarantee3`
+
+#### Task 3 — Register page redesign
+`web/app/[locale]/(public)/(auth)/register/PageClient.tsx` — completely rewritten to match login page auth-card pattern exactly:
+- `auth-outer` → `auth-card` wrapper with `auth-logo` (س mark), `auth-eyebrow`, `auth-title`, `auth-sub`
+- Same field styles (variable-based, not Tailwind) as login
+- Same submit button with spinner
+- Same social row (Google/Apple/Fawry ID, all disabled)
+- Footer link → login page
+- Register-specific: first/last name side-by-side grid, email, password with SHOW/HIDE, confirm password with SHOW/HIDE + client-side match validation, role selector as two pill-style radio buttons (customer / owner)
+- `useAuth().register(RegisterPayload)` called on submit; field-level errors mapped from `ApiError.field`; redirects to `/${locale}/bookings` on success
+- New keys added under `auth.register.*`: `eyebrow`, `subtitle`, `firstNamePlaceholder`, `lastNamePlaceholder`, `confirmPassword`, `showPassword`, `hidePassword`, `roleLabel`, `submitting`, `errorFirstName`, `errorLastName`, `errorEmail`, `errorEmailInvalid`, `errorPassword`, `errorPasswordLength`, `errorConfirmPassword`, `errorPasswordMismatch`
+
+### API Contracts (no changes needed)
+All existing endpoints — no new API endpoints required.
+
+### How to Test
+```bash
+# Checkout i18n — visit checkout in AR and EN
+curl http://localhost:3000/ar/yachts/YACHT_ID/book  # → no hardcoded Arabic
+curl http://localhost:3000/en/yachts/YACHT_ID/book  # → English labels
+
+# Detail page amenities/reviews
+curl http://localhost:3000/ar/yachts/YACHT_ID       # → Arabic amenity labels, Arabic review names
+curl http://localhost:3000/en/yachts/YACHT_ID       # → English amenity labels, English review names
+
+# Register page
+curl http://localhost:3000/ar/register              # → auth-card pattern, two name fields, role pills
+```

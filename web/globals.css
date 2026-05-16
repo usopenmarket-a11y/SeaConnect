@@ -962,6 +962,32 @@ img { display: block; max-width: 100%; }
 }
 .filter-input { min-width: 100px; }
 
+/* ── marketplace filter bar (below category pills) ── */
+.marketplace-filter-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 48px;
+  background: oklch(0.955 0.015 85 / 0.60);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--rule);
+}
+.marketplace-filter-bar .mfb-count {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  align-self: center;
+}
+.marketplace-filter-bar .mfb-right {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 /* ── tweaks panel ──────────────────────────────── */
 .tweaks-panel { position: fixed; bottom: 20px; inset-inline-end: 20px; background: var(--foam); border: 1px solid var(--ink); padding: 18px 20px; z-index: 100; width: 260px; box-shadow: 0 20px 60px -12px oklch(0.22 0.04 240 / 0.4); }
 .tweaks-panel h4 { font-family: var(--ff-mono); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 14px; color: var(--muted); }

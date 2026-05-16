@@ -12,9 +12,9 @@
 
 import * as React from 'react'
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ProductCard, type Product } from '@/components/marketplace/ProductCard'
+import { MarketplaceFilters } from '@/components/marketplace/MarketplaceFilters'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -77,15 +77,26 @@ async function fetchCategories(): Promise<Category[]> {
   }
 }
 
-async function fetchProducts(categorySlug?: string): Promise<Product[]> {
+interface ProductFilters {
+  category?: string
+  price_min?: string
+  price_max?: string
+  rating?: string
+}
+
+async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
   const apiUrl =
     process.env.API_INTERNAL_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
     'http://localhost:8010'
   try {
-    const url = categorySlug
-      ? `${apiUrl}/api/v1/marketplace/products/?category=${encodeURIComponent(categorySlug)}`
-      : `${apiUrl}/api/v1/marketplace/products/`
+    const q = new URLSearchParams()
+    if (filters.category) q.set('category', filters.category)
+    if (filters.price_min) q.set('price_min', filters.price_min)
+    if (filters.price_max) q.set('price_max', filters.price_max)
+    if (filters.rating) q.set('rating', filters.rating)
+    const qs = q.toString()
+    const url = `${apiUrl}/api/v1/marketplace/products/${qs ? `?${qs}` : ''}`
     const res = await fetch(url, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
@@ -102,7 +113,12 @@ async function fetchProducts(categorySlug?: string): Promise<Product[]> {
 
 interface MarketplacePageProps {
   params: { locale: string }
-  searchParams: { category?: string }
+  searchParams: {
+    category?: string
+    price_min?: string
+    price_max?: string
+    rating?: string
+  }
 }
 
 export default async function MarketplacePage({
@@ -112,13 +128,17 @@ export default async function MarketplacePage({
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'marketplace' })
 
-  const [categories, products] = await Promise.all([
+  const [, products] = await Promise.all([
     fetchCategories(),
-    fetchProducts(searchParams.category),
+    fetchProducts({
+      category: searchParams.category,
+      price_min: searchParams.price_min,
+      price_max: searchParams.price_max,
+      rating: searchParams.rating,
+    }),
   ])
 
   const isAr = locale === 'ar'
-  const activeCategorySlug = searchParams.category ?? null
 
   return (
     <div className="page-glass">
@@ -152,41 +172,22 @@ export default async function MarketplacePage({
         >
           {isAr ? (
             <>
-              عدّة الصيد{' '}
-              <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>كلها</em>{' '}
-              في مكان واحد.
+              {t('heading1')}{' '}
+              <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>{t('headingEm')}</em>{' '}
+              {t('heading2')}
             </>
           ) : (
             <>
-              All your{' '}
-              <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>fishing gear</em>
-              , one place.
+              {t('heading1')}{' '}
+              <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>{t('headingEm')}</em>
+              {t('heading2')}
             </>
           )}
         </h1>
       </div>
 
-      {/* ── Category pill tabs ─────────────────────────────────────────────── */}
-      <div className="pill-tabs" data-screen-label="category-tabs">
-        {/* "All products" tab */}
-        <Link
-          href={`/${locale}/marketplace`}
-          className={`pill${!activeCategorySlug ? ' active' : ''}`}
-        >
-          {t('allCategories')}
-        </Link>
-
-        {/* Dynamic category tabs from API */}
-        {categories.map((cat) => (
-          <Link
-            key={cat.id}
-            href={`/${locale}/marketplace?category=${encodeURIComponent(cat.slug)}`}
-            className={`pill${activeCategorySlug === cat.slug ? ' active' : ''}`}
-          >
-            {isAr ? (cat.name_ar || cat.name) : cat.name}
-          </Link>
-        ))}
-      </div>
+      {/* ── Category pills + filter bar (Client Component) ────────────────── */}
+      <MarketplaceFilters locale={locale} resultCount={products.length} />
 
       {/* ── Product grid ───────────────────────────────────────────────────── */}
       <div className="section" data-screen-label="products-grid">

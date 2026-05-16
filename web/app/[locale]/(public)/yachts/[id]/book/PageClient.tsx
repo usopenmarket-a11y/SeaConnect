@@ -222,7 +222,7 @@ function SummaryPanel({ yacht, trip, t }: SummaryPanelProps): React.ReactElement
         </div>
         {yacht.captain_name && (
           <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>
-            مع {yacht.captain_name}
+            {t('summary.with')} {yacht.captain_name}
           </div>
         )}
 
@@ -236,7 +236,7 @@ function SummaryPanel({ yacht, trip, t }: SummaryPanelProps): React.ReactElement
         )}
         {trip.numPassengers > 0 && (
           <div style={{ fontSize: 13, color: 'var(--muted-2)', marginBottom: 12 }}>
-            {trip.numPassengers} {trip.numPassengers === 1 ? 'مسافر' : 'مسافرون'}
+            {trip.numPassengers} {trip.numPassengers === 1 ? t('summary.passenger') : t('summary.passengers')}
           </div>
         )}
 
@@ -286,20 +286,21 @@ interface Step1Props {
   trip: TripDetails
   capacity: number
   onChange: (update: Partial<TripDetails>) => void
+  t: ReturnType<typeof useTranslations<'booking.checkout'>>
 }
 
-function Step1TripDetails({ trip, capacity, onChange }: Step1Props): React.ReactElement {
+function Step1TripDetails({ trip, capacity, onChange, t }: Step1Props): React.ReactElement {
   const passengerOptions = Array.from({ length: capacity }, (_, i) => i + 1)
 
   return (
     <>
       <div className="subhead" style={{ marginTop: 0 }}>
-        تفاصيل الرحلة
+        {t('steps.tripDetails')}
       </div>
 
       <div className="form-grid">
         <div className="form-field">
-          <label htmlFor="trip-date">تاريخ الرحلة</label>
+          <label htmlFor="trip-date">{t('tripDate')}</label>
           <input
             id="trip-date"
             type="date"
@@ -310,7 +311,7 @@ function Step1TripDetails({ trip, capacity, onChange }: Step1Props): React.React
         </div>
 
         <div className="form-field">
-          <label htmlFor="trip-passengers">عدد المسافرين</label>
+          <label htmlFor="trip-passengers">{t('guestsCount')}</label>
           <select
             id="trip-passengers"
             value={trip.numPassengers}
@@ -318,57 +319,57 @@ function Step1TripDetails({ trip, capacity, onChange }: Step1Props): React.React
           >
             {passengerOptions.map((n) => (
               <option key={n} value={n}>
-                {n} {n === 1 ? 'شخص' : 'أشخاص'}
+                {n} {n === 1 ? t('summary.passenger') : t('summary.passengers')}
               </option>
             ))}
           </select>
         </div>
 
         <div className="form-field">
-          <label htmlFor="trip-departure">وقت الانطلاق</label>
+          <label htmlFor="trip-departure">{t('departureTime')}</label>
           <select
             id="trip-departure"
             value={trip.departureTime}
             onChange={(e) => onChange({ departureTime: e.target.value })}
           >
-            <option value="06:00">06:00 صباحاً</option>
-            <option value="07:00">07:00 صباحاً</option>
-            <option value="08:00">08:00 صباحاً</option>
+            <option value="06:00">{t('time.0600am')}</option>
+            <option value="07:00">{t('time.0700am')}</option>
+            <option value="08:00">{t('time.0800am')}</option>
           </select>
         </div>
 
         <div className="form-field">
-          <label htmlFor="trip-return">وقت العودة</label>
+          <label htmlFor="trip-return">{t('returnTime')}</label>
           <select
             id="trip-return"
             value={trip.returnTime}
             onChange={(e) => onChange({ returnTime: e.target.value })}
           >
-            <option value="14:00">02:00 مساءً</option>
-            <option value="16:00">04:00 مساءً</option>
-            <option value="18:00">06:00 مساءً</option>
+            <option value="14:00">{t('time.0200pm')}</option>
+            <option value="16:00">{t('time.0400pm')}</option>
+            <option value="18:00">{t('time.0600pm')}</option>
           </select>
         </div>
 
         <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="trip-type">نوع الرحلة</label>
+          <label htmlFor="trip-type">{t('tripType')}</label>
           <select
             id="trip-type"
             value={trip.tripType}
             onChange={(e) => onChange({ tripType: e.target.value })}
           >
-            <option value="deep_fishing">صيد عميق</option>
-            <option value="coastal_fishing">صيد ساحلي</option>
-            <option value="snorkeling">سباحة وسنوركل</option>
+            <option value="deep_fishing">{t('tripTypes.deepFishing')}</option>
+            <option value="coastal_fishing">{t('tripTypes.coastalFishing')}</option>
+            <option value="snorkeling">{t('tripTypes.snorkeling')}</option>
           </select>
         </div>
 
         <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="trip-requests">طلبات خاصة (اختياري)</label>
+          <label htmlFor="trip-requests">{t('specialRequests')}</label>
           <textarea
             id="trip-requests"
             rows={3}
-            placeholder="وجبة نباتية، طفل رضيع، احتياجات معدات..."
+            placeholder={t('specialRequestsPlaceholder')}
             value={trip.specialRequests}
             onChange={(e) => onChange({ specialRequests: e.target.value })}
             style={{
@@ -396,29 +397,30 @@ function Step1TripDetails({ trip, capacity, onChange }: Step1Props): React.React
 interface Step2Props {
   info: PersonalInfo
   onChange: (update: Partial<PersonalInfo>) => void
+  t: ReturnType<typeof useTranslations<'booking.checkout'>>
 }
 
-function Step2PersonalInfo({ info, onChange }: Step2Props): React.ReactElement {
+function Step2PersonalInfo({ info, onChange, t }: Step2Props): React.ReactElement {
   return (
     <>
       <div className="subhead" style={{ marginTop: 0 }}>
-        بياناتك
+        {t('steps.yourInfo')}
       </div>
 
       <div className="form-grid">
         <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-          <label htmlFor="info-fullname">الاسم الكامل</label>
+          <label htmlFor="info-fullname">{t('fullName')}</label>
           <input
             id="info-fullname"
             type="text"
             value={info.fullName}
             onChange={(e) => onChange({ fullName: e.target.value })}
-            placeholder="الاسم كما في بطاقة الهوية"
+            placeholder={t('fullNamePlaceholder')}
           />
         </div>
 
         <div className="form-field">
-          <label htmlFor="info-phone">رقم الهاتف</label>
+          <label htmlFor="info-phone">{t('phone')}</label>
           <input
             id="info-phone"
             type="tel"
@@ -430,7 +432,7 @@ function Step2PersonalInfo({ info, onChange }: Step2Props): React.ReactElement {
         </div>
 
         <div className="form-field">
-          <label htmlFor="info-email">البريد الإلكتروني</label>
+          <label htmlFor="info-email">{t('email')}</label>
           <input
             id="info-email"
             type="email"
@@ -442,46 +444,46 @@ function Step2PersonalInfo({ info, onChange }: Step2Props): React.ReactElement {
         </div>
 
         <div className="form-field">
-          <label htmlFor="info-idtype">نوع الهوية</label>
+          <label htmlFor="info-idtype">{t('idType')}</label>
           <select
             id="info-idtype"
             value={info.idType}
             onChange={(e) => onChange({ idType: e.target.value })}
           >
-            <option value="national_id">بطاقة قومية</option>
-            <option value="passport">جواز سفر</option>
+            <option value="national_id">{t('idTypes.national')}</option>
+            <option value="passport">{t('idTypes.passport')}</option>
           </select>
         </div>
 
         <div className="form-field">
-          <label htmlFor="info-idnumber">رقم الهوية</label>
+          <label htmlFor="info-idnumber">{t('idNumber')}</label>
           <input
             id="info-idnumber"
             type="text"
             dir="ltr"
             value={info.idNumber}
             onChange={(e) => onChange({ idNumber: e.target.value })}
-            placeholder="رقم البطاقة أو جواز السفر"
+            placeholder={t('idNumberPlaceholder')}
           />
         </div>
 
         <div className="subhead-mini" style={{ gridColumn: '1 / -1', margin: '20px 0 8px' }}>
-          جهة الاتصال في حالات الطوارئ
+          {t('emergencyContact')}
         </div>
 
         <div className="form-field">
-          <label htmlFor="info-emergency-name">اسم جهة الاتصال</label>
+          <label htmlFor="info-emergency-name">{t('emergencyName')}</label>
           <input
             id="info-emergency-name"
             type="text"
             value={info.emergencyName}
             onChange={(e) => onChange({ emergencyName: e.target.value })}
-            placeholder="اسم الشخص المسؤول"
+            placeholder={t('emergencyNamePlaceholder')}
           />
         </div>
 
         <div className="form-field">
-          <label htmlFor="info-emergency-phone">هاتف الطوارئ</label>
+          <label htmlFor="info-emergency-phone">{t('emergencyPhone')}</label>
           <input
             id="info-emergency-phone"
             type="tel"
@@ -500,31 +502,26 @@ function Step2PersonalInfo({ info, onChange }: Step2Props): React.ReactElement {
 // Step 3 — Payment
 // ---------------------------------------------------------------------------
 
-interface PaymentOption {
-  code: PaymentMethod
-  title: string
-  subtitle: string
-}
-
-const PAYMENT_OPTIONS: PaymentOption[] = [
-  { code: 'FAWRY', title: 'Fawry', subtitle: 'الدفع عند أي منفذ فوري' },
-  { code: 'CARD', title: 'بطاقة ائتمان', subtitle: 'Visa · Mastercard' },
-  { code: 'INSTAPAY', title: 'InstaPay', subtitle: 'تحويل بنكي فوري' },
-]
-
 interface Step3Props {
   paymentMethod: PaymentMethod
   onChange: (method: PaymentMethod) => void
+  t: ReturnType<typeof useTranslations<'booking.checkout'>>
 }
 
-function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactElement {
+function Step3Payment({ paymentMethod, onChange, t }: Step3Props): React.ReactElement {
+  const paymentOptions: Array<{ code: PaymentMethod; titleKey: string; subtitleKey: string }> = [
+    { code: 'FAWRY', titleKey: 'payment.fawryTitle', subtitleKey: 'payment.fawrySubtitle' },
+    { code: 'CARD', titleKey: 'payment.cardTitle', subtitleKey: 'payment.cardSubtitle' },
+    { code: 'INSTAPAY', titleKey: 'payment.instapayTitle', subtitleKey: 'payment.instapaySubtitle' },
+  ]
+
   return (
     <>
       <div className="subhead" style={{ marginTop: 0 }}>
-        طريقة الدفع
+        {t('steps.payment')}
       </div>
 
-      {PAYMENT_OPTIONS.map((opt) => {
+      {paymentOptions.map((opt) => {
         const isActive = paymentMethod === opt.code
         return (
           <label
@@ -552,10 +549,10 @@ function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactEleme
             />
             <div>
               <div className="display" style={{ fontSize: 20, fontWeight: 700 }}>
-                {opt.title}
+                {t(opt.titleKey as Parameters<typeof t>[0])}
               </div>
               <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
-                {opt.subtitle}
+                {t(opt.subtitleKey as Parameters<typeof t>[0])}
               </div>
             </div>
             <div
@@ -592,7 +589,7 @@ function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactEleme
               marginBottom: 10,
             }}
           >
-            HOW FAWRY WORKS · آلية فوري
+            {t('payment.fawryHowLabel')}
           </div>
           <ol
             style={{
@@ -602,9 +599,9 @@ function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactEleme
               color: 'var(--ink-2)',
             }}
           >
-            <li>نرسل لك كود دفع فوري عبر رسالة نصية</li>
-            <li>توجّه إلى أي منفذ فوري (٢٠٠,٠٠٠+ منفذ)</li>
-            <li>ادفع المبلغ — الحجز يتأكد خلال دقيقتين</li>
+            <li>{t('payment.fawryStep1')}</li>
+            <li>{t('payment.fawryStep2')}</li>
+            <li>{t('payment.fawryStep3')}</li>
           </ol>
         </div>
       )}
@@ -627,7 +624,7 @@ function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactEleme
               marginBottom: 10,
             }}
           >
-            HOW INSTAPAY WORKS · آلية InstaPay
+            {t('payment.instapayHowLabel')}
           </div>
           <ol
             style={{
@@ -637,9 +634,9 @@ function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactEleme
               color: 'var(--ink-2)',
             }}
           >
-            <li>سنرسل لك رقم الحساب عبر رسالة نصية</li>
-            <li>حوّل المبلغ عبر تطبيق البنك أو InstaPay</li>
-            <li>يتأكد الحجز فور وصول التحويل</li>
+            <li>{t('payment.instapayStep1')}</li>
+            <li>{t('payment.instapayStep2')}</li>
+            <li>{t('payment.instapayStep3')}</li>
           </ol>
         </div>
       )}
@@ -662,10 +659,10 @@ function Step3Payment({ paymentMethod, onChange }: Step3Props): React.ReactEleme
               marginBottom: 10,
             }}
           >
-            SECURE CARD PAYMENT · دفع آمن بالبطاقة
+            {t('payment.cardHowLabel')}
           </div>
           <p style={{ fontSize: 14, lineHeight: 1.7, color: 'var(--ink-2)', margin: 0 }}>
-            ستُوجَّه إلى بوابة دفع آمنة لإدخال بيانات بطاقتك. يتم تشفير كل المعاملات بـ TLS.
+            {t('payment.cardBody')}
           </p>
         </div>
       )}
@@ -704,24 +701,24 @@ function Step4Confirmation({
 
   const paymentLabel =
     paymentMethod === 'FAWRY'
-      ? 'Fawry · يرسل الكود عند التأكيد'
+      ? t('payment.fawryConfirmLabel')
       : paymentMethod === 'INSTAPAY'
-        ? 'InstaPay · تحويل بنكي فوري'
-        : 'بطاقة ائتمان · Visa / Mastercard'
+        ? t('payment.instapayConfirmLabel')
+        : t('payment.cardConfirmLabel')
 
   const reviewRows: [string, string][] = [
-    ['المسافر الرئيسي', info.fullName],
-    ['البريد الإلكتروني', info.email],
-    ['الهاتف', info.phone],
+    [t('confirm.mainPassenger'), info.fullName],
+    [t('confirm.email'), info.email],
+    [t('confirm.phone'), info.phone],
     [
-      'التاريخ',
+      t('confirm.date'),
       trip.date
         ? `${formatDateAr(trip.date)} · ${trip.departureTime} → ${trip.returnTime}`
         : '—',
     ],
-    ['المسافرون', `${trip.numPassengers} ${trip.numPassengers === 1 ? 'مسافر' : 'أشخاص'}`],
-    ['طريقة الدفع', paymentLabel],
-    ['رقم الحجز', bookingRef],
+    [t('confirm.passengers'), `${trip.numPassengers} ${trip.numPassengers === 1 ? t('summary.passenger') : t('summary.passengers')}`],
+    [t('confirm.paymentMethod'), paymentLabel],
+    [t('bookingRef'), bookingRef],
   ]
 
   return (
@@ -733,20 +730,17 @@ function Step4Confirmation({
       <p style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--ink-2)', marginTop: 12 }}>
         {paymentMethod === 'FAWRY' && (
           <>
-            أرسلنا كود دفع فوري إلى <strong>{info.phone}</strong>. ادفع خلال ٤٨ ساعة
-            لتأمين حجزك. ستصلك التفاصيل الكاملة على بريدك.
+            {t('confirm.fawryBody1')} <strong>{info.phone}</strong>. {t('confirm.fawryBody2')}
           </>
         )}
         {paymentMethod === 'INSTAPAY' && (
           <>
-            أرسلنا بيانات التحويل إلى <strong>{info.phone}</strong>. أتمّ التحويل خلال
-            ٤٨ ساعة لتأمين حجزك.
+            {t('confirm.instapayBody1')} <strong>{info.phone}</strong>. {t('confirm.instapayBody2')}
           </>
         )}
         {paymentMethod === 'CARD' && (
           <>
-            تم استلام بطاقتك بنجاح. الحجز مؤكد وستصلك التفاصيل على{' '}
-            <strong>{info.email}</strong>.
+            {t('confirm.cardBody1')} <strong>{info.email}</strong>.
           </>
         )}
       </p>
@@ -792,7 +786,7 @@ function Step4Confirmation({
           className="main"
           style={{ borderInlineStart: '1px dashed var(--rule-strong)' }}
         >
-          <h4>التذكرة</h4>
+          <h4>{t('ticket.title')}</h4>
           <div className="display" style={{ fontSize: 32, lineHeight: 1, marginBottom: 4 }}>
             {yacht.name_ar || yacht.name}
           </div>
@@ -809,7 +803,7 @@ function Step4Confirmation({
                 className="mono"
                 style={{ fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
               >
-                DATE · التاريخ
+                {t('ticket.date')}
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
                 {trip.date ? formatDateAr(trip.date) : '—'}
@@ -820,10 +814,10 @@ function Step4Confirmation({
                 className="mono"
                 style={{ fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
               >
-                BOARDING · الصعود
+                {t('ticket.boarding')}
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
-                {trip.departureTime} صباحاً
+                {trip.departureTime} {t('ticket.am')}
               </div>
             </div>
             <div>
@@ -831,7 +825,7 @@ function Step4Confirmation({
                 className="mono"
                 style={{ fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
               >
-                MARINA · المرسى
+                {t('ticket.marina')}
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
                 {yacht.departure_port?.name_ar ?? '—'}
@@ -842,11 +836,11 @@ function Step4Confirmation({
                 className="mono"
                 style={{ fontSize: 10, letterSpacing: '0.1em', color: 'var(--muted)' }}
               >
-                PAX · المسافرون
+                {t('ticket.pax')}
               </div>
               <div style={{ fontSize: 14, fontWeight: 500, marginTop: 4 }}>
                 {trip.numPassengers}{' '}
-                {trip.numPassengers === 1 ? 'مسافر' : 'أشخاص'}
+                {trip.numPassengers === 1 ? t('summary.passenger') : t('summary.passengers')}
               </div>
             </div>
           </div>
@@ -864,12 +858,12 @@ function Step4Confirmation({
               textAlign: 'center',
             }}
           >
-            BOOKING REF · {bookingRef}
+            {t('ticket.bookingRefLabel')} · {bookingRef}
           </div>
         </div>
 
         <div className="side">
-          <h4>ملخص التكلفة</h4>
+          <h4>{t('ticket.costSummary')}</h4>
           <div className="display" style={{ fontSize: 36, fontWeight: 700, lineHeight: 1 }}>
             <span className="num">{fmtNum(total)}</span>
             <span
@@ -885,14 +879,14 @@ function Step4Confirmation({
             </span>
           </div>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
-            <span>{fmtNum(base)} أساسي</span>
+            <span>{fmtNum(base)} {t('ticket.base')}</span>
             <span style={{ margin: '0 6px' }}>+</span>
-            <span>{fmtNum(serviceFee)} رسوم</span>
+            <span>{fmtNum(serviceFee)} {t('ticket.fees')}</span>
             <span style={{ margin: '0 6px' }}>+</span>
-            <span>{fmtNum(insurance)} تأمين</span>
+            <span>{fmtNum(insurance)} {t('ticket.insurance')}</span>
           </div>
 
-          <h4 style={{ marginTop: 28 }}>ماذا بعد؟</h4>
+          <h4 style={{ marginTop: 28 }}>{t('ticket.whatsNext')}</h4>
           <ol
             style={{
               paddingInlineStart: 20,
@@ -901,11 +895,11 @@ function Step4Confirmation({
               color: 'var(--ink-2)',
             }}
           >
-            {paymentMethod === 'FAWRY' && <li>ادفع عبر فوري خلال ٤٨ ساعة</li>}
-            {paymentMethod === 'INSTAPAY' && <li>أتمّ التحويل خلال ٤٨ ساعة</li>}
-            <li>ستصلك تأكيد نهائي + بيانات الربان</li>
-            <li>الوصول للمرسى قبل ١٥ دقيقة من الإبحار</li>
-            <li>بعد الرحلة — شاركنا تقييمك</li>
+            {paymentMethod === 'FAWRY' && <li>{t('ticket.nextFawry')}</li>}
+            {paymentMethod === 'INSTAPAY' && <li>{t('ticket.nextInstapay')}</li>}
+            <li>{t('ticket.nextConfirm')}</li>
+            <li>{t('ticket.nextArrive')}</li>
+            <li>{t('ticket.nextReview')}</li>
           </ol>
 
           <button
@@ -921,7 +915,7 @@ function Step4Confirmation({
             style={{ marginTop: 10, width: '100%' }}
             onClick={onHome}
           >
-            العودة إلى الرئيسية
+            {t('backHome')}
           </button>
         </div>
       </div>
@@ -989,7 +983,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
         if (!cancelled) setYacht(data)
       })
       .catch(() => {
-        if (!cancelled) setLoadError('لم يتم العثور على اليخت المطلوب.')
+        if (!cancelled) setLoadError(t('yachtNotFound'))
       })
     return () => {
       cancelled = true
@@ -1013,13 +1007,13 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
 
   function validateStep(): string | null {
     if (step === 1) {
-      if (!trip.date) return 'يرجى اختيار تاريخ الرحلة.'
-      if (trip.numPassengers < 1) return 'يرجى اختيار عدد المسافرين.'
+      if (!trip.date) return t('validation.dateRequired')
+      if (trip.numPassengers < 1) return t('validation.passengersRequired')
     }
     if (step === 2) {
-      if (!info.fullName.trim()) return 'يرجى إدخال الاسم الكامل.'
-      if (!info.phone.trim()) return 'يرجى إدخال رقم الهاتف.'
-      if (!info.idNumber.trim()) return 'يرجى إدخال رقم الهوية.'
+      if (!info.fullName.trim()) return t('validation.fullNameRequired')
+      if (!info.phone.trim()) return t('validation.phoneRequired')
+      if (!info.idNumber.trim()) return t('validation.idNumberRequired')
     }
     return null
   }
@@ -1031,7 +1025,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
   async function submitBooking(): Promise<void> {
     if (!yacht) return
     if (!yacht.departure_port) {
-      setGlobalError('لا تتوفر بيانات ميناء الانطلاق لهذا اليخت. يرجى التواصل مع الدعم.')
+      setGlobalError(t('validation.noDeparturePort'))
       return
     }
 
@@ -1063,7 +1057,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
       } else if (err instanceof Error) {
         setGlobalError(err.message)
       } else {
-        setGlobalError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.')
+        setGlobalError(t('validation.unexpectedError'))
       }
     } finally {
       setSubmitting(false)
@@ -1113,7 +1107,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
           {loadError}
         </p>
         <button className="btn btn-ghost" style={{ marginTop: 20 }} onClick={() => router.back()}>
-          ← العودة
+          {t('back')}
         </button>
       </main>
     )
@@ -1127,7 +1121,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
       >
         <div
           role="status"
-          aria-label="جارٍ التحميل"
+          aria-label={t('loading')}
           style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}
         >
           <span
@@ -1161,7 +1155,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
               cursor: 'pointer',
             }}
           >
-            ← العودة إلى الرئيسية
+            {t('backHome')}
           </button>
         </div>
 
@@ -1266,6 +1260,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
               trip={trip}
               capacity={yacht.capacity}
               onChange={(update) => setTrip((prev) => ({ ...prev, ...update }))}
+              t={t}
             />
           )}
 
@@ -1273,6 +1268,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
             <Step2PersonalInfo
               info={info}
               onChange={(update) => setInfo((prev) => ({ ...prev, ...update }))}
+              t={t}
             />
           )}
 
@@ -1280,6 +1276,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
             <Step3Payment
               paymentMethod={paymentMethod}
               onChange={setPaymentMethod}
+              t={t}
             />
           )}
 
@@ -1294,7 +1291,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
             }}
           >
             <button className="btn btn-ghost" onClick={handleBack} disabled={submitting}>
-              ← {step === 1 ? 'إلغاء' : 'السابق'}
+              {step === 1 ? t('cancel') : t('previous')}
             </button>
             <button
               className="btn btn-clay"

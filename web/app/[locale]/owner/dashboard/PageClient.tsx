@@ -37,7 +37,15 @@ const fetchReviews = (path: string) =>
 
 // ── Mini Calendar (May 2026) ──────────────────────────────────────────────────
 
-function MiniCalendar({ bookedDays }: { bookedDays: number[] }) {
+interface MiniCalendarProps {
+  bookedDays: number[]
+  legendBooked: string
+  legendHold: string
+  legendToday: string
+  weekdays: string[]
+}
+
+function MiniCalendar({ bookedDays, legendBooked, legendHold, legendToday, weekdays }: MiniCalendarProps) {
   const cal: Array<{ day: number | ''; booked: boolean; hold: boolean; today: boolean }> = []
   for (let i = 0; i < 35; i++) {
     const day = i - 2  // May 1 starts on Thursday (index 4), shift -2 for Sunday grid
@@ -50,7 +58,7 @@ function MiniCalendar({ bookedDays }: { bookedDays: number[] }) {
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 6 }}>
-        {['أحد', 'اثن', 'ثلا', 'أرب', 'خمس', 'جمع', 'سبت'].map((d) => (
+        {weekdays.map((d) => (
           <div
             key={d}
             style={{
@@ -98,7 +106,7 @@ function MiniCalendar({ bookedDays }: { bookedDays: number[] }) {
               verticalAlign: 'middle',
             }}
           />
-          محجوز
+          {legendBooked}
         </span>
         <span>
           <span
@@ -111,7 +119,7 @@ function MiniCalendar({ bookedDays }: { bookedDays: number[] }) {
               verticalAlign: 'middle',
             }}
           />
-          معلّق
+          {legendHold}
         </span>
         <span>
           <span
@@ -124,7 +132,7 @@ function MiniCalendar({ bookedDays }: { bookedDays: number[] }) {
               verticalAlign: 'middle',
             }}
           />
-          اليوم
+          {legendToday}
         </span>
       </div>
     </>
@@ -274,50 +282,74 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
         <div>
           <div className="num-tag">§ OWNER · {locale.toUpperCase()} · DASHBOARD</div>
           <h1>
-            {t('title').split(' ')[0]}{' '}
-            <em>{t('title').split(' ').slice(1).join(' ')}</em>
+            {t('titleGreet')}{' '}
+            <em>{t('titleName')}</em>
           </h1>
+          {/* Vessel status subtitle — matches design SellerDashContent dash-head */}
+          <div
+            style={{
+              marginTop: 10,
+              fontFamily: 'var(--ff-mono)',
+              fontSize: 12,
+              color: 'var(--muted)',
+              letterSpacing: '0.05em',
+              direction: 'ltr',
+            }}
+          >
+            {t('vesselStatus')}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <Link href={`/${locale}/owner/yachts`} className="btn btn-ghost">
-            تعديل القارب
+            {t('editBoat')}
           </Link>
           <Link href={`/${locale}/owner/yachts/new`} className="btn btn-clay">
-            + إضافة قارب جديد
+            {t('addBoat')}
           </Link>
         </div>
       </header>
 
-      {/* ── KPI grid (4 tiles matching design) ─────────────────────────── */}
+      {/* ── KPI grid (4 tiles matching design SellerDashContent) ──────── */}
       <div className="kpi-grid" role="list" aria-label="Owner KPIs">
         <div className="kpi" role="listitem">
-          <div className="l">MONTHLY REVENUE · إيرادات الشهر</div>
+          <div className="l">{t('kpiRevenue')}</div>
           <div className="v num">
             {isLoading ? '—' : fmt(nextPayoutRaw)}
             <span className="unit"> {earningsCurrency}</span>
           </div>
-          <div className="delta up">▲ +22% vs APR</div>
+          <div className="delta up">▲ {t('kpiRevenueDelta')}</div>
         </div>
         <div className="kpi" role="listitem">
-          <div className="l">BOOKINGS · حجوزات</div>
+          <div className="l">{t('kpiBookings')}</div>
           <div className="v num">{isLoading ? '—' : fmt(pendingCount + activeCount)}</div>
-          <div className="delta up">▲ {activeCount} UPCOMING</div>
+          <div className="delta up">
+            ▲ {isLoading ? '—' : activeCount} {t('kpiBookingsDeltaSuffix')}
+          </div>
         </div>
         <div className="kpi" role="listitem">
-          <div className="l">OCCUPANCY · نسبة الإشغال</div>
+          <div className="l">{t('kpiOccupancy')}</div>
           <div className="v num">
             {isLoading ? '—' : occupancyPct}
             <span className="unit"> %</span>
           </div>
-          <div className="delta up">▲ +8pp MoM</div>
+          <div className="delta up">▲ {t('kpiOccupancyDelta')}</div>
         </div>
+        {/* 4th KPI: Rating — matches design (4.92 / 5 · 148 REVIEWS) */}
         <div className="kpi" role="listitem">
-          <div className="l">EARNINGS · {t('totalEarnings')}</div>
+          <div className="l">{t('kpiRating')}</div>
           <div className="v num">
-            {isLoading ? '—' : fmt(totalEarnings)}
-            <span className="unit"> {earningsCurrency}</span>
+            {reviews[0] ? (
+              <>
+                {(
+                  reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+                ).toFixed(2)}
+                <span className="unit"> / 5</span>
+              </>
+            ) : (
+              '—'
+            )}
           </div>
-          <div className="delta up">▲ COMPLETED</div>
+          <div className="delta up">▲ {reviews.length} {t('kpiRatingDeltaSuffix')}</div>
         </div>
       </div>
 
@@ -340,14 +372,28 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
       <div className="dash-row">
         {/* Calendar */}
         <div className="dash-card" data-screen-label="owner-calendar-widget">
-          <h3>التقويم · مايو ٢٠٢٦</h3>
+          <h3>{t('calendarTitle')}</h3>
           <div className="sub">CALENDAR · MAY 2026 · AVAILABILITY</div>
-          <MiniCalendar bookedDays={bookedDays} />
+          <MiniCalendar
+            bookedDays={bookedDays}
+            legendBooked={t('calLegendBooked')}
+            legendHold={t('calLegendHold')}
+            legendToday={t('calLegendToday')}
+            weekdays={[
+              t('calWeekdaySun'),
+              t('calWeekdayMon'),
+              t('calWeekdayTue'),
+              t('calWeekdayWed'),
+              t('calWeekdayThu'),
+              t('calWeekdayFri'),
+              t('calWeekdaySat'),
+            ]}
+          />
         </div>
 
         {/* Next Payout */}
         <div className="dash-card" data-screen-label="owner-payout-widget">
-          <h3>صافي الدفع القادم</h3>
+          <h3>{t('payoutTitle')}</h3>
           <div className="sub">NEXT PAYOUT · 15 MAY 2026</div>
           <div className="display" style={{ fontSize: 56, lineHeight: 1, marginTop: 8 }}>
             <span className="num">{isLoading ? '—' : nextPayout.toLocaleString('en')}</span>
@@ -359,11 +405,13 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
             </span>
           </div>
           <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--rule)' }}>
-            {[
-              ['إجمالي الحجوزات', nextPayoutRaw.toLocaleString('en'), null],
-              ['ضمان محتجز', `-${escrowHeld.toLocaleString('en')}`, 'hold'],
-              ['عمولة المنصة 0%', '—', 'promo'],
-            ].map(([l, v, k], i) => (
+            {(
+              [
+                [t('payoutLineTotal'), nextPayoutRaw.toLocaleString('en'), null],
+                [t('payoutLineEscrow'), `-${escrowHeld.toLocaleString('en')}`, 'hold'],
+                [t('payoutLineCommission'), '—', 'promo'],
+              ] as [string, string, string | null][]
+            ).map(([l, v, k], i) => (
               <div
                 key={i}
                 style={{
@@ -400,7 +448,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
             className="btn btn-primary"
             style={{ width: '100%', marginTop: 16, display: 'block', textAlign: 'center' }}
           >
-            عرض كشف الحساب
+            {t('viewStatement')}
           </Link>
         </div>
       </div>
@@ -415,7 +463,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
             marginBottom: 4,
           }}
         >
-          <h3>الحجوزات القادمة</h3>
+          <h3>{t('upcomingBookingsTitle')}</h3>
           <Link
             href={`/${locale}/owner/bookings`}
             style={{
@@ -464,11 +512,11 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
           <table className="dash-table">
             <thead>
               <tr>
-                <th>التاريخ</th>
-                <th>العميل</th>
-                <th>مسافرون</th>
-                <th>المبلغ</th>
-                <th>الحالة</th>
+                <th>{t('tableDate')}</th>
+                <th>{t('tableCustomer')}</th>
+                <th>{t('tablePax')}</th>
+                <th>{t('tableAmount')}</th>
+                <th>{t('tableStatus')}</th>
                 <th />
               </tr>
             </thead>
@@ -525,7 +573,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
                         className="btn btn-ghost"
                         style={{ padding: '6px 12px', fontSize: 12 }}
                       >
-                        التفاصيل ←
+                        {t('tableDetails')}
                       </Link>
                     </td>
                   </tr>
@@ -574,7 +622,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
       <div className="dash-row" style={{ marginTop: 32 }}>
         {/* Recent Reviews */}
         <div className="dash-card" data-screen-label="owner-reviews-widget">
-          <h3>أحدث التقييمات</h3>
+          <h3>{t('reviewsTitle')}</h3>
           <div className="sub">RECENT REVIEWS</div>
           {reviews.map((r) => (
             <div
@@ -632,7 +680,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
           }}
           data-screen-label="owner-ai-insight"
         >
-          <h3 style={{ color: 'var(--sand)' }}>نصيحة الأسبوع</h3>
+          <h3 style={{ color: 'var(--sand)' }}>{t('insightTitle')}</h3>
           <div
             className="sub"
             style={{ color: 'var(--sand-3)', opacity: 0.7 }}
@@ -648,10 +696,10 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
               margin: '16px 0 12px',
             }}
           >
-            ارفع سعر الخميس والجمعة بنسبة ١٥٪ — الطلب أعلى ب ٣٢٪.
+            {t('insightHeadline')}
           </p>
           <p style={{ fontSize: 13, opacity: 0.8, lineHeight: 1.6 }}>
-            قوارب مماثلة في الغردقة تُسعّر هذين اليومين بـ 4,370 EGP في المتوسط. زيادة قدرها 570 EGP يمكن أن تضيف ~4,500 EGP شهرياً دون خسارة حجوزات.
+            {t('insightBody')}
           </p>
           <button
             className="btn"
@@ -661,7 +709,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
               marginTop: 16,
             }}
           >
-            طبّق الاقتراح ←
+            {t('insightApply')}
           </button>
         </div>
       </div>

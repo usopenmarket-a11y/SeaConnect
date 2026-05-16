@@ -13,66 +13,49 @@ Dev behaviour:
     'sent' immediately (no real HTTP call) so the dev loop stays unblocked.
   - Email: routed to Mailpit via Django's SMTP backend (EMAIL_HOST=mailpit).
 
-Sprint 9A: real Firebase Admin SDK integration via _get_firebase_app().
+Sprint 9A: real Firebase Admin SDK integration via apps.notifications.firebase.
 """
-import base64
-import json
 import logging
 
 from celery import shared_task
-from decouple import config
 from django.utils import timezone
 
+from apps.notifications.firebase import get_firebase_app
 from apps.notifications.models import Notification, NotificationStatus
 
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Firebase singleton — lazy-initialised once per worker process
+# Firebase singleton — resolved via apps.notifications.firebase.get_firebase_app
 # ---------------------------------------------------------------------------
 
+# ``_firebase_app`` is kept as a module-level alias so that existing tests that
+# patch ``apps.notifications.tasks._firebase_app`` (to reset state between test
+# runs) continue to work.  The real singleton is owned by firebase.py; this
+# variable shadows the private ``_firebase_app`` in that module when tests
+# inject it directly here.
 _firebase_app = None
 
 
 def _get_firebase_app():
-    """Lazy-initialise the Firebase app singleton.
+    """Delegate to the canonical singleton in apps.notifications.firebase.
 
-    Returns the Firebase App instance on success, or None when
-    FIREBASE_CREDENTIALS_JSON is absent (dev / CI environments).
+    This thin wrapper exists so that tests which patch
+    ``apps.notifications.tasks._firebase_app`` at the module level can still
+    short-circuit the Firebase initialisation logic during test runs.
 
-    The singleton is stored at module level so each Celery worker process
-    initialises Firebase exactly once, regardless of how many tasks it runs.
+    When ``_firebase_app`` has been set (e.g. by a test's monkeypatch or by a
+    previous call that populated the firebase module's singleton), return it
+    directly.  Otherwise delegate to ``get_firebase_app()`` from firebase.py.
     """
     global _firebase_app
     if _firebase_app is not None:
         return _firebase_app
-
-    import firebase_admin
-    from firebase_admin import credentials
-
-    # Check if another code path already initialised the app (e.g. tests)
-    try:
-        _firebase_app = firebase_admin.get_app()
-        return _firebase_app
-    except ValueError:
-        pass  # App not yet initialised — proceed below
-
-    creds_b64 = config("FIREBASE_CREDENTIALS_JSON", default="")
-    if not creds_b64:
-        logger.info("FIREBASE_CREDENTIALS_JSON not set — FCM calls will be skipped (dev mode).")
-        _firebase_app = None
-        return None
-
-    try:
-        creds_json = json.loads(base64.b64decode(creds_b64))
-        cred = credentials.Certificate(creds_json)
-        _firebase_app = firebase_admin.initialize_app(cred)
-        logger.info("Firebase Admin SDK initialised successfully.")
-    except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to initialise Firebase Admin SDK: %s", exc)
-        _firebase_app = None
-
-    return _firebase_app
+    result = get_firebase_app()
+    # Mirror the result back into the module-level alias so subsequent calls
+    # within the same worker process are O(1) dictionary lookups.
+    _firebase_app = result
+    return result
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)

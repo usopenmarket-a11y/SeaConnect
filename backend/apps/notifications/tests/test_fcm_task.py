@@ -73,8 +73,16 @@ def _make_firebase_stub():
 
 
 def _reset_firebase_singleton():
-    """Reset the module-level _firebase_app to None between tests."""
+    """Reset the module-level _firebase_app to None between tests.
+
+    The singleton now lives in ``apps.notifications.firebase``.
+    ``apps.notifications.tasks`` mirrors it via a local alias, so both must
+    be cleared to prevent state leaking between test functions.
+    """
+    import apps.notifications.firebase as firebase_module
     import apps.notifications.tasks as tasks_module
+
+    firebase_module._firebase_app = None
     tasks_module._firebase_app = None
 
 
@@ -171,7 +179,7 @@ class TestFirebaseNotConfigured:
         _, messaging_mod = firebase_stub
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=""):
+        with patch("apps.notifications.firebase.config", return_value=""):
             from apps.notifications.tasks import send_push_notification
             send_push_notification(str(notif.id))
 
@@ -185,7 +193,7 @@ class TestFirebaseNotConfigured:
         """sent_at must be set when notification transitions to SENT in dev mode."""
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=""):
+        with patch("apps.notifications.firebase.config", return_value=""):
             from apps.notifications.tasks import send_push_notification
             send_push_notification(str(notif.id))
 
@@ -223,7 +231,7 @@ class TestFCMHappyPath:
         creds_b64 = self._configure_firebase(fb)
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=creds_b64):
+        with patch("apps.notifications.firebase.config", return_value=creds_b64):
             from apps.notifications.tasks import send_push_notification
             send_push_notification(str(notif.id))
 
@@ -237,7 +245,7 @@ class TestFCMHappyPath:
         creds_b64 = self._configure_firebase(fb)
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=creds_b64):
+        with patch("apps.notifications.firebase.config", return_value=creds_b64):
             from apps.notifications.tasks import send_push_notification
             send_push_notification(str(notif.id))
 
@@ -250,7 +258,7 @@ class TestFCMHappyPath:
         assert customer_with_token.preferred_lang == "ar"
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=creds_b64):
+        with patch("apps.notifications.firebase.config", return_value=creds_b64):
             from apps.notifications.tasks import send_push_notification
             send_push_notification(str(notif.id))
 
@@ -291,7 +299,7 @@ class TestFCMFailure:
         creds_b64 = self._configure_firebase()
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=creds_b64):
+        with patch("apps.notifications.firebase.config", return_value=creds_b64):
             from apps.notifications.tasks import send_push_notification
             # Must NOT raise — FCM errors are swallowed intentionally
             send_push_notification(str(notif.id))
@@ -307,7 +315,7 @@ class TestFCMFailure:
         creds_b64 = self._configure_firebase()
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=creds_b64):
+        with patch("apps.notifications.firebase.config", return_value=creds_b64):
             from apps.notifications.tasks import send_push_notification
             try:
                 send_push_notification(str(notif.id))
@@ -321,7 +329,7 @@ class TestFCMFailure:
         creds_b64 = self._configure_firebase()
         notif = _make_pending_notification(customer_with_token)
 
-        with patch("apps.notifications.tasks.config", return_value=creds_b64):
+        with patch("apps.notifications.firebase.config", return_value=creds_b64):
             from apps.notifications.tasks import send_push_notification
             send_push_notification(str(notif.id))
 
