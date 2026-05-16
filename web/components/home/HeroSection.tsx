@@ -62,16 +62,7 @@ export function HeroSection({
 
   return (
     <div className="hero" data-screen-label="hero">
-      {/* Parallax background image */}
-      <div
-        ref={ref as React.RefObject<HTMLDivElement>}
-        className="hero-img-parallax"
-        style={{
-          ...style,
-          backgroundImage:
-            'url(https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2400&q=80)',
-        }}
-      />
+      {/* Sea canvas shows through — no background image needed */}
       <div className="hero-overlay" />
 
       <div className="hero-content">

@@ -195,7 +195,7 @@ export default async function YachtDetailPage({
   const regionEnName = yacht.departure_port?.region?.name_en ?? 'RED SEA'
 
   return (
-    <>
+    <div className="page-glass">
       {/* ── Gallery ───────────────────────────────────────────────────────── */}
       <div className="detail-gallery" data-screen-label="detail-gallery">
         <div className="main" style={{ backgroundImage: `url(${heroImg})` }} />
@@ -497,6 +497,6 @@ export default async function YachtDetailPage({
           </div>
         </div>
       </div>
-    </>
+    </div>
   )
 }

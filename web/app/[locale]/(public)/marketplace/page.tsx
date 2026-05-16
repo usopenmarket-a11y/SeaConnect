@@ -121,7 +121,7 @@ export default async function MarketplacePage({
   const activeCategorySlug = searchParams.category ?? null
 
   return (
-    <>
+    <div className="page-glass">
       {/* ── Editorial header ───────────────────────────────────────────────── */}
       <div
         style={{
@@ -209,6 +209,6 @@ export default async function MarketplacePage({
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }

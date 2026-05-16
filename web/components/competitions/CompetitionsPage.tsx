@@ -91,7 +91,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
   }
 
   return (
-    <div dir="rtl">
+    <div className="page-glass" dir="rtl">
       {/* Header */}
       <div style={{ padding: '40px 48px 24px', borderBottom: '2px solid var(--ink)' }}>
         <div className="mono" style={{ fontSize: 11, letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: 8 }}>

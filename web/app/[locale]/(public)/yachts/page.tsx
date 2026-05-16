@@ -192,7 +192,7 @@ export default async function YachtsPage({
   })
 
   return (
-    <>
+    <div className="page-glass">
       {/* Page header */}
       <div
         style={{
@@ -241,6 +241,6 @@ export default async function YachtsPage({
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }
