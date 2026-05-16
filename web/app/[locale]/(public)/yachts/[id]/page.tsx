@@ -65,7 +65,7 @@ const GALLERY_FALLBACK = [
   'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80',
   'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=1200&q=80',
   'https://images.unsplash.com/photo-1605281317010-fe5ffe798166?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1561643028-02e42b8eb7e8?auto=format&fit=crop&w=1200&q=80',
 ]
 
 const AMENITIES = [

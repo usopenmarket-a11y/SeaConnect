@@ -1548,3 +1548,33 @@ cd e2e && npx playwright test --reporter=list
 # i18n parity check
 node e2e/check-i18n-parity.mjs
 ```
+
+---
+
+## HANDOFF-2026-05-16-003
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** any
+**Sprint:** 5
+**Feature:** Yachts listing & detail — correct maritime images
+
+### What Was Completed
+- Replaced surfer (`1502680390469`), scuba diver (`1533473359331`), coral reef (`1540946485063`), and car (`1569263979104`) Unsplash images with confirmed yacht/maritime photos in three layers: seed command, Next.js fallback arrays (both `/yachts/page.tsx` and `page.tsx`), and the live PostgreSQL `bookings_yachtmedia` table (via Django shell).
+- Updated `GALLERY_FALLBACK` in `/yachts/[id]/page.tsx` from non-maritime images to 4 confirmed yacht photos specified in the visual audit.
+- Fixed `seed_yachts.py` so future re-seeds use correct images.
+
+### Contract
+No API contract change — image URLs are stored in `bookings_yachtmedia.url` (free-text field).
+
+### How to Test
+```bash
+# Verify API returns only maritime images
+curl -s "http://localhost:8010/api/v1/yachts/?ordering=-created_at" | python3 -c "
+import json,sys; d=json.load(sys.stdin)
+for y in d['results']: print(y['name'], '->', y.get('primary_image_url','none'))"
+
+# Verify rendered HTML has no bad photo IDs
+curl -s "http://localhost:3010/ar/yachts" | grep -o "photo-[0-9a-f-]*" | sort | uniq
+# Should NOT contain: 1502680390469, 1533473359331, 1540946485063, 1569263979104
+```

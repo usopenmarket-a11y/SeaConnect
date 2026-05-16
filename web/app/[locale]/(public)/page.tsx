@@ -74,7 +74,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
     capt: 'الربان إبراهيم الغرباوي', captEn: 'Capt. Ibrahim Gharbawi',
     region: 'الإسكندرية', regionEn: 'Alexandria', coords: '31.2001°N · 29.9187°E',
     length: 28, pax: 6, year: 2019, price: 1800, rating: 4.81, reviews: 92,
-    img: 'https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1400&q=80',
+    img: 'https://images.unsplash.com/photo-1527484702778-7d9bbbc5e3ab?auto=format&fit=crop&w=1400&q=80',
     tagEn: 'TOP BOOKED',
   },
   {
@@ -110,7 +110,7 @@ const FALLBACK_BOATS: BoatCardData[] = [
     capt: 'الربان سامي حسن', captEn: 'Capt. Samy Hassan',
     region: 'دهب', regionEn: 'Dahab', coords: '28.5091°N · 34.5136°E',
     length: 22, pax: 4, year: 2020, price: 1200, rating: 4.79, reviews: 56,
-    img: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1400&q=80',
+    img: 'https://images.unsplash.com/photo-1561643028-02e42b8eb7e8?auto=format&fit=crop&w=1400&q=80',
     tagEn: 'VERIFIED',
   },
 ]
