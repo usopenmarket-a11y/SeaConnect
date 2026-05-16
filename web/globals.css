@@ -527,6 +527,15 @@ img { display: block; max-width: 100%; }
   z-index: 1;
 }
 
+/* ── page header glass backing (sea canvas compatibility) ── */
+[data-screen-label="yachts-header"],
+[data-screen-label="marketplace-header"],
+[data-screen-label="competitions-header"] {
+  background: oklch(0.97 0.008 210 / 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
 /* ── section headers ───────────────────────────── */
 .section {
   padding: calc(var(--pad-lg) * 2.2) 48px;
@@ -709,8 +718,9 @@ img { display: block; max-width: 100%; }
   padding-top: 12px;
   margin-top: auto;
 }
-.boat-card .price { font-family: var(--ff-display); font-size: 22px; font-weight: 700; }
-.boat-card .price .unit { font-family: var(--ff-mono); font-size: 11px; font-weight: 400; color: var(--muted); margin-inline-end: 2px; }
+.boat-card .price { font-family: var(--ff-display); font-size: 22px; font-weight: 700; display: flex; align-items: baseline; gap: 4px; }
+.boat-card .price .num { font-family: var(--ff-mono); font-size: 20px; font-weight: 600; direction: ltr; }
+.boat-card .price .unit { font-family: var(--ff-mono); font-size: 11px; font-weight: 400; color: var(--muted); }
 .boat-card .rating {
   font-family: var(--ff-mono);
   font-size: 12px;
@@ -832,17 +842,17 @@ img { display: block; max-width: 100%; }
   align-items: start;
 }
 
-.detail-left .crumbs { font-family: var(--ff-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 16px; direction: ltr; display: flex; gap: 8px; }
-.detail-left h1 { font-family: var(--ff-display); font-size: 64px; line-height: 1; letter-spacing: -0.02em; font-weight: 700; margin-bottom: 16px; }
+.detail-left .crumbs { font-family: var(--ff-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 18px; direction: ltr; display: flex; gap: 8px; }
+.detail-left h1 { font-family: var(--ff-display); font-size: 52px; line-height: 1.02; letter-spacing: -0.015em; font-weight: 700; margin-bottom: 16px; }
 .detail-left h1 em { font-style: italic; color: var(--clay); }
 
 .detail-meta-row {
   display: flex;
-  gap: 24px;
-  padding: 16px 0;
+  gap: 32px;
+  padding: 20px 0;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  margin-bottom: 32px;
+  margin: 20px 0;
   font-family: var(--ff-mono);
   font-size: 12px;
   flex-wrap: wrap;
@@ -907,6 +917,50 @@ img { display: block; max-width: 100%; }
 .pill-tabs .pill { padding: 8px 14px; font-family: var(--ff-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid transparent; border-radius: 2px; color: var(--muted); cursor: pointer; }
 .pill-tabs .pill:hover { color: var(--ink); }
 .pill-tabs .pill.active { background: var(--ink); color: var(--sand); border-color: var(--ink); }
+
+/* ── yacht / listing filter bar ────────────────── */
+.yacht-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 48px;
+  background: oklch(0.955 0.015 85 / 0.70);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-bottom: 1px solid var(--rule);
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.filter-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.filter-select,
+.filter-input {
+  font-family: var(--ff-sans);
+  font-size: 13px;
+  padding: 9px 12px;
+  background: var(--foam);
+  border: 1px solid var(--rule-strong);
+  color: var(--ink);
+  outline: none;
+  border-radius: 2px;
+  min-width: 140px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.filter-select:focus,
+.filter-input:focus {
+  border-color: var(--clay);
+  background: var(--pearl);
+}
+.filter-input { min-width: 100px; }
 
 /* ── tweaks panel ──────────────────────────────── */
 .tweaks-panel { position: fixed; bottom: 20px; inset-inline-end: 20px; background: var(--foam); border: 1px solid var(--ink); padding: 18px 20px; z-index: 100; width: 260px; box-shadow: 0 20px 60px -12px oklch(0.22 0.04 240 / 0.4); }
