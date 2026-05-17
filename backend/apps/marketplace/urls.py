@@ -72,6 +72,11 @@ urlpatterns = [
     path("marketplace/cart/items/<uuid:id>/", views.CartItemDetailView.as_view(), name="cart-item-detail"),
 
     # -----------------------------------------------------------------------
+    # Cart checkout (Sprint 16C) — dedicated endpoint with stock validation
+    # -----------------------------------------------------------------------
+    path("marketplace/cart/checkout/", views.CartCheckoutView.as_view(), name="cart-checkout"),
+
+    # -----------------------------------------------------------------------
     # Orders
     # -----------------------------------------------------------------------
     path("marketplace/orders/", views.OrderListCreateView.as_view(), name="order-list-create"),

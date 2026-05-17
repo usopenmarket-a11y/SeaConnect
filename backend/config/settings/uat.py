@@ -36,7 +36,11 @@ ALLOWED_HOSTS = config(
 # the original request used HTTPS so SECURE_SSL_REDIRECT works correctly.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-SECURE_SSL_REDIRECT = True
+# UAT runs on Render with SSL terminated at the edge (SECURE_PROXY_SSL_HEADER
+# is set above).  SECURE_SSL_REDIRECT is still correct here because Render
+# forwards the original proto header, so Django sees https:// and won't loop.
+# Override to False via env var if running behind a proxy that strips the header.
+SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True

@@ -28,7 +28,7 @@ interface CartProduct {
   id: string
   name: string
   name_ar: string
-  image_url: string | null
+  primary_image_url: string | null
   price: string
   currency: string
 }
@@ -47,11 +47,15 @@ interface CartData {
   item_count: number
 }
 
-interface OrderItem {
+/** Shape returned by POST /api/v1/marketplace/cart/checkout/ */
+interface CheckoutOrderItem {
   id: string
-  product: CartProduct
+  product_name: string
+  product_name_ar: string
+  image_url: string | null
   quantity: number
-  line_total: string
+  unit_price: string
+  currency: string
 }
 
 interface OrderResponse {
@@ -59,7 +63,9 @@ interface OrderResponse {
   status: string
   total_amount: string
   currency: string
-  items: OrderItem[]
+  delivery_address: string
+  items: CheckoutOrderItem[]
+  payment_required: boolean
 }
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -67,16 +73,16 @@ interface OrderResponse {
 const CART_KEY = '/marketplace/cart/'
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
 
-async function placeOrder(shippingAddress: string): Promise<OrderResponse> {
+async function placeOrder(deliveryAddress: string): Promise<OrderResponse> {
   const token = getAccessToken()
-  const res = await fetch(`${API_URL}/api/v1/marketplace/orders/`, {
+  const res = await fetch(`${API_URL}/api/v1/marketplace/cart/checkout/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ shipping_address: shippingAddress }),
+    body: JSON.stringify({ delivery_address: deliveryAddress }),
   })
   if (!res.ok) {
     throw new Error('order_failed')
@@ -200,11 +206,12 @@ function OrderSummary({ order, locale }: OrderSummaryProps): React.ReactElement 
       >
         {order.items.map((item, idx) => {
           const displayName = isAr
-            ? item.product.name_ar || item.product.name
-            : item.product.name
+            ? item.product_name_ar || item.product_name
+            : item.product_name
+          const itemTotal = Number(item.unit_price) * item.quantity
           const lineTotal = isAr
-            ? Number(item.line_total).toLocaleString('ar-EG')
-            : Number(item.line_total).toLocaleString('en')
+            ? itemTotal.toLocaleString('ar-EG')
+            : itemTotal.toLocaleString('en')
           return (
             <div
               key={item.id}
@@ -228,9 +235,9 @@ function OrderSummary({ order, locale }: OrderSummaryProps): React.ReactElement 
                   position: 'relative',
                 }}
               >
-                {item.product.image_url ? (
+                {item.image_url ? (
                   <Image
-                    src={item.product.image_url}
+                    src={item.image_url}
                     alt={displayName}
                     fill
                     style={{ objectFit: 'cover' }}
@@ -270,7 +277,7 @@ function OrderSummary({ order, locale }: OrderSummaryProps): React.ReactElement 
               >
                 {lineTotal}{' '}
                 <span style={{ fontSize: 11, fontWeight: 400, color: 'var(--muted)' }}>
-                  {item.product.currency}
+                  {item.currency}
                 </span>
               </span>
             </div>
@@ -351,11 +358,11 @@ function CheckoutForm({
   const t = useTranslations('checkout')
   const isAr = locale === 'ar'
 
-  const [shippingAddress, setShippingAddress] = React.useState('')
+  const [deliveryAddress, setDeliveryAddress] = React.useState('')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [submitError, setSubmitError] = React.useState<string | null>(null)
 
-  const currency = cart.items[0]?.product.currency ?? 'EGP'
+  const currency = cart.items[0]?.product.currency ?? ''
   const subtotal = cart.items.reduce(
     (sum, item) => sum + (Number(item.line_total) || 0),
     0,
@@ -366,13 +373,13 @@ function CheckoutForm({
 
   async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
-    if (!shippingAddress.trim()) return
+    if (!deliveryAddress.trim()) return
 
     setIsSubmitting(true)
     setSubmitError(null)
 
     try {
-      const order = await placeOrder(shippingAddress.trim())
+      const order = await placeOrder(deliveryAddress.trim())
       onSuccess(order)
     } catch {
       setSubmitError(t('orderError'))
@@ -443,7 +450,7 @@ function CheckoutForm({
         <form onSubmit={handleSubmit} noValidate>
           <div style={{ marginBottom: 24 }}>
             <label
-              htmlFor="shipping_address"
+              htmlFor="delivery_address"
               style={{
                 display: 'block',
                 fontFamily: 'var(--ff-sans)',
@@ -456,13 +463,13 @@ function CheckoutForm({
               {t('shippingAddress')}
             </label>
             <textarea
-              id="shipping_address"
-              name="shipping_address"
+              id="delivery_address"
+              name="delivery_address"
               rows={4}
               required
               placeholder={t('shippingPlaceholder')}
-              value={shippingAddress}
-              onChange={(e) => setShippingAddress(e.target.value)}
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
               style={{
                 width: '100%',
                 padding: '12px 14px',
@@ -502,7 +509,7 @@ function CheckoutForm({
             variant="primary"
             size="lg"
             isLoading={isSubmitting}
-            disabled={!shippingAddress.trim()}
+            disabled={!deliveryAddress.trim()}
             fullWidth
           >
             {isSubmitting ? t('placing') : t('placeOrder')}

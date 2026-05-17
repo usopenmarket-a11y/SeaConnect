@@ -11,6 +11,7 @@ import { get, type PaginatedResponse } from '@/lib/api'
 
 interface BookingSummary {
   id: string
+  yacht_id?: string
   status: string
   total_amount: string
   currency: string
@@ -21,6 +22,14 @@ interface BookingSummary {
   payment_method?: string
 }
 
+interface PricingInsight {
+  recommendation: string
+  suggested_price: string
+  currency: string
+  comparable_count: number
+  generated_at: string
+}
+
 interface ReviewSummary {
   id: string
   reviewer_name: string
@@ -29,11 +38,29 @@ interface ReviewSummary {
   created_at: string
 }
 
+interface EarningsMonth {
+  month: string        // "2026-05"
+  earnings: string     // "38420.00"
+  currency: string     // "EGP"
+  bookings: number
+  mom_delta: number    // 0.15 = +15%
+}
+
+interface EarningsResponse {
+  results: EarningsMonth[]
+}
+
 const fetchBookings = (path: string) =>
   get<PaginatedResponse<BookingSummary>>(path)
 
 const fetchReviews = (path: string) =>
   get<PaginatedResponse<ReviewSummary>>(path)
+
+const fetchInsight = (path: string) =>
+  get<PricingInsight>(path)
+
+const fetchEarnings = (path: string) =>
+  get<EarningsResponse>(path)
 
 // ── Mini Calendar (May 2026) ──────────────────────────────────────────────────
 
@@ -139,6 +166,136 @@ function MiniCalendar({ bookedDays, legendBooked, legendHold, legendToday, weekd
   )
 }
 
+// ── Revenue Bar Chart ────────────────────────────────────────────────────────
+
+interface RevenueChartProps {
+  months: EarningsMonth[]
+  chartMax: number
+  locale: string
+  isLoading: boolean
+  labelRevenue: string
+  labelNoData: string
+}
+
+function RevenueChart({
+  months,
+  chartMax,
+  locale,
+  isLoading,
+  labelRevenue,
+  labelNoData,
+}: RevenueChartProps): React.ReactElement {
+  function fmtMonth(ym: string): string {
+    try {
+      const [y, m] = ym.split('-')
+      const d = new Date(Number(y), Number(m) - 1, 1)
+      return d.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-GB', {
+        month: 'short',
+      })
+    } catch {
+      return ym
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 8,
+          height: 80,
+          padding: '0 4px',
+        }}
+        aria-label={labelRevenue}
+        role="img"
+      >
+        {[60, 40, 75, 50, 85, 65].map((h, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: `${h}%`,
+              background: 'var(--rule)',
+              borderRadius: 3,
+              animation: 'pulse 1.4s ease-in-out infinite',
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
+
+  if (months.length === 0) {
+    return (
+      <p
+        style={{
+          textAlign: 'center',
+          fontSize: 12,
+          color: 'var(--muted)',
+          fontFamily: 'var(--ff-mono)',
+          padding: '16px 0',
+        }}
+      >
+        {labelNoData}
+      </p>
+    )
+  }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 6,
+          height: 80,
+        }}
+        role="img"
+        aria-label={labelRevenue}
+      >
+        {months.map((m) => {
+          const heightPct = Math.max(
+            4,
+            Math.round((Number(m.earnings) / chartMax) * 100),
+          )
+          const isLatest = m === months[months.length - 1]
+          return (
+            <div
+              key={m.month}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
+              title={`${fmtMonth(m.month)}: ${Number(m.earnings).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US')} ${m.currency}`}
+            >
+              <div
+                style={{
+                  width: '100%',
+                  height: `${heightPct}%`,
+                  minHeight: 4,
+                  background: isLatest ? 'var(--sea)' : 'var(--sea-glow)',
+                  borderRadius: 3,
+                  opacity: isLatest ? 1 : 0.55,
+                  transition: 'height 0.3s ease',
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: 'var(--ff-mono)',
+                  fontSize: 9,
+                  color: 'var(--muted)',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {fmtMonth(m.month)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -181,6 +338,28 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
       swrOpts,
     )
 
+  const { data: earningsData, isLoading: earningsLoading } =
+    useSWR<EarningsResponse>(
+      '/analytics/earnings/',
+      fetchEarnings,
+      swrOpts,
+    )
+
+  // Derive the owner's primary yacht ID from the first available booking.
+  // Bookings are owner-scoped by the API so any yacht_id here belongs to them.
+  const primaryYachtId: string | null =
+    confirmedData?.results[0]?.yacht_id ??
+    pendingData?.results[0]?.yacht_id ??
+    completedData?.results[0]?.yacht_id ??
+    null
+
+  const { data: insightData, error: insightError, isLoading: insightLoading } =
+    useSWR<PricingInsight>(
+      primaryYachtId ? `/yachts/${primaryYachtId}/pricing-insight/` : null,
+      fetchInsight,
+      { ...swrOpts, shouldRetryOnError: false },
+    )
+
   const isLoading = pendingLoading || confirmedLoading || completedLoading
 
   const pendingCount = pendingData?.results.length ?? 0
@@ -191,6 +370,15 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
 
   // Occupancy: active / 30 days × 100
   const occupancyPct = Math.min(Math.round((activeCount / 30) * 100), 100)
+
+  // Earnings chart — latest 6 months from API
+  const earningsMonths: EarningsMonth[] = earningsData?.results?.slice(-6) ?? []
+  const latestMonth: EarningsMonth | undefined = earningsMonths[earningsMonths.length - 1]
+  const latestMomDelta: number | undefined = latestMonth?.mom_delta
+  const chartMax = earningsMonths.reduce(
+    (m, e) => Math.max(m, Number(e.earnings)),
+    1,
+  )
 
   // Next payout: sum of confirmed bookings
   const nextPayoutRaw =
@@ -247,6 +435,15 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
         { day: 'numeric', month: 'short', year: 'numeric' },
       )
     } catch { return iso }
+  }
+
+  function fmtMomDelta(delta: number | undefined): string {
+    if (delta === undefined || delta === null) return '—'
+    const pct = Math.round(delta * 100)
+    const sign = pct >= 0 ? '+' : ''
+    return locale === 'ar'
+      ? `${sign}${pct.toLocaleString('ar-EG')}%`
+      : `${sign}${pct}%`
   }
 
   function fmtRelDate(iso: string): string {
@@ -317,7 +514,13 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
             {isLoading ? '—' : fmt(nextPayoutRaw)}
             <span className="unit"> {earningsCurrency}</span>
           </div>
-          <div className="delta up">▲ {t('kpiRevenueDelta')}</div>
+          <div className={`delta ${latestMomDelta !== undefined && latestMomDelta >= 0 ? 'up' : 'down'}`}>
+            {earningsLoading
+              ? '—'
+              : latestMomDelta !== undefined
+                ? `${latestMomDelta >= 0 ? '▲' : '▼'} ${fmtMomDelta(latestMomDelta)}`
+                : `▲ ${t('kpiRevenueDelta')}`}
+          </div>
         </div>
         <div className="kpi" role="listitem">
           <div className="l">{t('kpiBookings')}</div>
@@ -351,6 +554,34 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
           </div>
           <div className="delta up">▲ {reviews.length} {t('kpiRatingDeltaSuffix')}</div>
         </div>
+      </div>
+
+      {/* ── Earnings chart ──────────────────────────────────────────────── */}
+      <div className="dash-card" data-screen-label="owner-earnings-chart" style={{ marginTop: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <h3>{t('earningsChartTitle')}</h3>
+          {!earningsLoading && latestMonth && (
+            <span
+              className="num"
+              style={{ fontFamily: 'var(--ff-mono)', fontSize: 11, color: 'var(--muted)', direction: 'ltr' }}
+            >
+              {latestMonth.month} ·{' '}
+              {Number(latestMonth.earnings).toLocaleString(
+                locale === 'ar' ? 'ar-EG' : 'en-US',
+              )}{' '}
+              {latestMonth.currency}
+            </span>
+          )}
+        </div>
+        <div className="sub">EARNINGS · 6-MONTH TREND · MoM CHANGE</div>
+        <RevenueChart
+          months={earningsMonths}
+          chartMax={chartMax}
+          locale={locale}
+          isLoading={earningsLoading}
+          labelRevenue={t('earningsChartAriaLabel')}
+          labelNoData={t('earningsChartNoData')}
+        />
       </div>
 
       {/* ── Error state ─────────────────────────────────────────────────── */}
@@ -687,20 +918,102 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
           >
             INSIGHT · POWERED BY SEACONNECT
           </div>
-          <p
-            style={{
-              fontFamily: 'var(--ff-display)',
-              fontSize: 22,
-              fontWeight: 700,
-              lineHeight: 1.3,
-              margin: '16px 0 12px',
-            }}
-          >
-            {t('insightHeadline')}
-          </p>
-          <p style={{ fontSize: 13, opacity: 0.8, lineHeight: 1.6 }}>
-            {t('insightBody')}
-          </p>
+
+          {/* Loading skeleton */}
+          {insightLoading && (
+            <div aria-busy="true" aria-label={tCommon('loading')}>
+              <div
+                style={{
+                  height: 28,
+                  borderRadius: 4,
+                  background: 'oklch(0.25 0.02 220 / 0.6)',
+                  marginTop: 16,
+                  marginBottom: 8,
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                }}
+              />
+              <div
+                style={{
+                  height: 16,
+                  borderRadius: 4,
+                  background: 'oklch(0.25 0.02 220 / 0.4)',
+                  marginBottom: 6,
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                }}
+              />
+              <div
+                style={{
+                  height: 16,
+                  width: '70%',
+                  borderRadius: 4,
+                  background: 'oklch(0.25 0.02 220 / 0.4)',
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                }}
+              />
+            </div>
+          )}
+
+          {/* Live AI recommendation */}
+          {!insightLoading && insightData && (
+            <>
+              <p
+                style={{
+                  fontFamily: 'var(--ff-display)',
+                  fontSize: 20,
+                  fontWeight: 700,
+                  lineHeight: 1.4,
+                  margin: '16px 0 12px',
+                  direction: 'rtl',
+                }}
+              >
+                {insightData.recommendation}
+              </p>
+              <div
+                style={{
+                  fontFamily: 'var(--ff-mono)',
+                  fontSize: 13,
+                  opacity: 0.85,
+                  marginBottom: 16,
+                  direction: 'ltr',
+                }}
+              >
+                {locale === 'ar' ? 'السعر المقترح' : 'Suggested price'}{' '}
+                <strong>
+                  {Number(insightData.suggested_price).toLocaleString(
+                    locale === 'ar' ? 'ar-EG' : 'en-US',
+                  )}{' '}
+                  {insightData.currency}
+                </strong>
+                {insightData.comparable_count > 0 && (
+                  <span style={{ opacity: 0.6, marginInlineStart: 8 }}>
+                    · {insightData.comparable_count}{' '}
+                    {locale === 'ar' ? 'يخوت مماثلة' : 'comparable yachts'}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Fallback — Ollama unavailable or no yacht linked yet */}
+          {!insightLoading && (insightError || !primaryYachtId) && (
+            <>
+              <p
+                style={{
+                  fontFamily: 'var(--ff-display)',
+                  fontSize: 22,
+                  fontWeight: 700,
+                  lineHeight: 1.3,
+                  margin: '16px 0 12px',
+                }}
+              >
+                {t('insightHeadline')}
+              </p>
+              <p style={{ fontSize: 13, opacity: 0.8, lineHeight: 1.6 }}>
+                {t('insightBody')}
+              </p>
+            </>
+          )}
+
           <button
             className="btn"
             style={{

@@ -497,6 +497,107 @@ _VENDOR_TRANSITION_PRECONDITIONS: dict[str, list[str]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Sprint 16C — Cart checkout dedicated endpoint
+# ---------------------------------------------------------------------------
+
+
+class CartCheckoutView(APIView):
+    """POST /api/v1/marketplace/cart/checkout/
+
+    Converts the authenticated customer's cart into a confirmed Order.
+
+    Steps:
+    1. Fetch cart items, ensuring each product is active and has sufficient
+       stock.  Returns 400 with code INSUFFICIENT_STOCK on the first failure.
+    2. Create Order (status=pending) with total_amount and currency derived
+       from the first product's vendor region (ADR-018 — never hardcode EGP).
+    3. Create one OrderItem per cart item with a price snapshot.
+    4. Clear cart items in the same atomic block.
+    5. Return the order with enriched item data.
+
+    No payment initiation in this endpoint — the client should redirect to
+    a payment page using the returned order_id.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self, request: Request) -> Response:
+        from .serializers import CartCheckoutResponseSerializer, CartCheckoutRequestSerializer
+
+        req_serializer = CartCheckoutRequestSerializer(data=request.data)
+        req_serializer.is_valid(raise_exception=True)
+        delivery_address = req_serializer.validated_data.get("delivery_address", "")
+
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        items = (
+            cart.items
+            .select_related("product__vendor__region")
+            .all()
+        )
+
+        if not items.exists():
+            return Response(
+                {
+                    "error": "Your cart is empty.",
+                    "code": "EMPTY_CART",
+                    "detail": {},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Stock validation — fail fast on the first out-of-stock item.
+        for item in items:
+            if item.product.stock < item.quantity:
+                return Response(
+                    {
+                        "error": (
+                            f"Insufficient stock for '{item.product.name}'. "
+                            f"Available: {item.product.stock}, requested: {item.quantity}."
+                        ),
+                        "code": "INSUFFICIENT_STOCK",
+                        "detail": {
+                            "product_id": str(item.product.id),
+                            "available": item.product.stock,
+                            "requested": item.quantity,
+                        },
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # MVP: derive currency from the first item's vendor region (ADR-018).
+        first_item = items.first()
+        region = first_item.product.vendor.region
+        total = sum(item.product.price * item.quantity for item in items)
+
+        order = Order.objects.create(
+            customer=request.user,
+            region=region,
+            status=OrderStatus.PENDING,
+            total_amount=total,
+            currency=region.currency,
+            delivery_address=delivery_address,
+        )
+
+        order_items = []
+        for item in items:
+            oi = OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                unit_price=item.product.price,  # price snapshot — ADR note in OrderListCreateView
+                currency=item.product.currency,
+            )
+            order_items.append(oi)
+
+        # Clear cart after successful order creation.
+        cart.items.all().delete()
+
+        serializer = CartCheckoutResponseSerializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 class VendorOrderActionView(APIView):
     """POST /api/v1/marketplace/orders/{id}/{action}/
 

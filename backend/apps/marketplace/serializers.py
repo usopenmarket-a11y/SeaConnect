@@ -186,6 +186,82 @@ class VendorProfileWriteSerializer(serializers.ModelSerializer):
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Sprint 16C — Cart checkout request / response serializers
+# ---------------------------------------------------------------------------
+
+
+class CartCheckoutRequestSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Request body for POST /api/v1/marketplace/cart/checkout/.
+
+    delivery_address is optional — allows guest-style checkout for digital goods
+    or deferred address collection.
+    """
+
+    delivery_address = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        max_length=1000,
+    )
+
+
+class CartCheckoutOrderItemSerializer(serializers.ModelSerializer):
+    """Enriched order item response — includes product name (bilingual) and image URL.
+
+    Returned as part of CartCheckoutResponseSerializer so the checkout
+    confirmation screen can render item names and thumbnails without a
+    second API call.
+    """
+
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    product_name_ar = serializers.CharField(source="product.name_ar", read_only=True)
+    image_url = serializers.CharField(source="product.primary_image_url", read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            "id",
+            "product_name",
+            "product_name_ar",
+            "image_url",
+            "quantity",
+            "unit_price",
+            "currency",
+        ]
+        read_only_fields = fields
+
+
+class CartCheckoutResponseSerializer(serializers.ModelSerializer):
+    """Response shape for POST /api/v1/marketplace/cart/checkout/.
+
+    Includes:
+    - order_id, status, total_amount, currency (ADR-018 — from region, never hardcoded)
+    - items: list of CartCheckoutOrderItemSerializer
+    - payment_required: always True for now (Fawry / provider integration is post-MVP)
+    """
+
+    items = CartCheckoutOrderItemSerializer(many=True, read_only=True)
+    payment_required = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "status",
+            "total_amount",
+            "currency",
+            "delivery_address",
+            "items",
+            "payment_required",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_payment_required(self, obj) -> bool:  # type: ignore[override]
+        return True
+
+
 class ProductImageUploadSerializer(serializers.Serializer):  # type: ignore[type-arg]
     """Request serializer for ``POST /api/v1/marketplace/products/{id}/images/``.
 

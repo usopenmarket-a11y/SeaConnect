@@ -16,6 +16,7 @@ from .views import (
     YachtMonthAvailabilityView,
     YachtPhotoDeleteView,
     YachtPhotoUploadView,
+    YachtPricingInsightView,
     YachtRetrieveUpdateView,
     YachtReviewListCreateView,
     YachtSemanticSearchView,
@@ -35,6 +36,12 @@ urlpatterns = [
         "yachts/<uuid:id>/availability/",
         YachtAvailabilityView.as_view(),
         name="yacht-availability",
+    ),
+    # Sprint 16A — AI pricing insight (owner only, cached 24h)
+    path(
+        "yachts/<uuid:yacht_id>/pricing-insight/",
+        YachtPricingInsightView.as_view(),
+        name="yacht-pricing-insight",
     ),
     # Sprint 12A — yacht reviews (customer GET/POST per yacht)
     path(

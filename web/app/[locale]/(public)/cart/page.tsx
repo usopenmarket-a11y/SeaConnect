@@ -27,7 +27,7 @@ interface CartProduct {
   id: string
   name: string
   name_ar: string
-  image_url: string | null
+  primary_image_url: string | null
   price: string
   currency: string
 }
@@ -111,7 +111,7 @@ function CartRow({
     ? item.product.name_ar || item.product.name
     : item.product.name
 
-  const currency = item.product.currency || 'EGP'
+  const currency = item.product.currency
   const unitPrice = Number(item.product.price) || 0
   const lineTotal = Number(item.line_total) || 0
 
@@ -142,9 +142,9 @@ function CartRow({
               position: 'relative',
             }}
           >
-            {item.product.image_url ? (
+            {item.product.primary_image_url ? (
               <Image
-                src={item.product.image_url}
+                src={item.product.primary_image_url}
                 alt={displayName}
                 fill
                 style={{ objectFit: 'cover' }}
@@ -366,7 +366,7 @@ function CartInner({ locale }: CartInnerProps): React.ReactElement {
   }
 
   const items = data?.items ?? []
-  const currency = items[0]?.product.currency ?? 'EGP'
+  const currency = items[0]?.product.currency ?? ''
 
   // Compute subtotal from line_totals
   const subtotal = items.reduce(

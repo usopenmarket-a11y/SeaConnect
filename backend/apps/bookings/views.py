@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import calendar
 import datetime
+import logging
 import os
+import re
 import uuid as uuid_module
 
 import httpx
@@ -1052,6 +1054,8 @@ class OwnerReviewsListView(generics.ListAPIView):  # type: ignore[type-arg]
 
 import datetime as _datetime  # noqa: E402 — used only in this section
 
+logger = logging.getLogger(__name__)
+
 
 class DisputeCreateView(APIView):
     """POST /api/v1/bookings/{booking_id}/dispute/
@@ -1125,6 +1129,226 @@ class AdminDisputeListView(generics.ListAPIView):  # type: ignore[type-arg]
         if status_filter:
             qs = qs.filter(status=status_filter)
         return qs
+
+
+# ---------------------------------------------------------------------------
+# Sprint 16A — AI Pricing Insight (Ollama + Redis cache)
+# ---------------------------------------------------------------------------
+
+
+class YachtPricingInsightView(APIView):
+    """GET /api/v1/yachts/{yacht_id}/pricing-insight/
+
+    Returns an AI-generated Arabic pricing recommendation for a yacht owner,
+    backed by Ollama (llama3.2) and cached in Redis for 24 hours.
+
+    Permission:
+      - JWT authenticated (ADR-009).
+      - Caller must be the yacht's owner (object-level check; no inline role
+        comparison — enforced by raising PermissionDenied instead of inline
+        ``if user.role``).
+
+    Cache:
+      Key: ``pricing_insight:{yacht_id}``  (KEY_PREFIX "sc" added by Django).
+      TTL: 86 400 seconds (24 hours).
+      On cache hit the response is returned immediately without calling Ollama.
+      On Ollama failure the mock response is returned **without** caching so
+      the next request retries the live model.
+
+    N+1 prevention:
+      The yacht query uses select_related('departure_port__region', 'region').
+      Comparable yachts are fetched in a single filtered queryset.
+
+    Error format (ADR):
+      {"error": "human message", "code": "SNAKE_CASE_CODE", "detail": {}}
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request: Request, yacht_id) -> Response:
+        from django.core.cache import cache
+
+        yacht = get_object_or_404(
+            Yacht.objects.select_related("departure_port__region", "region"),
+            id=yacht_id,
+            is_deleted=False,
+        )
+
+        # Object-level ownership check — permission class enforces role, but
+        # the yacht.owner FK is the definitive source of truth here.
+        if yacht.owner_id != request.user.id:
+            return Response(
+                {
+                    "error": "You do not own this yacht.",
+                    "code": "ERR_PERMISSION_DENIED",
+                    "detail": {},
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        cache_key = f"pricing_insight:{yacht_id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        result = self._generate_insight(yacht)
+
+        # Only cache when the result came from the live model (not a fallback).
+        if result.get("_from_cache_eligible", True):
+            cache.set(cache_key, result, timeout=86_400)
+
+        # Remove the internal flag before returning.
+        result.pop("_from_cache_eligible", None)
+        return Response(result)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _build_comparable_summary(self, yacht: Yacht) -> tuple[str, int]:
+        """Return (Arabic text summary of comparable yachts, count).
+
+        Comparable = same yacht_type, same region, capacity within ±30%,
+        active, not this yacht.  ORM-only — no raw SQL (ADR-001).
+        """
+        low_cap = max(1, int(yacht.capacity * 0.70))
+        high_cap = int(yacht.capacity * 1.30)
+
+        comparables = (
+            Yacht.objects.filter(
+                yacht_type=yacht.yacht_type,
+                region=yacht.region,
+                capacity__gte=low_cap,
+                capacity__lte=high_cap,
+                status=YachtStatus.ACTIVE,
+                is_deleted=False,
+            )
+            .exclude(id=yacht.id)
+            .select_related("departure_port")
+            .only("name_ar", "price_per_day", "currency", "capacity", "average_rating")
+            [:10]
+        )
+
+        comparable_list = list(comparables)
+        if not comparable_list:
+            return "لا توجد يخوت مماثلة متاحة في المنطقة حالياً.", 0
+
+        lines = []
+        for c in comparable_list:
+            lines.append(
+                f"- {c.name_ar}: {c.price_per_day} {c.currency}/يوم، "
+                f"سعة {c.capacity} شخصاً، تقييم {c.average_rating}/5"
+            )
+
+        return "\n".join(lines), len(comparable_list)
+
+    def _resolve_port_name(self, yacht: Yacht) -> str:
+        """Return the Arabic port name, falling back to English."""
+        if yacht.departure_port_id:
+            dp = yacht.departure_port
+            return dp.name_ar or dp.name_en
+        return "ميناء غير معروف"
+
+    def _call_ollama(self, prompt: str) -> str:
+        """POST to Ollama /api/generate with a 10-second timeout.
+
+        Raises any exception on network or HTTP error so the caller can
+        fall through to the mock response.
+        """
+        ollama_url: str = getattr(
+            settings, "OLLAMA_BASE_URL", "http://ollama:11434"
+        )
+        resp = httpx.post(
+            f"{ollama_url}/api/generate",
+            json={"model": "llama3.2", "prompt": prompt, "stream": False},
+            timeout=10.0,
+        )
+        resp.raise_for_status()
+        return resp.json()["response"]
+
+    def _extract_price(
+        self, text: str, current_price: object, comparable_count: int
+    ) -> str:
+        """Extract a suggested price from the Ollama response text.
+
+        Strategy:
+          1. Find the first number (int or decimal) in the response.
+          2. If no number found, return current_price ± 5 % depending on
+             whether any comparable data was available.
+        """
+        match = re.search(r"\b(\d[\d,]*(?:\.\d{1,2})?)\b", text)
+        if match:
+            raw = match.group(1).replace(",", "")
+            try:
+                return f"{float(raw):.2f}"
+            except ValueError:
+                pass
+
+        # Fallback: nudge ±5 % based on comparable availability.
+        base = float(current_price)
+        if comparable_count > 0:
+            suggested = base * 1.05
+        else:
+            suggested = base * 0.95
+        return f"{suggested:.2f}"
+
+    def _generate_insight(self, yacht: Yacht) -> dict:
+        """Build prompt, call Ollama, parse response, return result dict."""
+        comparable_text, comparable_count = self._build_comparable_summary(yacht)
+        port_name = self._resolve_port_name(yacht)
+
+        # Resolve currency from region (ADR-018 — never hardcode 'EGP').
+        currency = yacht.currency
+        if not currency and yacht.region_id:
+            currency = yacht.region.currency
+
+        prompt = (
+            "أنت خبير تسعير سياحي بحري في مصر. بناءً على البيانات التالية، "
+            "اقترح سعراً مثالياً لليوم.\n\n"
+            f"اليخت: {yacht.name_ar}، النوع: {yacht.yacht_type}، "
+            f"السعة: {yacht.capacity} شخصاً، الميناء: {port_name}\n"
+            f"السعر الحالي: {yacht.price_per_day} {currency} في اليوم\n"
+            f"متوسط تقييم العملاء: {yacht.average_rating}/5 "
+            f"({yacht.review_count} تقييم)\n\n"
+            f"يخوت مماثلة في المنطقة:\n{comparable_text}\n\n"
+            "اكتب توصية موجزة (جملتان فقط) بالعربية تتضمن السعر المقترح والسبب."
+        )
+
+        generated_at = _datetime.datetime.now(_datetime.timezone.utc).isoformat()
+
+        try:
+            recommendation = self._call_ollama(prompt)
+            suggested_price = self._extract_price(
+                recommendation, yacht.price_per_day, comparable_count
+            )
+            return {
+                "recommendation": recommendation,
+                "suggested_price": suggested_price,
+                "currency": currency,
+                "comparable_count": comparable_count,
+                "generated_at": generated_at,
+                "_from_cache_eligible": True,
+            }
+        except Exception as exc:
+            logger.warning(
+                "Ollama unavailable for yacht %s — returning mock insight. "
+                "Error: %s",
+                yacht.id,
+                exc,
+            )
+            # Mock fallback — not cached so the next request retries Ollama.
+            mock_price = self._extract_price("", yacht.price_per_day, comparable_count)
+            return {
+                "recommendation": (
+                    f"بناءً على بيانات السوق، السعر الحالي للـ{yacht.name_ar} "
+                    f"تنافسي. يُنصح بمراجعة الأسعار عند توفر بيانات إضافية."
+                ),
+                "suggested_price": mock_price,
+                "currency": currency,
+                "comparable_count": comparable_count,
+                "generated_at": generated_at,
+                "_from_cache_eligible": False,
+            }
 
 
 class AdminDisputeResolveView(APIView):

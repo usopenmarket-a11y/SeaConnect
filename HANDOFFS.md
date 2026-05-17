@@ -2766,3 +2766,151 @@ cd backend && pytest apps/payments/tests/test_payments.py -v -k webhook
 cd backend && pytest apps/accounts/tests/ -v -k kyc
 ```
 
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** READY
+**From:** django-api-agent
+**To:** nextjs-page-agent
+**Sprint:** 16A
+**Feature:** AI Pricing Insight endpoint (Ollama + Redis cache)
+
+### What Was Completed
+- `GET /api/v1/yachts/{yacht_id}/pricing-insight/` — `YachtPricingInsightView(APIView)` in `backend/apps/bookings/views.py`. Owner-only (JWT + object-level ownership check), Redis 24h cache (`pricing_insight:{yacht_id}`), Ollama `llama3.2` with 10-second timeout, Arabic-output prompt, regex price extraction, graceful mock fallback when Ollama is unreachable (not cached so retried on next request).
+- URL registered in `backend/apps/bookings/urls.py` under `yachts/<uuid:yacht_id>/pricing-insight/` (placed before the reviews pattern to avoid UUID clash).
+- `backend/apps/bookings/tests/test_pricing_insight.py` — 9 tests covering happy path, cache hit (Ollama not called), Ollama timeout fallback (not cached), anonymous 401, customer 403, wrong-owner 403, not-found 404.
+- `web/app/[locale]/owner/dashboard/PageClient.tsx` — AI insight card wired to live API: `useSWR` on `/yachts/{primaryYachtId}/pricing-insight/`, loading skeleton, live recommendation display with `suggested_price` + `comparable_count`, fallback to existing hardcoded i18n strings when Ollama unavailable or no yacht linked.
+
+### Contract
+- `GET /api/v1/yachts/{yacht_id}/pricing-insight/` → 200:
+  ```json
+  {
+    "recommendation": "string (Arabic, 1-2 sentences from Ollama)",
+    "suggested_price": "decimal string e.g. 3200.00",
+    "currency": "EGP",
+    "comparable_count": 3,
+    "generated_at": "ISO 8601 UTC"
+  }
+  ```
+- 401 when unauthenticated; 403 when caller is not the yacht's owner; 404 when yacht not found or soft-deleted.
+
+### How to Test
+```bash
+# Backend syntax check
+cd backend && python3 -c "import ast; ast.parse(open('apps/bookings/views.py').read()); print('OK')"
+
+# Run new tests inside Docker
+docker compose exec api pytest apps/bookings/tests/test_pricing_insight.py -v
+
+# Smoke test (replace tokens/IDs with real values):
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v1/yachts/$YACHT_ID/pricing-insight/
+```
+
+### Notes for Next Agent
+- The `_from_cache_eligible` field is stripped before the response is returned — it is an internal signal only.
+- `OLLAMA_BASE_URL` must be set in the environment (default: `http://ollama:11434`) — already present in `.env.example`.
+- The frontend derives `primaryYachtId` from the first booking's `yacht_id` field (exposed by `BookingListSerializer`). If the owner has no bookings yet the SWR key is `null` and the insight card shows the hardcoded fallback — this is intentional.
+
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** api-endpoint-agent, backend-agent
+**Sprint:** 16D
+**Feature:** Owner earnings chart live data, GA4, production Django settings
+
+### What Was Completed
+- `web/app/[locale]/owner/dashboard/PageClient.tsx` — added `EarningsMonth` type, `useSWR('/analytics/earnings/')` hook, `RevenueChart` bar-chart component (6-month trend, CSS-var colours, loading skeleton, empty state), and live `mom_delta` formatted as `+N%` replacing the hardcoded `+22% vs APR` delta in the revenue KPI tile
+- `web/app/layout.tsx` — added `GoogleAnalytics` from `@next/third-parties/google` gated on `NEXT_PUBLIC_GA_MEASUREMENT_ID`; `web/.env.example` updated with the new env var; `@next/third-parties` npm package installed
+- `backend/config/settings/prod.py` — new production settings file (DEBUG=False, full security headers, structured-JSON logging, HSTS, Sentry opt-in); `backend/config/settings/uat.py` — `SECURE_SSL_REDIRECT` made env-var-driven (default True) for proxy-less local testing
+
+### Contract
+- Earnings API: `GET /api/v1/analytics/earnings/` → `{results: [{month, earnings, currency, bookings, mom_delta}]}`
+- `python manage.py check --settings=config.settings.prod` passes (0 issues)
+
+### How to Test
+```bash
+# Backend settings check
+cd backend && SECRET_KEY=x DATABASE_URL=postgresql://u:p@localhost/db REDIS_URL=redis://localhost/0 python3 manage.py check --settings=config.settings.prod
+
+# Frontend type check (1 pre-existing error in register/PageClient.tsx is unrelated)
+cd web && npx tsc --noEmit
+
+# GA4: set NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX in .env.local, run npm run dev, inspect network for gtag requests
+```
+
+### Notes for Next Agent
+- The `/analytics/earnings/` endpoint does not exist yet — needs implementing in `apps/analytics/views.py`. The response shape must match `EarningsMonth` (month as "YYYY-MM", earnings as decimal string, currency ISO-4217, bookings int, mom_delta float).
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID` must be added to Vercel's environment variables for UAT/prod — not set by default.
+
+---
+
+## HANDOFF-2026-05-17-003
+
+**Status:** DONE
+**From:** api-endpoint-agent
+**To:** nextjs-page-agent
+**Sprint:** 16C
+**Feature:** Cart + Checkout API wiring
+
+### What Was Completed
+- `POST /api/v1/marketplace/cart/checkout/` — new `CartCheckoutView` in `apps/marketplace/views.py`. Validates stock per-item, creates Order + OrderItems atomically, clears cart, returns enriched order response. Error codes: `EMPTY_CART` (400), `INSUFFICIENT_STOCK` (400).
+- `CartCheckoutRequestSerializer` + `CartCheckoutOrderItemSerializer` + `CartCheckoutResponseSerializer` added to `apps/marketplace/serializers.py`. Response includes `id`, `status`, `total_amount`, `currency`, `delivery_address`, `items[]` (with `product_name`, `product_name_ar`, `image_url`, `quantity`, `unit_price`, `currency`), `payment_required: true`.
+- URL registered: `marketplace/cart/checkout/` → name `marketplace:cart-checkout`.
+- `backend/apps/marketplace/tests/test_cart.py` — 13 tests: cart GET after add, upsert quantity, DELETE item, checkout happy path, empty cart, insufficient stock, auth required, currency from region, price snapshot.
+- `web/app/[locale]/(public)/checkout/page.tsx` — wired to new endpoint (`/marketplace/cart/checkout/`), fixed field name (`shipping_address` → `delivery_address`), updated `OrderResponse` + `CheckoutOrderItem` types to match actual API shape.
+- `web/app/[locale]/(public)/cart/page.tsx` — fixed `CartProduct.image_url` → `primary_image_url` to match API, removed hardcoded `'EGP'` currency fallback (ADR-018).
+
+### Contract
+`POST /api/v1/marketplace/cart/checkout/` request:
+```json
+{"delivery_address": "optional string"}
+```
+`POST /api/v1/marketplace/cart/checkout/` response (201):
+```json
+{
+  "id": "uuid",
+  "status": "pending",
+  "total_amount": "500.00",
+  "currency": "EGP",
+  "delivery_address": "...",
+  "items": [
+    {
+      "id": "uuid",
+      "product_name": "Life Jacket",
+      "product_name_ar": "سترة نجاة",
+      "image_url": "https://...",
+      "quantity": 2,
+      "unit_price": "250.00",
+      "currency": "EGP"
+    }
+  ],
+  "payment_required": true,
+  "created_at": "2026-05-17T..."
+}
+```
+Error (400 EMPTY_CART): `{"error": "...", "code": "EMPTY_CART", "detail": {}}`
+Error (400 INSUFFICIENT_STOCK): `{"error": "...", "code": "INSUFFICIENT_STOCK", "detail": {"product_id": "uuid", "available": 2, "requested": 5}}`
+
+### How to Test
+```bash
+# With docker compose running:
+TOKEN=$(curl -s -X POST http://localhost:8000/api/v1/auth/login/ -d '{"email":"customer@test.com","password":"..."}' -H "Content-Type: application/json" | python3 -c "import json,sys; print(json.load(sys.stdin)['access'])")
+# Add item to cart then checkout:
+curl -s -X POST http://localhost:8000/api/v1/marketplace/cart/checkout/ \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"delivery_address": "123 Test Street, Cairo"}' | python3 -m json.tool
+
+# Backend tests (requires postgres container):
+docker exec seaconnect-api-1 python3 -m pytest apps/marketplace/tests/test_cart.py -v
+```
+
+### Notes for Next Agent
+- `payment_required: true` is always returned — actual Fawry payment initiation for marketplace orders is post-MVP. The frontend currently shows a confirmation screen; a future sprint should wire up `POST /api/v1/payments/initiate/` using the returned `order_id`.
+- The existing `POST /api/v1/marketplace/orders/` endpoint still works and is used by existing tests — the new `/cart/checkout/` endpoint is the canonical path going forward.

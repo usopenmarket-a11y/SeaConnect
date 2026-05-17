@@ -23,7 +23,7 @@
 | **13** | Admin Portal Complete, Competitions, Analytics | ✅ DONE | Disputes model+API+page, payout approvals, user mgmt, competitions registration+results, analytics wired |
 | **14** | Search & SEO, pgvector, Performance | ✅ DONE | pgvector semantic search, SEO metadata+JSON-LD+sitemap+robots, Image component, search tabs/facets/sort |
 | **15** | Security, Rate Limiting, Sentry | ✅ DONE | DRF throttling, OWASP audit (webhook idempotency + KYC filename fixes), Sentry Django+Next.js, enhanced /health/ |
-| **16** | AI Pricing, Real-time, Cart, Launch | 🔲 PLANNED | AI insight, WebSocket notifications, cart checkout, Egypt launch |
+| **16** | AI Pricing, Cart, Analytics, Launch Prep | ✅ DONE | AI pricing insight (Ollama+Redis), cart+checkout complete, owner earnings chart live, GA4, prod.py settings |
 
 ---
 
