@@ -1,18 +1,20 @@
 import * as React from 'react'
 import { setRequestLocale } from 'next-intl/server'
 import type { Metadata } from 'next'
-import { NewYachtPage } from './PageClient'
+import { EditYachtPage } from './PageClient'
 
-interface Props { params: { locale: string; id?: string } }
+interface Props {
+  params: { locale: string; id: string }
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
-    title: params.locale === 'ar' ? 'قارب جديد | SeaConnect' : 'New Yacht | SeaConnect',
+    title: params.locale === 'ar' ? 'تعديل القارب | SeaConnect' : 'Edit Yacht | SeaConnect',
     robots: { index: false },
   }
 }
 
 export default function Page({ params }: Props): React.ReactElement {
   setRequestLocale(params.locale)
-  return <NewYachtPage params={params} />
+  return <EditYachtPage params={params} />
 }

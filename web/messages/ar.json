@@ -732,6 +732,7 @@
       },
       "form": {
         "title": "قارب جديد",
+        "editTitle": "تعديل القارب",
         "nameEn": "الاسم (إنجليزي)",
         "nameAr": "الاسم (عربي)",
         "descriptionEn": "الوصف (إنجليزي)",
@@ -742,8 +743,26 @@
         "departurePort": "ميناء المغادرة",
         "submit": "إنشاء القارب",
         "submitting": "جارٍ الإنشاء...",
+        "saveChanges": "حفظ التعديلات",
+        "saving": "جارٍ الحفظ...",
         "successMessage": "تم إنشاء القارب بنجاح",
-        "comingSoon": "ميزة إضافة القوارب قادمة قريباً"
+        "editSuccessMessage": "تم حفظ التعديلات بنجاح",
+        "comingSoon": "ميزة إضافة القوارب قادمة قريباً",
+        "loadError": "تعذّر تحميل بيانات القارب",
+        "typeOptions": {
+          "motorboat": "قارب محرك",
+          "sailboat": "قارب شراعي",
+          "catamaran": "كاتاماران",
+          "fishing": "قارب صيد",
+          "speedboat": "زورق سريع"
+        },
+        "errors": {
+          "nameEnRequired": "الرجاء إدخال اسم القارب بالإنجليزية",
+          "nameArRequired": "الرجاء إدخال اسم القارب بالعربية",
+          "capacityInvalid": "الرجاء إدخال عدد ركاب صحيح (١ على الأقل)",
+          "priceInvalid": "الرجاء إدخال سعر يومي صحيح",
+          "portRequired": "الرجاء اختيار ميناء الانطلاق"
+        }
       }
     },
     "calendar": {
@@ -752,9 +771,35 @@
       "pricingRulesTitle": "قواعد التسعير النشطة",
       "blockedDatesTitle": "التواريخ المحظورة",
       "smartSuggestion": "اقتراح ذكي",
+      "smartSuggestionBody": "٧ تواريخ مفتوحة في الأسبوع القادم — السعر أعلى ١٢٪ من المتوسط. خفّض ٥٪ لزيادة الحجز.",
       "applyBtn": "طبّق ←",
       "hot": "⚡ ذروة · ١ متبقي",
-      "maintenance": "⛔ صيانة"
+      "maintenance": "⛔ صيانة",
+      "prevMonth": "الشهر السابق",
+      "nextMonth": "الشهر التالي",
+      "statsBooked": "محجوز",
+      "statsOpen": "متاح",
+      "statsBlocked": "محظور",
+      "statsRevenue": "إيرادات",
+      "weekdaySun": "الأحد",
+      "weekdayMon": "الاثنين",
+      "weekdayTue": "الثلاثاء",
+      "weekdayWed": "الأربعاء",
+      "weekdayThu": "الخميس",
+      "weekdayFri": "الجمعة",
+      "weekdaySat": "السبت",
+      "ruleWeekend": "عطلة نهاية الأسبوع",
+      "ruleWeekendDetail": "+30% خميس + جمعة",
+      "rulePeakSeason": "ذروة الموسم",
+      "rulePeakSeasonDetail": "+20% يونيو – أغسطس",
+      "ruleMultiDay": "عرض ٣ أيام",
+      "ruleMultiDayDetail": "−10% خصم متعدد الأيام",
+      "blockedDate1": "١٤ مايو",
+      "blockedDate1Reason": "صيانة المحرك",
+      "blockedDate2": "٢١ مايو",
+      "blockedDate2Reason": "إجازة شخصية",
+      "blockedDate3": "٢٨–٢٩ مايو",
+      "blockedDate3Reason": "فحص خفر السواحل"
     },
     "payouts": {
       "title": "المدفوعات والضمان",
@@ -788,7 +833,10 @@
       "status": {
         "deposited": "✓ محوّل",
         "scheduled": "⏱ مجدول"
-      }
+      },
+      "downloadPdfAria": "تحميل إيصال PDF للدفعة {ref}",
+      "escrowSubtitle": "حجوزات محتجزة · تُحرَّر بعد ٢٤ ساعة من انتهاء الرحلة",
+      "escrowRelease": "يُحرَّر خلال {hours} ساعة"
     },
     "onboarding": {
       "title": "التحقق من الهوية والتأهيل",
@@ -845,6 +893,266 @@
         "amenities": "الخدمات",
         "policies": "السياسات"
       }
+    },
+    "kyc": {
+      "eyebrow": "KYC · توثيق الهوية",
+      "title": "توثيق هويتك وقاربك",
+      "subtitle": "أكمل الخطوات الست لتفعيل حسابك كمالك قارب وبدء استقبال الحجوزات.",
+      "progressLabel": "مكتملة",
+      "stepperLabel": "خطوات التوثيق",
+      "checklistTitle": "قائمة التحقق",
+      "stepDone": "مكتملة",
+      "stepPending": "بانتظار الإكمال",
+      "uploadPlaceholder": "↑ اسحب الملف هنا · PDF / JPG · حتى ١٠ ميجابايت",
+      "markReady": "تحديد كجاهز · MARK READY",
+      "markingReady": "جارٍ الحفظ...",
+      "allStepsDone": "كل الخطوات مكتملة",
+      "markComplete": "تحديد كمكتمل",
+      "contactSupport": "تواصل مع الدعم لإكمال هذه الخطوة",
+      "submitReview": "إرسال للمراجعة →",
+      "submitting": "جارٍ الإرسال...",
+      "submitSuccess": "تم إرسال طلبك بنجاح — سنراجعه خلال ٢٤ ساعة.",
+      "loadError": "تعذّر تحميل بيانات الملف",
+      "errorGeneric": "حدث خطأ — يرجى المحاولة مجدداً",
+      "statusBanner": {
+        "submitted": "تم إرسال طلبك للمراجعة · UNDER REVIEW — سيتم الرد خلال ٢٤ ساعة",
+        "approved": "تم قبول طلبك · KYC APPROVED — يمكنك الآن استقبال الحجوزات",
+        "rejected": "تم رفض الطلب · REJECTED — يرجى مراجعة السبب أدناه"
+      },
+      "status": {
+        "not_started": "لم يبدأ",
+        "in_progress": "قيد الإكمال",
+        "submitted": "تحت المراجعة",
+        "approved": "مقبول",
+        "rejected": "مرفوض"
+      },
+      "steps": {
+        "identity": "الهوية الشخصية",
+        "vesselDocs": "مستندات القارب",
+        "captainLicense": "رخصة الربان",
+        "insurance": "تأمين القارب",
+        "inspection": "الفحص الميداني",
+        "bankSetup": "الحساب البنكي"
+      },
+      "stepDesc": {
+        "identity": "صورة من بطاقة الهوية القومية أو جواز السفر ساري المفعول.",
+        "vesselDocs": "عقد ملكية القارب وشهادة تسجيل خفر السواحل.",
+        "captainLicense": "رخصة قيادة بحرية معتمدة ومصدّق عليها.",
+        "insurance": "شهادة تأمين بحري سارية تشمل المسافرين والقارب والمسؤولية.",
+        "inspection": "فحص فني للقارب بواسطة فريق SeaConnect (٣٠ دقيقة).",
+        "bankSetup": "ربط حساب مصرفي لاستقبال عائدات الحجوزات."
+      }
+    }
+  },
+  "notifications": {
+    "eyebrow": "NOTIFICATIONS · الإشعارات",
+    "heading": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء · MARK ALL READ",
+    "unread": "غير مقروء",
+    "unreadCount": "{count} غير مقروء",
+    "empty": "لا توجد إشعارات في هذه الفئة حتى الآن.",
+    "tabs": {
+      "all": "الكل",
+      "bookings": "الحجوزات",
+      "payments": "المدفوعات",
+      "system": "النظام"
+    },
+    "types": {
+      "booking": "حجز",
+      "payment": "دفع",
+      "alert": "تنبيه",
+      "system": "نظام"
+    },
+    "dates": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "may11": "١١ مايو",
+      "may10": "١٠ مايو"
+    },
+    "items": {
+      "bookingConfirmed": {
+        "title": "تم تأكيد حجزك",
+        "desc": "رحلة الغردقة مع الربان عمر — ١٢ مايو ٢٠٢٦ · ٠٦:٠٠ صباحاً. تذكرة فوري سارية لمدة ٤٨ ساعة."
+      },
+      "fawryReceived": {
+        "title": "دفعة فوري مستلمة",
+        "desc": "استلمنا دفعة ٨,٢٠٠ EGP لحجز BOAT-0042. سيتم تحويل المبلغ بعد إتمام الرحلة."
+      },
+      "tripReminder": {
+        "title": "تذكير بموعد رحلتك",
+        "desc": "رحلتك على متن «نجمة النيل» بعد ٣ أيام. تأكد من إحضار الهوية الشخصية ووصول باكر."
+      },
+      "weatherAlert": {
+        "title": "تحذير طقس · البحر الأحمر",
+        "desc": "توقع موجات ١.٨ م وريح ٢٢ عقدة يوم الأربعاء. قد يؤثر ذلك على رحلات المناطق المفتوحة."
+      },
+      "newTournament": {
+        "title": "بطولة جديدة مفتوحة للتسجيل",
+        "desc": "بطولة صيد البحر الأحمر ٢٠٢٦ — سجّل الآن واربح ٥٠,٠٠٠ EGP. آخر موعد للتسجيل ٢٠ مايو."
+      },
+      "refundComplete": {
+        "title": "رد استرجاع مكتمل",
+        "desc": "تم رد ٣,٤٠٠ EGP لحجز BOAT-0031 الملغي. سيظهر في حسابك خلال ٢–٥ أيام عمل."
+      },
+      "rateTrip": {
+        "title": "تقييم رحلتك",
+        "desc": "كيف كانت رحلتك على متن «شمس البحر» مع الربان خالد؟ تقييمك يساعد الجميع."
+      },
+      "exclusiveOffer": {
+        "title": "عرض حصري · عملاء مميزون",
+        "desc": "خصم ١٥٪ على حجزك القادم لمحبي البحر الذين أكملوا ٥ رحلات أو أكثر. كودك: SEA15."
+      }
+    }
+  },
+  "settings": {
+    "eyebrow": "SETTINGS · الإعدادات",
+    "heading": "الإعدادات",
+    "logoutBtn": "تسجيل الخروج · LOGOUT",
+    "sidebar": {
+      "profile": { "label": "الملف الشخصي", "sub": "PROFILE" },
+      "notifs":  { "label": "الإشعارات",     "sub": "NOTIFICATIONS" },
+      "payments":{ "label": "طرق الدفع",     "sub": "PAYMENTS" },
+      "lang":    { "label": "اللغة والمنطقة","sub": "LANGUAGE" },
+      "security":{ "label": "الخصوصية والأمان","sub": "SECURITY" },
+      "about":   { "label": "عن التطبيق",    "sub": "ABOUT" }
+    },
+    "profile": {
+      "title": "الملف الشخصي · PROFILE",
+      "avatarName": "نور حسن",
+      "memberSince": "MEMBER SINCE · 2026-01 · CAIRO",
+      "changePhoto": "تغيير الصورة · CHANGE PHOTO",
+      "editBtn": "تعديل · EDIT",
+      "saveBtn": "حفظ التغييرات · SAVE",
+      "fields": {
+        "fullName": "الاسم الكامل",
+        "phone": "رقم الهاتف",
+        "email": "البريد الإلكتروني",
+        "city": "المدينة"
+      },
+      "fieldValues": {
+        "fullName": "نور حسن",
+        "phone": "+20 10xxxxxxxx",
+        "email": "nour@example.com",
+        "city": "القاهرة"
+      }
+    },
+    "notifs": {
+      "title": "الإشعارات · NOTIFICATIONS",
+      "channelsTitle": "القنوات · CHANNELS",
+      "prefs": {
+        "booking":    { "label": "تحديثات الحجوزات",  "sub": "Booking updates — confirmations, reminders, cancellations" },
+        "payment":    { "label": "تنبيهات المدفوعات", "sub": "Payment confirmations, receipts, and refund status" },
+        "weather":    { "label": "تحذيرات الطقس",     "sub": "Marine weather alerts affecting your upcoming trips" },
+        "promo":      { "label": "العروض والخصومات",  "sub": "Promotional offers, loyalty points, and seasonal deals" },
+        "newsletter": { "label": "النشرة الإخبارية",  "sub": "Monthly SeaConnect newsletter and market updates" }
+      },
+      "channels": {
+        "inApp":    { "label": "إشعارات التطبيق",     "sub": "In-app push notifications" },
+        "sms":      { "label": "رسائل SMS",            "sub": "Text messages to your registered phone" },
+        "whatsapp": { "label": "واتساب",               "sub": "WhatsApp messages (Egypt only)" },
+        "email":    { "label": "البريد الإلكتروني",   "sub": "Email digest (weekly summary)" }
+      }
+    },
+    "payments": {
+      "title": "طرق الدفع · PAYMENT METHODS",
+      "defaultBadge": "DEFAULT",
+      "removeBtn": "إزالة · REMOVE",
+      "addMethod": "إضافة طريقة دفع · ADD PAYMENT METHOD",
+      "historyTitle": "سجل المعاملات",
+      "methods": {
+        "fawry":   "كود فوري · كود يُرسل إليك",
+        "vfCash":  "محفظة فودافون · 010xxxxxxxx",
+        "instapay":"نظام التحويل الفوري · بنك القاهرة",
+        "visa":    "تنتهي صلاحيتها في 09/28"
+      },
+      "txTypes": {
+        "booking": "حجز",
+        "refund":  "استرجاع"
+      },
+      "txStatus": {
+        "completed": "مكتمل"
+      }
+    },
+    "lang": {
+      "title": "اللغة والمنطقة · LANGUAGE & REGION",
+      "appLang": {
+        "label": "لغة التطبيق",
+        "sub": "اختر اللغة المفضلة لديك"
+      },
+      "arabic":  "عربي",
+      "english": "English",
+      "timezone": {
+        "label": "المنطقة الزمنية",
+        "value": "Africa/Cairo (UTC+3)"
+      },
+      "currency": {
+        "label": "العملة",
+        "value": "جنيه مصري · EGP"
+      },
+      "dateFormat": {
+        "label": "تنسيق التاريخ",
+        "value": "DD / MM / YYYY"
+      }
+    },
+    "security": {
+      "title": "الخصوصية والأمان · SECURITY",
+      "yourData": "بياناتك · YOUR DATA",
+      "twoFactor": {
+        "label": "التحقق بخطوتين",
+        "sub": "إضافة طبقة حماية بالرمز المرسل عبر SMS"
+      },
+      "biometric": {
+        "label": "تسجيل الدخول البيومتري",
+        "sub": "بصمة الإصبع أو الوجه (الجهاز يجب أن يدعم ذلك)"
+      },
+      "loginAlert": {
+        "label": "تنبيهات تسجيل الدخول",
+        "sub": "إشعار عند تسجيل دخول من جهاز جديد"
+      },
+      "downloadData": {
+        "label": "تحميل بياناتك",
+        "sub": "صدّر كل بياناتك الشخصية والحجوزات بصيغة JSON",
+        "btn": "تحميل · EXPORT"
+      },
+      "deleteAccount": {
+        "label": "حذف الحساب",
+        "sub": "سيُحذف حسابك وكل بياناتك نهائياً وبشكل غير قابل للتراجع.",
+        "btn": "حذف الحساب · DELETE"
+      }
+    },
+    "about": {
+      "title": "عن التطبيق · ABOUT",
+      "appName": "سي كونكت",
+      "version": "v1.0.0 · BETA · BUILD 2026.05",
+      "copyright": "© 2026 SeaConnect Egypt S.A.E. · جميع الحقوق محفوظة\nسي كونكت هو منصة بحرية مرخّصة في جمهورية مصر العربية.",
+      "links": {
+        "terms": "الشروط والأحكام",
+        "termsSub": "قرأ واقبل قبل الاستخدام",
+        "privacy": "سياسة الخصوصية",
+        "privacySub": "كيف نحمي بياناتك",
+        "cancellation": "سياسة الإلغاء والاسترداد",
+        "cancellationSub": "شروط الإلغاء والاسترجاع",
+        "guidelines": "دليل المجتمع والسلوك",
+        "guidelinesSub": "معايير الاستخدام والإبلاغ",
+        "support": "التواصل مع الدعم",
+        "supportSub": "مركز المساعدة وتواصل معنا"
+      }
+    }
+  },
+  "search": {
+    "filtersLabel": "بحث وفلترة",
+    "activeLabel": "الفلاتر المفعّلة",
+    "searchPlaceholder": "ابحث عن قارب، وجهة، نوع...",
+    "noResults": "لا توجد نتائج",
+    "noResultsSub": "حاول تغيير كلمة البحث أو إزالة بعض الفلاتر.",
+    "resultsMeta": "نتيجة",
+    "applyFilters": "تطبيق الفلاتر",
+    "clearAll": "مسح الكل",
+    "sort": {
+      "recommended": "الأكثر ملاءمة",
+      "priceAsc": "السعر: من الأقل",
+      "priceDesc": "السعر: من الأعلى",
+      "rating": "التقييم"
     }
   }
 }

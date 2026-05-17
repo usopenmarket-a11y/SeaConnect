@@ -225,6 +225,40 @@ class BoatOwnerProfileSerializer(serializers.ModelSerializer):  # type: ignore[t
         ]
 
 
+class OwnerProfileStepSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Write serializer for Sprint 10D step-marking (PATCH).
+
+    Allows the owner to flip individual step booleans to True via a
+    PATCH to /api/v1/accounts/owner-profile/.  kyc_status is not writable
+    here — use the /submit/ endpoint for that transition.
+
+    Only accepts the six step boolean fields; all other profile fields are
+    ignored.  Steps can only be set to True, never cleared back to False
+    via this endpoint (idempotent-safe: setting True→True is a no-op).
+    """
+
+    class Meta:
+        model = BoatOwnerProfile
+        fields = [
+            "national_id_verified",
+            "vessel_docs_verified",
+            "captain_license_verified",
+            "insurance_verified",
+            "inspection_passed",
+            "bank_account_configured",
+        ]
+
+    def validate(self, attrs: dict) -> dict:  # type: ignore[override]
+        """Prevent clearing a step that is already True."""
+        for field, value in attrs.items():
+            existing = getattr(self.instance, field, False)
+            if existing and not value:
+                raise serializers.ValidationError(
+                    {field: "Cannot un-complete a step that is already marked ready."}
+                )
+        return attrs
+
+
 class AdminKYCSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
     """Read serializer for the admin KYC queue.
 

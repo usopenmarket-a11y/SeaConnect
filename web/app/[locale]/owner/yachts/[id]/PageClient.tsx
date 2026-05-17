@@ -1,10 +1,12 @@
 'use client'
 
 /**
- * Owner — new yacht listing form.
+ * Owner — edit existing yacht form.
  *
- * POST /api/v1/yachts/ — creates a draft yacht owned by the authenticated owner.
- * Departure port options come from the public GET /api/v1/ports/ endpoint.
+ * GET  /api/v1/yachts/{id}/ — fetch current data to pre-fill the form.
+ * PATCH /api/v1/yachts/{id}/ — submit only the changed fields (partial update).
+ *
+ * The backend returns 403 if the authenticated user does not own this yacht.
  */
 
 import * as React from 'react'
@@ -13,8 +15,12 @@ import { useTranslations } from 'next-intl'
 
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { ApiError, get, post } from '@/lib/api'
+import { ApiError, get, patch } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { YACHT_TYPES } from '../new/PageClient'
+import type { YachtType, FieldErrors } from '../new/PageClient'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Port {
   id: string
@@ -24,40 +30,30 @@ interface Port {
   city_ar: string
 }
 
-export type YachtType =
-  | 'motorboat'
-  | 'sailboat'
-  | 'catamaran'
-  | 'fishing'
-  | 'speedboat'
-
-export const YACHT_TYPES: YachtType[] = [
-  'motorboat',
-  'sailboat',
-  'catamaran',
-  'fishing',
-  'speedboat',
-]
-
-export interface FieldErrors {
-  name?: string
-  name_ar?: string
-  capacity?: string
-  price_per_day?: string
-  yacht_type?: string
-  departure_port?: string
+interface YachtDetail {
+  id: string
+  name: string
+  name_ar: string
+  description: string
+  description_ar: string
+  capacity: number
+  price_per_day: string
+  yacht_type: YachtType
+  departure_port_id: string | null
 }
 
 interface Props {
-  params: { locale: string }
+  params: { locale: string; id: string }
 }
 
-export function NewYachtPage({
-  params: { locale },
-}: Props): React.ReactElement {
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export function EditYachtPage({ params: { locale, id } }: Props): React.ReactElement {
   const t = useTranslations('owner.yachts.form')
   const tCommon = useTranslations('common')
   const router = useRouter()
+
+  // ── Form state ───────────────────────────────────────────────────────────────
 
   const [name, setName] = React.useState('')
   const [nameAr, setNameAr] = React.useState('')
@@ -68,7 +64,17 @@ export function NewYachtPage({
   const [yachtType, setYachtType] = React.useState<YachtType>('motorboat')
   const [portId, setPortId] = React.useState<string>('')
 
+  // Track what was originally loaded so we only PATCH changed fields
+  const [originalData, setOriginalData] = React.useState<YachtDetail | null>(null)
+
+  // ── Remote data ──────────────────────────────────────────────────────────────
+
   const [ports, setPorts] = React.useState<Port[]>([])
+  const [loadError, setLoadError] = React.useState<string | null>(null)
+  const [isLoadingYacht, setIsLoadingYacht] = React.useState(true)
+
+  // ── Submission state ─────────────────────────────────────────────────────────
+
   const [submitting, setSubmitting] = React.useState(false)
   const [globalMessage, setGlobalMessage] = React.useState<{
     kind: 'success' | 'error' | 'info'
@@ -76,7 +82,8 @@ export function NewYachtPage({
   } | null>(null)
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({})
 
-  // Load ports.
+  // ── Load ports ───────────────────────────────────────────────────────────────
+
   React.useEffect(() => {
     let cancelled = false
     get<Port[] | { results: Port[] }>('/ports/?region=EG')
@@ -84,15 +91,52 @@ export function NewYachtPage({
         if (cancelled) return
         const list = Array.isArray(data) ? data : (data.results ?? [])
         setPorts(list)
-        if (list.length > 0) setPortId(list[0].id)
       })
       .catch(() => {
-        // Non-fatal — submit will fail with a clearer message
+        // Non-fatal — port select will show empty until API is available
       })
     return () => {
       cancelled = true
     }
   }, [])
+
+  // ── Load existing yacht data ─────────────────────────────────────────────────
+
+  React.useEffect(() => {
+    let cancelled = false
+    setIsLoadingYacht(true)
+    setLoadError(null)
+
+    get<YachtDetail>(`/yachts/${id}/`)
+      .then((data) => {
+        if (cancelled) return
+        setOriginalData(data)
+        setName(data.name)
+        setNameAr(data.name_ar)
+        setDescriptionEn(data.description ?? '')
+        setDescriptionAr(data.description_ar ?? '')
+        setCapacity(data.capacity)
+        setPricePerDay(data.price_per_day)
+        setYachtType(data.yacht_type)
+        setPortId(data.departure_port_id ?? '')
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        if (err instanceof ApiError) {
+          setLoadError(err.message)
+        } else {
+          setLoadError(t('loadError'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingYacht(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id, t])
+
+  // ── Validation ───────────────────────────────────────────────────────────────
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {}
@@ -109,9 +153,9 @@ export function NewYachtPage({
     return errors
   }
 
-  async function handleSubmit(
-    event: React.FormEvent<HTMLFormElement>,
-  ): Promise<void> {
+  // ── Submit ────────────────────────────────────────────────────────────────────
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     const errors = validate()
     if (Object.keys(errors).length > 0) {
@@ -122,24 +166,46 @@ export function NewYachtPage({
     setGlobalMessage(null)
     setSubmitting(true)
 
-    try {
-      const created = await post<{ id: string }>('/yachts/', {
-        name,
-        name_ar: nameAr,
-        description: descriptionEn,
-        description_ar: descriptionAr,
-        capacity,
-        price_per_day: pricePerDay,
-        yacht_type: yachtType,
-        departure_port_id: portId,
-      })
-      setGlobalMessage({ kind: 'success', text: t('successMessage') })
+    // Build partial payload — only send fields that changed
+    const payload: Partial<{
+      name: string
+      name_ar: string
+      description: string
+      description_ar: string
+      capacity: number
+      price_per_day: string
+      yacht_type: YachtType
+      departure_port_id: string
+    }> = {}
+
+    if (!originalData || name !== originalData.name) payload.name = name
+    if (!originalData || nameAr !== originalData.name_ar) payload.name_ar = nameAr
+    if (!originalData || descriptionEn !== (originalData.description ?? ''))
+      payload.description = descriptionEn
+    if (!originalData || descriptionAr !== (originalData.description_ar ?? ''))
+      payload.description_ar = descriptionAr
+    if (!originalData || capacity !== originalData.capacity) payload.capacity = capacity
+    if (!originalData || pricePerDay !== originalData.price_per_day)
+      payload.price_per_day = pricePerDay
+    if (!originalData || yachtType !== originalData.yacht_type)
+      payload.yacht_type = yachtType
+    if (!originalData || portId !== (originalData.departure_port_id ?? ''))
+      payload.departure_port_id = portId
+
+    // If nothing changed, skip the network call
+    if (Object.keys(payload).length === 0) {
+      setGlobalMessage({ kind: 'info', text: t('editSuccessMessage') })
       router.push(`/${locale}/owner/yachts`)
-      void created
+      return
+    }
+
+    try {
+      await patch<YachtDetail>(`/yachts/${id}/`, payload)
+      setGlobalMessage({ kind: 'success', text: t('editSuccessMessage') })
+      router.push(`/${locale}/owner/yachts`)
     } catch (err) {
       if (err instanceof ApiError) {
         setGlobalMessage({ kind: 'error', text: err.message })
-        // Map API field errors back to the form — only for known field names
         const knownFields: ReadonlyArray<keyof FieldErrors> = [
           'name',
           'name_ar',
@@ -149,7 +215,10 @@ export function NewYachtPage({
           'departure_port',
         ]
         if (err.field && (knownFields as ReadonlyArray<string>).includes(err.field)) {
-          setFieldErrors((prev) => ({ ...prev, [err.field as keyof FieldErrors]: err.message }))
+          setFieldErrors((prev) => ({
+            ...prev,
+            [err.field as keyof FieldErrors]: err.message,
+          }))
         }
       } else if (err instanceof Error) {
         setGlobalMessage({ kind: 'error', text: err.message })
@@ -160,6 +229,8 @@ export function NewYachtPage({
       setSubmitting(false)
     }
   }
+
+  // ── Styles ────────────────────────────────────────────────────────────────────
 
   const inputBase = cn(
     'h-10 w-full rounded-lg border border-ink/20 bg-white',
@@ -182,12 +253,42 @@ export function NewYachtPage({
     info: 'bg-amber-50 text-amber-700',
   } as const
 
+  // ── Loading / error states ────────────────────────────────────────────────────
+
+  if (isLoadingYacht) {
+    return (
+      <section>
+        <Card>
+          <Card.Body>
+            <p className="text-sm text-ink/60">{tCommon('loading')}</p>
+          </Card.Body>
+        </Card>
+      </section>
+    )
+  }
+
+  if (loadError !== null) {
+    return (
+      <section>
+        <Card>
+          <Card.Body>
+            <p role="alert" className="text-sm text-red-600">
+              {loadError}
+            </p>
+          </Card.Body>
+        </Card>
+      </section>
+    )
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
     <section>
       <Card>
         <Card.Header>
           <h1 className="font-display text-2xl font-bold text-ink">
-            {t('title')}
+            {t('editTitle')}
           </h1>
         </Card.Header>
 
@@ -205,6 +306,7 @@ export function NewYachtPage({
           )}
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+            {/* Names */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="name" className="text-sm font-medium text-ink">
@@ -247,6 +349,7 @@ export function NewYachtPage({
               </div>
             </div>
 
+            {/* Descriptions */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <label
@@ -281,6 +384,7 @@ export function NewYachtPage({
               </div>
             </div>
 
+            {/* Capacity, price, type */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="capacity" className="text-sm font-medium text-ink">
@@ -347,6 +451,7 @@ export function NewYachtPage({
               </div>
             </div>
 
+            {/* Departure port */}
             <div className="flex flex-col gap-1.5">
               <label htmlFor="port" className="text-sm font-medium text-ink">
                 {t('departurePort')}
@@ -383,7 +488,7 @@ export function NewYachtPage({
               fullWidth
               isLoading={submitting}
             >
-              {submitting ? t('submitting') : t('submit')}
+              {submitting ? t('saving') : t('saveChanges')}
             </Button>
           </form>
         </Card.Body>

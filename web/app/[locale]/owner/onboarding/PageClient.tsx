@@ -1,49 +1,38 @@
 'use client'
 
 /**
- * Owner Onboarding/Verification page — Client Component.
+ * Owner KYC / Onboarding page — Client Component.
  *
- * 6-step verification wizard:
- *   Step 1 — Personal identity (الهوية الشخصية)
- *   Step 2 — Vessel documents (مستندات القارب)
- *   Step 3 — Captain license (رخصة الربان)
- *   Step 4 — Boat insurance (تأمين القارب)
- *   Step 5 — Physical inspection (فحص الفريق)
- *   Step 6 — Bank / payout setup (الحساب البنكي)
+ * Fetches GET /api/v1/accounts/owner-profile/ via SWR with auth token.
+ * Displays 6-step checklist cards; each card has a "Mark as complete"
+ * button that shows a toast directing the owner to support (Sprint 11
+ * will wire real file uploads).
  *
- * CSS classes from globals.css: .onb-progress, .onb-bar, .onb-fill,
- * .onb-pct, .onb-stepper, .onb-step, .dash-row, .dash-card,
- * .ins-options, .ins-card, .tick-circle, .action-bar, .btn-clay,
- * .num-tag
+ * Submit button at bottom calls POST /api/v1/accounts/owner-profile/submit/.
  *
- * ADR-014 — logical CSS only (ms-, me-, ps-, pe-).
- * ADR-015 — all strings via t() keys.
+ * Status-aware rendering:
+ *   not_started / in_progress  → checklist + submit button
+ *   submitted                  → amber "Under Review" banner, submit disabled
+ *   approved                   → green "KYC Approved" banner
+ *   rejected                   → red rejection banner with reason
+ *
+ * ADR-009 — JWT in-memory only (via get/post from @/lib/api).
+ * ADR-014 — logical CSS (ms-, me-, ps-, pe-) only.
+ * ADR-015 — all strings via t() from owner.kyc namespace.
  */
 
 import * as React from 'react'
 import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
-import { get, post } from '@/lib/api'
+import { get, post, ApiError } from '@/lib/api'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type StepStatus = 'done' | 'active' | 'pending'
-
-interface WizardStep {
-  number: string
-  labelAr: string
-  labelEn: string
-  status: StepStatus
-}
-
-interface ChecklistItem {
-  labelAr: string
-  done: boolean
-}
+type KycStatus = 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'rejected'
 
 interface OwnerProfile {
   id: string
-  kyc_status: 'not_started' | 'in_progress' | 'submitted' | 'approved' | 'rejected'
+  kyc_status: KycStatus
   national_id_verified: boolean
   vessel_docs_verified: boolean
   captain_license_verified: boolean
@@ -56,225 +45,159 @@ interface OwnerProfile {
   rejection_reason: string
 }
 
-// ── Static data ───────────────────────────────────────────────────────────────
-
-const STEPS: WizardStep[] = [
-  { number: '01', labelAr: 'الهوية الشخصية', labelEn: 'IDENTITY', status: 'done' },
-  { number: '02', labelAr: 'مستندات القارب', labelEn: 'VESSEL DOCS', status: 'done' },
-  { number: '03', labelAr: 'رخصة الربان', labelEn: 'CAPTAIN LICENSE', status: 'done' },
-  { number: '04', labelAr: 'تأمين القارب', labelEn: 'INSURANCE', status: 'active' },
-  { number: '05', labelAr: 'فحص الفريق', labelEn: 'PHYSICAL INSPECTION', status: 'pending' },
-  { number: '06', labelAr: 'الحساب البنكي', labelEn: 'PAYOUT SETUP', status: 'pending' },
-]
-
-/** Maps STEPS index → OwnerProfile boolean field. */
-const STEP_FIELDS: (keyof OwnerProfile)[] = [
-  'national_id_verified',
-  'vessel_docs_verified',
-  'captain_license_verified',
-  'insurance_verified',
-  'inspection_passed',
-  'bank_account_configured',
-]
-
-const CHECKLIST: ChecklistItem[] = [
-  { labelAr: 'البطاقة الشخصية أو جواز سفر ساري', done: true },
-  { labelAr: 'عقد ملكية القارب', done: true },
-  { labelAr: 'شهادة تسجيل خفر السواحل', done: true },
-  { labelAr: 'رخصة قيادة بحرية معتمدة', done: true },
-  { labelAr: 'شهادة تأمين سارية', done: false },
-  { labelAr: 'فحص فني للقارب (٣٠ دقيقة)', done: false },
-]
-
-/** Maps CHECKLIST index → OwnerProfile boolean field. */
-const CHECKLIST_KEYS: (keyof OwnerProfile)[] = [
-  'national_id_verified',
-  'vessel_docs_verified',
-  'captain_license_verified',
-  'captain_license_verified',
-  'insurance_verified',
-  'inspection_passed',
-]
-
-// ── Step content panels ───────────────────────────────────────────────────────
-
-/** Step 4 panel shown in design — insurance upload + SeaConnect Marine option. */
-function InsuranceStepPanel(): React.ReactElement {
-  return (
-    <>
-      <div className="num-tag">§ STEP 04 · INSURANCE</div>
-      <h2 style={{ marginTop: 8 }}>
-        تأمين القارب <em>والمسافرين</em>
-      </h2>
-      <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink-2)', marginTop: 12, maxWidth: '52ch' }}>
-        كل قارب على المنصة يجب أن يكون مؤمّناً ضد الحوادث البحرية ومسؤولية الطرف الثالث.
-        يمكنك رفع شهادة تأمين قائمة، أو شراء تغطية SeaConnect المعتمدة.
-      </p>
-
-      <div className="ins-options">
-        <label className="ins-card">
-          <div className="radio" aria-hidden="true" />
-          <div className="body">
-            <div className="t">SeaConnect Marine · موصى به</div>
-            <div className="d">تغطية شاملة · ١,٥٠٠,٠٠٠ EGP حدّ أقصى · مسافرون + قارب + مسؤولية</div>
-            <div className="price num">2,180 EGP / سنة</div>
-          </div>
-          <div className="badge mono">RECOMMENDED</div>
-        </label>
-
-        <label className="ins-card on">
-          <div className="radio" aria-hidden="true" />
-          <div className="body">
-            <div className="t">رفع شهادة موجودة</div>
-            <div className="d">إذا كان لديك تأمين بالفعل من شركة معتمدة (مصر للتأمين، GIG، أكسا)</div>
-            <div
-              className="upload-zone mono"
-              role="button"
-              tabIndex={0}
-              aria-label="رفع شهادة التأمين"
-            >
-              <span>↑ اسحب الشهادة هنا · PDF / JPG · MAX 10MB</span>
-            </div>
-          </div>
-        </label>
-      </div>
-    </>
-  )
+interface StepDef {
+  key: string
+  field: keyof OwnerProfile
+  labelKey: string
+  descKey: string
+  number: string
+  enLabel: string
 }
 
-/** Generic placeholder panel for steps not yet designed in detail. */
-function GenericStepPanel({ step }: { step: WizardStep }): React.ReactElement {
-  return (
-    <>
-      <div className="num-tag">§ STEP {step.number} · {step.labelEn}</div>
-      <h2 style={{ marginTop: 8 }}>{step.labelAr}</h2>
-      <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink-2)', marginTop: 12, maxWidth: '52ch' }}>
-        هذه الخطوة قيد الإعداد. ستظهر هنا النماذج والتعليمات الخاصة بـ{step.labelAr}.
-      </p>
-    </>
-  )
-}
+// ── Step definitions ──────────────────────────────────────────────────────────
 
-// ── Loading skeleton ──────────────────────────────────────────────────────────
+const STEPS: StepDef[] = [
+  {
+    key: 'identity',
+    field: 'national_id_verified',
+    labelKey: 'steps.identity',
+    descKey: 'stepDesc.identity',
+    number: '01',
+    enLabel: 'IDENTITY',
+  },
+  {
+    key: 'vesselDocs',
+    field: 'vessel_docs_verified',
+    labelKey: 'steps.vesselDocs',
+    descKey: 'stepDesc.vesselDocs',
+    number: '02',
+    enLabel: 'VESSEL DOCS',
+  },
+  {
+    key: 'captainLicense',
+    field: 'captain_license_verified',
+    labelKey: 'steps.captainLicense',
+    descKey: 'stepDesc.captainLicense',
+    number: '03',
+    enLabel: 'CAPTAIN LICENSE',
+  },
+  {
+    key: 'insurance',
+    field: 'insurance_verified',
+    labelKey: 'steps.insurance',
+    descKey: 'stepDesc.insurance',
+    number: '04',
+    enLabel: 'INSURANCE',
+  },
+  {
+    key: 'inspection',
+    field: 'inspection_passed',
+    labelKey: 'steps.inspection',
+    descKey: 'stepDesc.inspection',
+    number: '05',
+    enLabel: 'PORT AUTHORITY',
+  },
+  {
+    key: 'bankSetup',
+    field: 'bank_account_configured',
+    labelKey: 'steps.bankSetup',
+    descKey: 'stepDesc.bankSetup',
+    number: '06',
+    enLabel: 'BANK DETAILS',
+  },
+]
 
-function ProfileLoadingSkeleton(): React.ReactElement {
-  return (
-    <section dir="rtl" aria-busy="true" aria-label="جارٍ التحميل">
-      <div
-        style={{
-          height: 32,
-          width: '40%',
-          background: 'var(--rule)',
-          borderRadius: 6,
-          marginBottom: 24,
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }}
-      />
-      <div
-        style={{
-          height: 12,
-          width: '100%',
-          background: 'var(--rule)',
-          borderRadius: 6,
-          marginBottom: 8,
-        }}
-      />
-      <div
-        style={{
-          height: 12,
-          width: '60%',
-          background: 'var(--rule)',
-          borderRadius: 6,
-          marginBottom: 32,
-        }}
-      />
-      <div style={{ display: 'flex', gap: 16 }}>
-        {[1, 2, 3, 4, 5, 6].map((n) => (
-          <div
-            key={n}
-            style={{
-              height: 64,
-              flex: 1,
-              background: 'var(--rule)',
-              borderRadius: 8,
-            }}
-          />
-        ))}
-      </div>
-    </section>
-  )
-}
+// ── SWR fetcher ───────────────────────────────────────────────────────────────
 
-// ── Status banners ────────────────────────────────────────────────────────────
+const fetchProfile = (path: string) => get<OwnerProfile>(path)
 
-function StatusBanner({ kyc_status, rejection_reason }: {
-  kyc_status: OwnerProfile['kyc_status']
-  rejection_reason: string
+// ── Status banner ─────────────────────────────────────────────────────────────
+
+function StatusBanner({
+  kycStatus,
+  rejectionReason,
+  t,
+}: {
+  kycStatus: KycStatus
+  rejectionReason: string
+  t: ReturnType<typeof useTranslations<'owner.kyc'>>
 }): React.ReactElement | null {
-  const t = useTranslations('owner.onboarding')
-
-  if (kyc_status === 'submitted') {
+  if (kycStatus === 'submitted') {
     return (
       <div
         role="status"
+        data-screen-label="kyc-banner-submitted"
         style={{
           background: 'oklch(0.97 0.05 85)',
           border: '1px solid oklch(0.75 0.12 85)',
           borderRadius: 8,
-          padding: '12px 16px',
-          marginBottom: 20,
-          color: 'oklch(0.40 0.12 60)',
+          padding: '14px 18px',
+          marginBottom: 24,
+          color: 'oklch(0.38 0.12 60)',
           fontFamily: 'var(--ff-sans)',
           fontSize: 14,
           fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
         }}
       >
+        <span style={{ fontFamily: 'var(--ff-mono)', fontSize: 18 }}>⏳</span>
         {t('statusBanner.submitted')}
       </div>
     )
   }
 
-  if (kyc_status === 'approved') {
+  if (kycStatus === 'approved') {
     return (
       <div
         role="status"
+        data-screen-label="kyc-banner-approved"
         style={{
           background: 'oklch(0.97 0.05 145)',
           border: '1px solid oklch(0.75 0.12 145)',
           borderRadius: 8,
-          padding: '12px 16px',
-          marginBottom: 20,
+          padding: '14px 18px',
+          marginBottom: 24,
           color: 'oklch(0.35 0.12 145)',
           fontFamily: 'var(--ff-sans)',
           fontSize: 14,
           fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
         }}
       >
+        <span style={{ fontFamily: 'var(--ff-mono)', fontSize: 18 }}>✓</span>
         {t('statusBanner.approved')}
       </div>
     )
   }
 
-  if (kyc_status === 'rejected') {
+  if (kycStatus === 'rejected') {
     return (
       <div
         role="alert"
+        data-screen-label="kyc-banner-rejected"
         style={{
           background: 'oklch(0.97 0.05 20)',
           border: '1px solid oklch(0.75 0.12 20)',
           borderRadius: 8,
-          padding: '12px 16px',
-          marginBottom: 20,
+          padding: '14px 18px',
+          marginBottom: 24,
           color: 'oklch(0.40 0.15 20)',
           fontFamily: 'var(--ff-sans)',
           fontSize: 14,
           fontWeight: 600,
         }}
       >
-        <div>{t('statusBanner.rejected')}</div>
-        {rejection_reason && (
-          <div style={{ marginTop: 4, fontWeight: 400, fontSize: 13 }}>
-            {rejection_reason}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontFamily: 'var(--ff-mono)', fontSize: 18 }}>✕</span>
+          {t('statusBanner.rejected')}
+        </div>
+        {rejectionReason && (
+          <div style={{ marginTop: 6, fontWeight: 400, fontSize: 13 }}>
+            {rejectionReason}
           </div>
         )}
       </div>
@@ -284,6 +207,238 @@ function StatusBanner({ kyc_status, rejection_reason }: {
   return null
 }
 
+// ── Toast notification ────────────────────────────────────────────────────────
+
+interface ToastProps {
+  message: string
+  type: 'info' | 'success' | 'error'
+  onDismiss: () => void
+}
+
+function Toast({ message, type, onDismiss }: ToastProps): React.ReactElement {
+  React.useEffect(() => {
+    const id = setTimeout(onDismiss, 4000)
+    return () => clearTimeout(id)
+  }, [onDismiss])
+
+  const colors: Record<ToastProps['type'], { bg: string; border: string; text: string }> = {
+    info: { bg: 'oklch(0.97 0.02 220)', border: 'oklch(0.75 0.06 220)', text: 'oklch(0.30 0.07 225)' },
+    success: { bg: 'oklch(0.97 0.05 145)', border: 'oklch(0.75 0.12 145)', text: 'oklch(0.35 0.12 145)' },
+    error: { bg: 'oklch(0.97 0.05 20)', border: 'oklch(0.75 0.12 20)', text: 'oklch(0.40 0.15 20)' },
+  }
+  const c = colors[type]
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        bottom: 80,
+        insetInlineEnd: 24,
+        zIndex: 9999,
+        background: c.bg,
+        border: `1px solid ${c.border}`,
+        borderRadius: 8,
+        padding: '12px 18px',
+        color: c.text,
+        fontFamily: 'var(--ff-sans)',
+        fontSize: 14,
+        fontWeight: 600,
+        maxWidth: 360,
+        boxShadow: '0 8px 24px oklch(0.14 0.04 240 / 0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        onClick={onDismiss}
+        aria-label="dismiss"
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'inherit',
+          fontSize: 16,
+          lineHeight: 1,
+          padding: 0,
+          opacity: 0.7,
+        }}
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
+// ── Step card ─────────────────────────────────────────────────────────────────
+
+function StepCard({
+  step,
+  isDone,
+  isReadOnly,
+  onMarkComplete,
+  t,
+}: {
+  step: StepDef
+  isDone: boolean
+  isReadOnly: boolean
+  onMarkComplete: (stepKey: string) => void
+  t: ReturnType<typeof useTranslations<'owner.kyc'>>
+}): React.ReactElement {
+  return (
+    <div
+      className="dash-card"
+      data-screen-label={`kyc-step-${step.key}`}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 20,
+        padding: '22px 26px',
+        borderInlineStart: `4px solid ${isDone ? 'oklch(0.55 0.13 155)' : 'var(--rule)'}`,
+        opacity: isDone ? 1 : 0.85,
+      }}
+    >
+      {/* Step number + tick */}
+      <div
+        className={`tick-circle${isDone ? ' on' : ''}`}
+        aria-hidden="true"
+        style={{ width: 40, height: 40, fontSize: 16, flexShrink: 0, marginTop: 2 }}
+      >
+        {isDone ? '✓' : step.number}
+      </div>
+
+      {/* Step body */}
+      <div style={{ flex: 1 }}>
+        <div
+          style={{
+            fontFamily: 'var(--ff-mono)',
+            fontSize: 9,
+            letterSpacing: '0.12em',
+            color: 'var(--muted)',
+            textTransform: 'uppercase',
+            marginBottom: 4,
+            direction: 'ltr',
+          }}
+        >
+          STEP {step.number} · {step.enLabel}
+        </div>
+        <div
+          style={{
+            fontFamily: 'var(--ff-display)',
+            fontSize: 18,
+            fontWeight: 700,
+            marginBottom: 4,
+          }}
+        >
+          {t(step.labelKey as Parameters<typeof t>[0])}
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            color: 'var(--muted-2)',
+            lineHeight: 1.6,
+          }}
+        >
+          {t(step.descKey as Parameters<typeof t>[0])}
+        </div>
+      </div>
+
+      {/* Status pill + action */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 10,
+          flexShrink: 0,
+        }}
+      >
+        {isDone ? (
+          <span
+            className="pill-status ok"
+            style={{ fontFamily: 'var(--ff-mono)', fontSize: 10, letterSpacing: '0.08em' }}
+          >
+            {t('stepDone')}
+          </span>
+        ) : (
+          <span
+            className="pill-status pending"
+            style={{ fontFamily: 'var(--ff-mono)', fontSize: 10, letterSpacing: '0.08em' }}
+          >
+            {t('stepPending')}
+          </span>
+        )}
+
+        {!isDone && !isReadOnly && (
+          <button
+            className="btn btn-ghost"
+            style={{ padding: '6px 14px', fontSize: 12, whiteSpace: 'nowrap' }}
+            onClick={() => onMarkComplete(step.key)}
+          >
+            {t('markComplete')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Loading skeleton ──────────────────────────────────────────────────────────
+
+function LoadingSkeleton(): React.ReactElement {
+  return (
+    <section aria-busy="true" aria-label="جارٍ التحميل" style={{ direction: 'rtl' }}>
+      <div
+        style={{
+          height: 28,
+          width: '45%',
+          background: 'var(--rule)',
+          borderRadius: 6,
+          marginBottom: 10,
+        }}
+      />
+      <div
+        style={{
+          height: 14,
+          width: '65%',
+          background: 'var(--rule)',
+          borderRadius: 6,
+          marginBottom: 32,
+        }}
+      />
+      <div
+        style={{
+          height: 8,
+          background: 'var(--rule)',
+          borderRadius: 4,
+          marginBottom: 32,
+        }}
+      />
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}
+      >
+        {[1, 2, 3, 4, 5, 6].map((n) => (
+          <div
+            key={n}
+            style={{
+              height: 90,
+              background: 'var(--rule)',
+              borderRadius: 4,
+            }}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface Props {
@@ -291,64 +446,44 @@ interface Props {
 }
 
 export function OnboardingPageClient({ locale: _locale }: Props): React.ReactElement {
-  const t = useTranslations('owner.onboarding')
+  const t = useTranslations('owner.kyc')
 
-  // ── API state ──────────────────────────────────────────────────────────────
-  const { data: profile, mutate } = useSWR<OwnerProfile>(
-    '/accounts/owner-profile/',
-    (path: string) => get<OwnerProfile>(path),
-    { revalidateOnFocus: false },
-  )
+  // ── API: profile fetch ─────────────────────────────────────────────────────
+  const {
+    data: profile,
+    error: profileError,
+    mutate,
+    isLoading,
+  } = useSWR<OwnerProfile>('/accounts/owner-profile/', fetchProfile, {
+    revalidateOnFocus: false,
+  })
 
+  // ── Submit state ───────────────────────────────────────────────────────────
   const [submitting, setSubmitting] = React.useState<boolean>(false)
   const [submitError, setSubmitError] = React.useState<string | null>(null)
 
-  // ── Derive steps from API ──────────────────────────────────────────────────
-  const derivedSteps: WizardStep[] = STEPS.map((s, i) => {
-    const field = STEP_FIELDS[i]
-    const isDone = profile ? Boolean(profile[field]) : s.status === 'done'
-    const firstIncomplete = profile
-      ? STEP_FIELDS.findIndex((f) => !profile[f])
-      : STEPS.findIndex((step) => step.status === 'active')
-    return {
-      ...s,
-      status: isDone
-        ? ('done' as const)
-        : i === firstIncomplete
-          ? ('active' as const)
-          : ('pending' as const),
-    }
-  })
+  // ── Toast state ────────────────────────────────────────────────────────────
+  interface ToastEntry {
+    id: number
+    message: string
+    type: 'info' | 'success' | 'error'
+  }
+  const [toasts, setToasts] = React.useState<ToastEntry[]>([])
+  const toastIdRef = React.useRef<number>(0)
 
-  // ── Progress numbers from API when available ───────────────────────────────
-  const doneCount = profile?.completed_steps ?? derivedSteps.filter((s) => s.status === 'done').length
-  const pct = profile
-    ? Math.round((profile.completed_steps / profile.total_steps) * 100)
-    : Math.round((doneCount / STEPS.length) * 100)
+  function showToast(message: string, type: ToastEntry['type'] = 'info'): void {
+    const id = ++toastIdRef.current
+    setToasts((prev) => [...prev, { id, message, type }])
+  }
 
-  // ── Active step navigation ─────────────────────────────────────────────────
-  const initialActiveIdx = Math.max(
-    derivedSteps.findIndex((s) => s.status === 'active'),
-    0,
-  )
-  const [activeIdx, setActiveIdx] = React.useState<number>(initialActiveIdx)
+  function dismissToast(id: number): void {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }
 
-  // Keep activeIdx in sync when profile loads and changes the first active step
-  const firstActiveFromProfile = derivedSteps.findIndex((s) => s.status === 'active')
-  React.useEffect(() => {
-    if (profile && firstActiveFromProfile >= 0) {
-      setActiveIdx(firstActiveFromProfile)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile?.kyc_status, profile?.completed_steps])
-
-  const activeStep = derivedSteps[activeIdx] ?? derivedSteps[0]
-
-  // ── Checklist done flags from API ──────────────────────────────────────────
-  const checklistItems: ChecklistItem[] = CHECKLIST.map((item, i) => ({
-    ...item,
-    done: profile ? Boolean(profile[CHECKLIST_KEYS[i]]) : item.done,
-  }))
+  // ── "Mark as Complete" handler — Sprint 11 will wire real uploads ──────────
+  function handleMarkComplete(_stepKey: string): void {
+    showToast(t('contactSupport'), 'info')
+  }
 
   // ── Submit handler ─────────────────────────────────────────────────────────
   async function handleSubmit(): Promise<void> {
@@ -357,150 +492,193 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
     try {
       await post('/accounts/owner-profile/submit/', {})
       await mutate()
+      showToast(t('submitSuccess'), 'success')
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'حدث خطأ')
+      if (err instanceof ApiError && err.status === 409) {
+        setSubmitError(t('statusBanner.submitted'))
+      } else {
+        setSubmitError(err instanceof Error ? err.message : t('errorGeneric'))
+      }
     } finally {
       setSubmitting(false)
     }
   }
 
-  function handlePrev(): void {
-    setActiveIdx((prev) => Math.max(prev - 1, 0))
-  }
-
-  function handleNext(): void {
-    setActiveIdx((prev) => Math.min(prev + 1, STEPS.length - 1))
-  }
-
   // ── Loading state ──────────────────────────────────────────────────────────
-  if (!profile) {
-    return <ProfileLoadingSkeleton />
+  if (isLoading) {
+    return <LoadingSkeleton />
   }
 
-  const canSubmit =
-    profile.kyc_status === 'not_started' || profile.kyc_status === 'in_progress'
-  const isReadOnly =
-    profile.kyc_status === 'submitted' || profile.kyc_status === 'approved'
+  // ── Error state ────────────────────────────────────────────────────────────
+  if (profileError || !profile) {
+    return (
+      <div
+        role="alert"
+        style={{
+          padding: '24px 28px',
+          background: 'oklch(0.97 0.05 20)',
+          border: '1px solid oklch(0.75 0.12 20)',
+          borderRadius: 8,
+          color: 'oklch(0.40 0.15 20)',
+          fontFamily: 'var(--ff-sans)',
+          fontSize: 14,
+        }}
+      >
+        {t('loadError')}
+      </div>
+    )
+  }
+
+  const kycStatus = profile.kyc_status
+  const isReadOnly = kycStatus === 'submitted' || kycStatus === 'approved'
+  const canSubmit = kycStatus === 'not_started' || kycStatus === 'in_progress'
+
+  const doneCount = profile.completed_steps
+  const totalSteps = profile.total_steps
+  const pct = totalSteps > 0 ? Math.round((doneCount / totalSteps) * 100) : 0
 
   return (
-    <section dir="rtl">
-      <h1 className="mb-6 font-display text-2xl font-bold text-ink">
-        {t('title')}
-      </h1>
+    <section data-screen-label="owner-kyc-page">
+      {/* Toast layer */}
+      {toasts.map((toast) => (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onDismiss={() => dismissToast(toast.id)}
+        />
+      ))}
 
-      {/* ── Status banner (submitted / approved / rejected) ── */}
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <header className="dash-head" style={{ marginBottom: 32 }}>
+        <div>
+          <div className="num-tag">{t('eyebrow')}</div>
+          <h1 style={{ fontFamily: 'var(--ff-display)', fontSize: 32, fontWeight: 700, margin: '8px 0 4px' }}>
+            {t('title')}
+          </h1>
+          <p style={{ fontSize: 14, color: 'var(--muted-2)', maxWidth: '52ch' }}>
+            {t('subtitle')}
+          </p>
+        </div>
+
+        {/* KYC status badge */}
+        <div
+          style={{
+            fontFamily: 'var(--ff-mono)',
+            fontSize: 11,
+            letterSpacing: '0.10em',
+            color: 'var(--muted)',
+            paddingTop: 4,
+          }}
+        >
+          {t(`status.${kycStatus}` as Parameters<typeof t>[0])}
+        </div>
+      </header>
+
+      {/* ── Status banner ─────────────────────────────────────────────────── */}
       <StatusBanner
-        kyc_status={profile.kyc_status}
-        rejection_reason={profile.rejection_reason}
+        kycStatus={kycStatus}
+        rejectionReason={profile.rejection_reason}
+        t={t}
       />
 
-      {/* ── Progress bar ── */}
-      <div className="onb-progress">
+      {/* ── Progress bar ──────────────────────────────────────────────────── */}
+      <div
+        className="onb-progress"
+        style={{ marginBottom: 28 }}
+        data-screen-label="kyc-progress"
+      >
         <div
           className="onb-bar"
           role="progressbar"
           aria-valuenow={pct}
           aria-valuemin={0}
           aria-valuemax={100}
+          aria-label={`${doneCount} / ${totalSteps} ${t('progressLabel')}`}
         >
           <div className="onb-fill" style={{ width: `${pct}%` }} />
         </div>
-        <div className="onb-pct mono">
-          {doneCount} / {STEPS.length} {t('progressLabel')} · {pct}%
+        <div
+          className="onb-pct"
+          style={{
+            fontFamily: 'var(--ff-mono)',
+            fontSize: 11,
+            letterSpacing: '0.07em',
+            color: 'var(--muted)',
+            marginTop: 8,
+            direction: 'ltr',
+          }}
+        >
+          {doneCount} / {totalSteps} {t('progressLabel')} · {pct}%
         </div>
       </div>
 
-      {/* ── Step indicators ── */}
-      <div className="onb-stepper" role="list" aria-label="خطوات التحقق">
-        {derivedSteps.map((step, idx) => (
-          <div
-            key={step.number}
-            className={`onb-step ${step.status}`}
-            role="listitem"
-            aria-current={step.status === 'active' ? 'step' : undefined}
-          >
-            <button
-              className="circle"
-              onClick={() => setActiveIdx(idx)}
-              aria-label={`الخطوة ${step.number}: ${step.labelAr}`}
-              disabled={step.status === 'pending' || isReadOnly}
-              style={{
-                cursor: step.status === 'pending' || isReadOnly ? 'not-allowed' : 'pointer',
-                border: 'none',
-                background: 'inherit',
-              }}
+      {/* ── Step stepper indicator ────────────────────────────────────────── */}
+      <div
+        className="onb-stepper"
+        role="list"
+        aria-label={t('stepperLabel')}
+        style={{ marginBottom: 32 }}
+      >
+        {STEPS.map((step, idx) => {
+          const isDone = Boolean(profile[step.field])
+          const firstPending = STEPS.findIndex((s) => !profile[s.field])
+          const isActive = !isDone && idx === firstPending
+          const stepClass = isDone ? 'done' : isActive ? 'active' : 'pending'
+          return (
+            <div
+              key={step.key}
+              className={`onb-step ${stepClass}`}
+              role="listitem"
+              aria-current={isActive ? 'step' : undefined}
             >
-              {step.status === 'done' ? '✓' : step.number}
-            </button>
-            <div className="lbl">
-              <div className="ar">{step.labelAr}</div>
-              <div className="en mono">{step.labelEn}</div>
+              <div
+                className="circle"
+                aria-hidden="true"
+              >
+                {isDone ? '✓' : step.number}
+              </div>
+              <div className="lbl">
+                <div className="ar">{t(step.labelKey as Parameters<typeof t>[0])}</div>
+                <div className="en">{step.enLabel}</div>
+              </div>
+              {idx < STEPS.length - 1 && (
+                <div className="line" aria-hidden="true" />
+              )}
             </div>
-            {idx < derivedSteps.length - 1 && (
-              <div className="line" aria-hidden="true" />
-            )}
-          </div>
+          )
+        })}
+      </div>
+
+      {/* ── Step cards ────────────────────────────────────────────────────── */}
+      <div
+        style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        data-screen-label="kyc-step-cards"
+      >
+        {STEPS.map((step) => (
+          <StepCard
+            key={step.key}
+            step={step}
+            isDone={Boolean(profile[step.field])}
+            isReadOnly={isReadOnly}
+            onMarkComplete={handleMarkComplete}
+            t={t}
+          />
         ))}
       </div>
 
-      {/* ── Step content + checklist ── */}
-      <div className="dash-row" style={{ gridTemplateColumns: '1.5fr 1fr', marginTop: 32 }}>
-        <div className="dash-card">
-          {activeStep.number === '04' ? (
-            <InsuranceStepPanel />
-          ) : (
-            <GenericStepPanel step={activeStep} />
-          )}
-        </div>
-
-        {/* Verification checklist */}
-        <div className="dash-card">
-          <h3>{t('checklistTitle')}</h3>
-          <div className="sub">VERIFICATION CHECKLIST</div>
-
-          {checklistItems.map((item) => (
-            <div
-              key={item.labelAr}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '12px 0',
-                borderBottom: '1px solid var(--rule)',
-                opacity: item.done ? 1 : 0.55,
-              }}
-            >
-              <span
-                className={`tick-circle${item.done ? ' on' : ''}`}
-                aria-hidden="true"
-              >
-                {item.done ? '✓' : ''}
-              </span>
-              <span
-                style={{
-                  flex: 1,
-                  fontSize: 14,
-                  textDecoration: item.done ? 'line-through' : 'none',
-                }}
-              >
-                {item.labelAr}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Submit error ── */}
+      {/* ── Submit error ──────────────────────────────────────────────────── */}
       {submitError && (
         <div
           role="alert"
           style={{
-            marginTop: 12,
-            padding: '10px 14px',
+            marginTop: 16,
+            padding: '12px 16px',
             background: 'oklch(0.97 0.05 20)',
             border: '1px solid oklch(0.75 0.12 20)',
             borderRadius: 6,
             color: 'oklch(0.40 0.15 20)',
+            fontFamily: 'var(--ff-sans)',
             fontSize: 13,
           }}
         >
@@ -508,39 +686,44 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
         </div>
       )}
 
-      {/* ── Navigation action bar ── */}
-      <div className="action-bar">
-        {canSubmit && (
-          <button
-            className="btn btn-ghost"
-            onClick={handlePrev}
-            disabled={activeIdx === 0}
-            aria-label={t('prevStep')}
+      {/* ── Action bar ────────────────────────────────────────────────────── */}
+      <div className="action-bar" style={{ marginTop: 32 }}>
+        {doneCount === totalSteps ? (
+          <span
+            style={{
+              fontFamily: 'var(--ff-mono)',
+              fontSize: 12,
+              letterSpacing: '0.08em',
+              color: 'oklch(0.85 0.09 155)',
+            }}
           >
-            {t('prevStep')}
-          </button>
+            ✓ {t('allStepsDone')}
+          </span>
+        ) : (
+          <span
+            style={{
+              fontFamily: 'var(--ff-mono)',
+              fontSize: 12,
+              letterSpacing: '0.08em',
+              color: 'var(--foam)',
+              opacity: 0.6,
+            }}
+          >
+            {doneCount} / {totalSteps} {t('progressLabel')}
+          </span>
         )}
 
-        {canSubmit && activeIdx < STEPS.length - 1 && (
-          <button
-            className="btn btn-clay cta-shimmer"
-            onClick={handleNext}
-            aria-label={t('nextStep')}
-          >
-            {t('nextStep')}
-          </button>
-        )}
-
-        {canSubmit && activeIdx === STEPS.length - 1 && (
-          <button
-            className="btn btn-clay cta-shimmer"
-            onClick={handleSubmit}
-            disabled={submitting}
-            aria-label={t('submitReview')}
-          >
-            {submitting ? t('submitting') : t('submitReview')}
-          </button>
-        )}
+        <button
+          className="btn btn-clay cta-shimmer"
+          onClick={handleSubmit}
+          disabled={!canSubmit || submitting}
+          style={{
+            opacity: !canSubmit || submitting ? 0.5 : 1,
+            cursor: !canSubmit || submitting ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {submitting ? t('submitting') : t('submitReview')}
+        </button>
       </div>
     </section>
   )

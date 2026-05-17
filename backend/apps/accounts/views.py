@@ -20,6 +20,7 @@ from .serializers import (
     AdminKYCSerializer,
     AdminUserSerializer,
     BoatOwnerProfileSerializer,
+    OwnerProfileStepSerializer,
     RegisterSerializer,
     UserProfileSerializer,
 )
@@ -122,10 +123,16 @@ class AdminUserListView(generics.ListAPIView):  # type: ignore[type-arg]
 
 
 class OwnerProfileView(APIView):
-    """GET /api/v1/accounts/owner-profile/
+    """GET/PATCH /api/v1/accounts/owner-profile/
 
-    Returns the authenticated owner's BoatOwnerProfile, creating one lazily
-    if it does not exist yet (first visit to the owner portal).
+    GET  — Returns the authenticated owner's BoatOwnerProfile, creating one
+           lazily if it does not exist yet (first visit to the owner portal).
+
+    PATCH — Sprint 10D: allows the owner to mark individual KYC steps as
+            ready by setting step boolean fields to True.  kyc_status
+            transitions must go through the /submit/ endpoint instead.
+            Only the six step booleans are writable; all other profile
+            fields are ignored.
 
     Requires: IsAuthenticated + role == 'owner'.
     """
@@ -136,6 +143,43 @@ class OwnerProfileView(APIView):
         profile, _ = BoatOwnerProfile.objects.get_or_create(user=request.user)
         serializer = BoatOwnerProfileSerializer(profile)
         return Response(serializer.data)
+
+    def patch(self, request: Request) -> Response:
+        profile, _ = BoatOwnerProfile.objects.get_or_create(user=request.user)
+
+        # Refuse writes once the application has left the editable window
+        if profile.kyc_status in (KYCStatus.SUBMITTED, KYCStatus.APPROVED):
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_NOT_EDITABLE",
+                        "message": (
+                            f"Profile with status '{profile.kyc_status}' cannot be modified. "
+                            "Contact support if you need to update your documents."
+                        ),
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = OwnerProfileStepSerializer(
+            profile, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        updated_fields = list(serializer.validated_data.keys()) + ["updated_at"]
+
+        # Promote status from NOT_STARTED to IN_PROGRESS on first edit
+        if profile.kyc_status == KYCStatus.NOT_STARTED and serializer.validated_data:
+            profile.kyc_status = KYCStatus.IN_PROGRESS
+            updated_fields.append("kyc_status")
+
+        for field, value in serializer.validated_data.items():
+            setattr(profile, field, value)
+
+        profile.save(update_fields=updated_fields)
+
+        read_serializer = BoatOwnerProfileSerializer(profile)
+        return Response(read_serializer.data)
 
 
 class OwnerProfileSubmitView(APIView):

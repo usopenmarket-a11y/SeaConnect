@@ -1,6 +1,7 @@
-"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload."""
+"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload + Sprint 10E filters."""
 import os
 import uuid as uuid_module
+from decimal import Decimal, InvalidOperation
 
 from django.core.files.storage import default_storage
 from django.db import transaction
@@ -206,9 +207,36 @@ class VendorProductListCreateView(generics.ListCreateAPIView):
             .select_related("vendor", "category")
             .order_by("-created_at")
         )
-        category_slug = self.request.query_params.get("category")
+        params = self.request.query_params
+
+        category_slug = params.get("category")
         if category_slug:
             qs = qs.filter(category__slug=category_slug)
+
+        # price_min: include products where price >= N (silently ignore non-numeric values)
+        price_min_raw = params.get("price_min")
+        if price_min_raw is not None:
+            try:
+                qs = qs.filter(price__gte=Decimal(price_min_raw))
+            except InvalidOperation:
+                pass  # invalid param — ignore, return unfiltered
+
+        # price_max: include products where price <= N (silently ignore non-numeric values)
+        price_max_raw = params.get("price_max")
+        if price_max_raw is not None:
+            try:
+                qs = qs.filter(price__lte=Decimal(price_max_raw))
+            except InvalidOperation:
+                pass  # invalid param — ignore, return unfiltered
+
+        # rating: include products where average_rating >= N (silently ignore non-numeric values)
+        rating_raw = params.get("rating")
+        if rating_raw is not None:
+            try:
+                qs = qs.filter(average_rating__gte=Decimal(rating_raw))
+            except InvalidOperation:
+                pass  # invalid param — ignore, return unfiltered
+
         return qs
 
     def perform_create(self, serializer):

@@ -77,6 +77,12 @@ class Product(TimeStampedModel):
         db_index=True,
     )
     primary_image_url = models.URLField(max_length=1000, blank=True)
+    average_rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0,
+        help_text="Aggregate average review rating (0.00–5.00). Updated by review write-back.",
+    )
 
     class Meta:
         db_table = "marketplace_product"

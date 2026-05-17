@@ -12,13 +12,18 @@
  * CSS classes from globals.css: .dash-row, .dash-card, .dash-table,
  * .pill-status, .bank-card, .schedule, .sched-opt, .escrow-list, .escrow-row
  *
- * Data: useSWR('/payments/payouts/') and useSWR('/payments/escrow/') with
- *       mock fallbacks when the API returns an empty result set in dev.
- * TODO: All hardcoded Arabic strings below are labelled with i18n TODO.
- *       Wire to t() keys under owner.payouts.* once translations are added.
+ * Data:
+ *   useSWR('/payments/payouts/')  → PaginatedResponse<ApiPayout>
+ *   useSWR('/payments/escrow/')   → PaginatedResponse<ApiEscrow>
+ *
+ * Auth: the `get` helper in lib/api.ts injects the in-memory Bearer token
+ * automatically — no extra fetcher wrapper is needed here (ADR-009).
+ *
+ * Mock fallback: when the API returns an empty result set in dev, mock
+ * constants are used so the UI is never empty.
  *
  * ADR-014 — logical CSS only (ms-, me-, ps-, pe-).
- * ADR-015 — hardcoded strings marked as TODO for i18n.
+ * ADR-015 — all strings via t() under owner.payouts.*.
  */
 
 import * as React from 'react'
@@ -30,11 +35,12 @@ import { get, type PaginatedResponse } from '@/lib/api'
 
 interface LedgerRow {
   id: string
-  ref: string       // maps to `reference`
-  dateAr: string    // maps to `scheduled_date`
-  amount: number    // maps to `amount`
-  method: string    // maps to `payment_method`
-  status: 'paid' | 'pending'  // maps to API status 'paid'/'scheduled'
+  ref: string
+  dateAr: string
+  amount: number
+  currency: string
+  method: string
+  status: 'paid' | 'pending'
 }
 
 /** Raw shape returned by GET /api/v1/payments/payouts/ results array. */
@@ -51,11 +57,22 @@ interface ApiPayout {
   created_at: string
 }
 
+/** Raw shape returned by GET /api/v1/payments/escrow/ results array. */
+interface ApiEscrow {
+  id: string
+  customer_name: string
+  trip_date: string
+  amount: string
+  currency: string
+  release_hours: number
+}
+
 interface EscrowRow {
   id: string
   customerName: string
   tripDate: string
   amount: number
+  currency: string
   releaseHours: number
 }
 
@@ -80,47 +97,93 @@ interface BankAccount {
 // ── Mock data ─────────────────────────────────────────────────────────────────
 
 const MOCK_SUMMARY: PayoutSummary = {
-  nextPayoutDate: '١٥ مايو ٢٠٢٦', // TODO: i18n — owner.payouts.nextPayoutDate
+  nextPayoutDate: '١٥ مايو ٢٠٢٦',
   nextPayoutAmount: 38420,
   currency: 'EGP',
   totalBookings: 43650,
-  escrowHeld: -5230,
+  escrowHeld: 5230,
   platformCommission: 0,
   taxes: 0,
 }
 
 const MOCK_BANK: BankAccount = {
-  bankName: 'بنك الإسكندرية', // TODO: i18n — from API
+  bankName: 'بنك الإسكندرية',
   iban: 'EG 21 · ••• ••• ••• ••• 8842',
   accountHolder: 'MAHMOUD SEIF · محمود سيف',
 }
 
 const MOCK_LEDGER: LedgerRow[] = [
-  { id: 'mock-1', ref: 'PO-4280', dateAr: '١٥ مايو ٢٠٢٦', amount: 38420, method: 'بنك الإسكندرية ••8842', status: 'pending' },
-  { id: 'mock-2', ref: 'PO-4192', dateAr: '١ مايو ٢٠٢٦', amount: 41200, method: 'بنك الإسكندرية ••8842', status: 'paid' },
-  { id: 'mock-3', ref: 'PO-4108', dateAr: '١٥ أبريل ٢٠٢٦', amount: 35640, method: 'بنك الإسكندرية ••8842', status: 'paid' },
-  { id: 'mock-4', ref: 'PO-4021', dateAr: '١ أبريل ٢٠٢٦', amount: 28980, method: 'بنك الإسكندرية ••8842', status: 'paid' },
-  { id: 'mock-5', ref: 'PO-3944', dateAr: '١٥ مارس ٢٠٢٦', amount: 19450, method: 'INSTAPAY · 0100••5678', status: 'paid' },
+  { id: 'mock-1', ref: 'PO-4280', dateAr: '١٥ مايو ٢٠٢٦', amount: 38420, currency: 'EGP', method: 'بنك الإسكندرية ••8842', status: 'pending' },
+  { id: 'mock-2', ref: 'PO-4192', dateAr: '١ مايو ٢٠٢٦', amount: 41200, currency: 'EGP', method: 'بنك الإسكندرية ••8842', status: 'paid' },
+  { id: 'mock-3', ref: 'PO-4108', dateAr: '١٥ أبريل ٢٠٢٦', amount: 35640, currency: 'EGP', method: 'بنك الإسكندرية ••8842', status: 'paid' },
+  { id: 'mock-4', ref: 'PO-4021', dateAr: '١ أبريل ٢٠٢٦', amount: 28980, currency: 'EGP', method: 'بنك الإسكندرية ••8842', status: 'paid' },
+  { id: 'mock-5', ref: 'PO-3944', dateAr: '١٥ مارس ٢٠٢٦', amount: 19450, currency: 'EGP', method: 'INSTAPAY · 0100••5678', status: 'paid' },
+]
+
+const MOCK_ESCROW: EscrowRow[] = [
+  { id: 'BK-7421', customerName: 'نور حسن', tripDate: '12 MAY', amount: 5480, currency: 'EGP', releaseHours: 14 },
+  { id: 'BK-7409', customerName: 'أحمد لطفي', tripDate: '24 MAY', amount: 6200, currency: 'EGP', releaseHours: 312 },
+  { id: 'BK-7398', customerName: 'منى صبري', tripDate: '8 JUN', amount: 7400, currency: 'EGP', releaseHours: 720 },
 ]
 
 // ── API transform helpers ─────────────────────────────────────────────────────
 
-function transformPayout(p: ApiPayout): LedgerRow {
+function formatIsoDate(iso: string, locale: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(
+      locale === 'ar' ? 'ar-EG' : 'en-GB',
+      { day: 'numeric', month: 'long', year: 'numeric' },
+    )
+  } catch {
+    return iso
+  }
+}
+
+function transformPayout(p: ApiPayout, locale: string): LedgerRow {
   return {
     id: p.id,
     ref: p.reference,
-    dateAr: p.scheduled_date,
+    dateAr: formatIsoDate(p.scheduled_date, locale),
     amount: Number(p.amount),
+    currency: p.currency,
     method: p.payment_method,
     status: p.status === 'paid' ? 'paid' : 'pending',
   }
 }
 
-const MOCK_ESCROW: EscrowRow[] = [
-  { id: 'BK-7421', customerName: 'نور حسن', tripDate: '12 MAY', amount: 5480, releaseHours: 14 },
-  { id: 'BK-7409', customerName: 'أحمد لطفي', tripDate: '24 MAY', amount: 6200, releaseHours: 312 },
-  { id: 'BK-7398', customerName: 'منى صبري', tripDate: '8 JUN', amount: 7400, releaseHours: 720 },
-]
+function transformEscrow(e: ApiEscrow): EscrowRow {
+  return {
+    id: e.id,
+    customerName: e.customer_name,
+    tripDate: e.trip_date,
+    amount: Number(e.amount),
+    currency: e.currency,
+    releaseHours: e.release_hours,
+  }
+}
+
+function deriveSummary(
+  payouts: ApiPayout[],
+  escrowRows: EscrowRow[],
+  locale: string,
+): PayoutSummary {
+  // First scheduled/pending payout becomes the "next payout"
+  const nextPayout = payouts.find((p) => p.status !== 'paid') ?? payouts[0]
+  const escrowHeld = escrowRows.reduce((sum, e) => sum + e.amount, 0)
+  const totalBookings = payouts.reduce((sum, p) => sum + Number(p.amount), 0)
+
+  return {
+    nextPayoutDate: nextPayout
+      ? formatIsoDate(nextPayout.scheduled_date, locale)
+      : MOCK_SUMMARY.nextPayoutDate,
+    nextPayoutAmount: nextPayout ? Number(nextPayout.amount) : MOCK_SUMMARY.nextPayoutAmount,
+    currency: nextPayout?.currency ?? MOCK_SUMMARY.currency,
+    totalBookings: totalBookings > 0 ? totalBookings : MOCK_SUMMARY.totalBookings,
+    escrowHeld: escrowHeld > 0 ? escrowHeld : MOCK_SUMMARY.escrowHeld,
+    platformCommission: 0,
+    taxes: 0,
+  }
+}
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -132,25 +195,40 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
   const t = useTranslations('owner.payouts')
   const [schedule, setSchedule] = React.useState<ScheduleOption>('biweekly')
 
-  // ── Live data (falls back to mock constants when API returns empty in dev) ──
+  // ── Live data ──────────────────────────────────────────────────────────────
+  // The `get` helper from lib/api.ts attaches Authorization: Bearer <token>
+  // automatically from the in-memory store (ADR-009).
   const { data: payoutsData } = useSWR(
     '/payments/payouts/',
     (path: string) => get<PaginatedResponse<ApiPayout>>(path),
+    { revalidateOnFocus: false },
   )
   const { data: escrowData } = useSWR(
     '/payments/escrow/',
-    (path: string) => get<EscrowRow[]>(path),
+    (path: string) => get<PaginatedResponse<ApiEscrow>>(path),
+    { revalidateOnFocus: false },
   )
+
+  // ── Derived data — fall back to mocks when API returns empty in dev ────────
+  const apiEscrowRows: EscrowRow[] =
+    escrowData && escrowData.results.length > 0
+      ? escrowData.results.map(transformEscrow)
+      : []
+
+  const escrowRows: EscrowRow[] =
+    apiEscrowRows.length > 0 ? apiEscrowRows : MOCK_ESCROW
 
   const ledgerRows: LedgerRow[] =
     payoutsData && payoutsData.results.length > 0
-      ? payoutsData.results.map(transformPayout)
+      ? payoutsData.results.map((p) => transformPayout(p, locale))
       : MOCK_LEDGER
 
-  const escrowRows: EscrowRow[] =
-    escrowData && escrowData.length > 0
-      ? escrowData
-      : MOCK_ESCROW
+  const summary: PayoutSummary =
+    payoutsData && payoutsData.results.length > 0
+      ? deriveSummary(payoutsData.results, apiEscrowRows, locale)
+      : MOCK_SUMMARY
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
   function formatAmount(n: number): string {
     return locale === 'ar' ? n.toLocaleString('ar-EG') : n.toLocaleString('en-US')
@@ -182,7 +260,7 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
           }}
         >
           <div className="sub" style={{ color: 'var(--sand-3)', opacity: 0.7 }}>
-            {t('nextPayout')} · {MOCK_SUMMARY.nextPayoutDate}
+            {t('nextPayout')} · {summary.nextPayoutDate}
           </div>
 
           <div
@@ -195,12 +273,12 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
               fontFamily: 'var(--ff-display)',
             }}
           >
-            {formatAmount(MOCK_SUMMARY.nextPayoutAmount)}
+            {formatAmount(summary.nextPayoutAmount)}
             <span
               className="mono"
               style={{ fontSize: 18, fontWeight: 400, color: 'var(--sand-3)', marginInlineEnd: 8, opacity: 0.8 }}
             >
-              {' '}{MOCK_SUMMARY.currency}
+              {' '}{summary.currency}
             </span>
           </div>
 
@@ -208,8 +286,8 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
           <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid oklch(1 0 0 / 0.2)' }}>
             {(
               [
-                { labelKey: 'breakdown.totalBookings', value: formatAmount(MOCK_SUMMARY.totalBookings), variant: null },
-                { labelKey: 'breakdown.escrowHeld', value: `−${formatAmount(Math.abs(MOCK_SUMMARY.escrowHeld))}`, variant: 'hold' },
+                { labelKey: 'breakdown.totalBookings', value: formatAmount(summary.totalBookings), variant: null },
+                { labelKey: 'breakdown.escrowHeld', value: `−${formatAmount(summary.escrowHeld)}`, variant: 'hold' },
                 { labelKey: 'breakdown.platformCommission', value: '—', variant: 'promo' },
                 { labelKey: 'breakdown.taxes', value: '0', variant: null },
               ] as Array<{ labelKey: string; value: string; variant: 'hold' | 'promo' | null }>
@@ -312,7 +390,7 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
                 </td>
                 <td>{row.dateAr}</td>
                 <td className="num" style={{ fontWeight: 600 }}>
-                  {formatAmount(row.amount)} EGP
+                  {formatAmount(row.amount)} {row.currency}
                 </td>
                 <td
                   className="mono"
@@ -331,7 +409,7 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
                   <button
                     className="btn btn-ghost"
                     style={{ padding: '6px 12px', fontSize: 12 }}
-                    aria-label={`تحميل إيصال PDF للدفعة ${row.ref}`}
+                    aria-label={t('downloadPdfAria', { ref: row.ref })}
                   >
                     {t('downloadPdf')}
                   </button>
@@ -346,7 +424,7 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
       <div className="dash-card" style={{ marginTop: 24 }}>
         <h3>{t('escrowTitle')}</h3>
         <div className="sub">
-          {escrowRows.length} BOOKINGS HELD · RELEASES AFTER 24H FROM TRIP END
+          {escrowRows.length} {t('escrowSubtitle')}
         </div>
 
         <div className="escrow-list">
@@ -361,14 +439,14 @@ export function PayoutsPageClient({ locale }: Props): React.ReactElement {
                   </span>
                 </div>
                 <div className="d mono">
-                  RELEASES IN {entry.releaseHours}H · {entry.tripDate} +24H
+                  {t('escrowRelease', { hours: entry.releaseHours })} · {entry.tripDate} +24H
                 </div>
               </div>
               <div
                 className="num"
                 style={{ fontFamily: 'var(--ff-display)', fontSize: 18, fontWeight: 700 }}
               >
-                {formatAmount(entry.amount)} EGP
+                {formatAmount(entry.amount)} {entry.currency}
               </div>
             </div>
           ))}

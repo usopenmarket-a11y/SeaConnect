@@ -732,6 +732,7 @@
       },
       "form": {
         "title": "New yacht",
+        "editTitle": "Edit yacht",
         "nameEn": "Name (English)",
         "nameAr": "Name (Arabic)",
         "descriptionEn": "Description (English)",
@@ -742,8 +743,26 @@
         "departurePort": "Departure port",
         "submit": "Create yacht",
         "submitting": "Creating...",
+        "saveChanges": "Save changes",
+        "saving": "Saving...",
         "successMessage": "Yacht created successfully",
-        "comingSoon": "Yacht creation API is coming soon"
+        "editSuccessMessage": "Changes saved successfully",
+        "comingSoon": "Yacht creation API is coming soon",
+        "loadError": "Could not load yacht data",
+        "typeOptions": {
+          "motorboat": "Motorboat",
+          "sailboat": "Sailboat",
+          "catamaran": "Catamaran",
+          "fishing": "Fishing boat",
+          "speedboat": "Speedboat"
+        },
+        "errors": {
+          "nameEnRequired": "Please enter the yacht name in English",
+          "nameArRequired": "Please enter the yacht name in Arabic",
+          "capacityInvalid": "Please enter a valid passenger count (at least 1)",
+          "priceInvalid": "Please enter a valid daily price",
+          "portRequired": "Please select a departure port"
+        }
       }
     },
     "calendar": {
@@ -752,9 +771,35 @@
       "pricingRulesTitle": "Active pricing rules",
       "blockedDatesTitle": "Blocked dates",
       "smartSuggestion": "Smart suggestion",
+      "smartSuggestionBody": "7 open dates next week — pricing is 12% above average. Drop 5% to increase bookings.",
       "applyBtn": "Apply ←",
       "hot": "⚡ HOT · 1 left",
-      "maintenance": "⛔ Maintenance"
+      "maintenance": "⛔ Maintenance",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "statsBooked": "BOOKED",
+      "statsOpen": "OPEN",
+      "statsBlocked": "BLOCKED",
+      "statsRevenue": "REVENUE",
+      "weekdaySun": "Sun",
+      "weekdayMon": "Mon",
+      "weekdayTue": "Tue",
+      "weekdayWed": "Wed",
+      "weekdayThu": "Thu",
+      "weekdayFri": "Fri",
+      "weekdaySat": "Sat",
+      "ruleWeekend": "Weekend",
+      "ruleWeekendDetail": "+30% Thu & Fri",
+      "rulePeakSeason": "Peak season",
+      "rulePeakSeasonDetail": "+20% Jun – Aug",
+      "ruleMultiDay": "3-day deal",
+      "ruleMultiDayDetail": "−10% multi-day discount",
+      "blockedDate1": "14 May",
+      "blockedDate1Reason": "Engine maintenance",
+      "blockedDate2": "21 May",
+      "blockedDate2Reason": "Personal leave",
+      "blockedDate3": "28–29 May",
+      "blockedDate3Reason": "Coast guard inspection"
     },
     "payouts": {
       "title": "Payouts & Escrow",
@@ -788,7 +833,10 @@
       "status": {
         "deposited": "✓ DEPOSITED",
         "scheduled": "⏱ SCHEDULED"
-      }
+      },
+      "downloadPdfAria": "Download PDF receipt for payout {ref}",
+      "escrowSubtitle": "bookings held · released 24h after trip end",
+      "escrowRelease": "Releases in {hours}h"
     },
     "onboarding": {
       "title": "Identity verification & onboarding",
@@ -851,6 +899,266 @@
         "amenities": "Amenities",
         "policies": "Policies"
       }
+    },
+    "kyc": {
+      "eyebrow": "KYC · IDENTITY VERIFICATION",
+      "title": "Verify your identity & vessel",
+      "subtitle": "Complete all six steps to activate your boat owner account and start accepting bookings.",
+      "progressLabel": "COMPLETE",
+      "stepperLabel": "Verification steps",
+      "checklistTitle": "Verification checklist",
+      "stepDone": "Complete",
+      "stepPending": "Awaiting completion",
+      "uploadPlaceholder": "↑ Drag file here · PDF / JPG · MAX 10MB",
+      "markReady": "Mark as ready · تحديد كجاهز",
+      "markingReady": "Saving...",
+      "allStepsDone": "All steps complete",
+      "markComplete": "Mark as complete",
+      "contactSupport": "Contact support to complete this step",
+      "submitReview": "Submit for review →",
+      "submitting": "Submitting...",
+      "submitSuccess": "Your application has been submitted — we will review it within 24 hours.",
+      "loadError": "Could not load profile data",
+      "errorGeneric": "An error occurred — please try again",
+      "statusBanner": {
+        "submitted": "Your application has been submitted for review · UNDER REVIEW — we will respond within 24 hours",
+        "approved": "Your application has been approved · KYC APPROVED — you can now accept bookings",
+        "rejected": "Your application was rejected · REJECTED — please review the reason below"
+      },
+      "status": {
+        "not_started": "Not started",
+        "in_progress": "In progress",
+        "submitted": "Under review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "steps": {
+        "identity": "Personal identity",
+        "vesselDocs": "Vessel documents",
+        "captainLicense": "Captain licence",
+        "insurance": "Boat insurance",
+        "inspection": "Physical inspection",
+        "bankSetup": "Payout setup"
+      },
+      "stepDesc": {
+        "identity": "A copy of your national ID or valid passport.",
+        "vesselDocs": "Vessel ownership contract and coast guard registration certificate.",
+        "captainLicense": "Certified and endorsed marine driving licence.",
+        "insurance": "Valid marine insurance covering passengers, vessel, and third-party liability.",
+        "inspection": "Technical vessel inspection by the SeaConnect team (30 minutes).",
+        "bankSetup": "Link a bank account to receive booking payouts."
+      }
+    }
+  },
+  "notifications": {
+    "eyebrow": "NOTIFICATIONS · الإشعارات",
+    "heading": "Notifications",
+    "markAllRead": "Mark all as read",
+    "unread": "Unread",
+    "unreadCount": "{count} unread",
+    "empty": "No notifications in this category yet.",
+    "tabs": {
+      "all": "All",
+      "bookings": "Bookings",
+      "payments": "Payments",
+      "system": "System"
+    },
+    "types": {
+      "booking": "BOOKING",
+      "payment": "PAYMENT",
+      "alert": "ALERT",
+      "system": "SYSTEM"
+    },
+    "dates": {
+      "today": "TODAY",
+      "yesterday": "YESTERDAY",
+      "may11": "11 MAY",
+      "may10": "10 MAY"
+    },
+    "items": {
+      "bookingConfirmed": {
+        "title": "Booking confirmed",
+        "desc": "Hurghada trip with Captain Omar — 12 May 2026 · 06:00 AM. Fawry ticket valid for 48 hours."
+      },
+      "fawryReceived": {
+        "title": "Fawry payment received",
+        "desc": "We received 8,200 EGP for booking BOAT-0042. Funds will be transferred after the trip completes."
+      },
+      "tripReminder": {
+        "title": "Trip reminder",
+        "desc": "Your trip on \"Nile Star\" is in 3 days. Bring your ID and arrive early."
+      },
+      "weatherAlert": {
+        "title": "Weather alert · Red Sea",
+        "desc": "Expect 1.8m waves and 22-knot winds on Wednesday. May affect open-water trips."
+      },
+      "newTournament": {
+        "title": "New tournament open for registration",
+        "desc": "Red Sea Fishing Tournament 2026 — register now and win 50,000 EGP. Deadline: 20 May."
+      },
+      "refundComplete": {
+        "title": "Refund complete",
+        "desc": "3,400 EGP refunded for cancelled booking BOAT-0031. Appears in your account within 2–5 business days."
+      },
+      "rateTrip": {
+        "title": "Rate your trip",
+        "desc": "How was your trip on \"Sea Sun\" with Captain Khaled? Your review helps everyone."
+      },
+      "exclusiveOffer": {
+        "title": "Exclusive offer · Premium members",
+        "desc": "15% off your next booking for sea lovers who completed 5+ trips. Your code: SEA15."
+      }
+    }
+  },
+  "settings": {
+    "eyebrow": "SETTINGS · الإعدادات",
+    "heading": "Settings",
+    "logoutBtn": "Log out · LOGOUT",
+    "sidebar": {
+      "profile": { "label": "Profile",              "sub": "PROFILE" },
+      "notifs":  { "label": "Notifications",        "sub": "NOTIFICATIONS" },
+      "payments":{ "label": "Payment methods",      "sub": "PAYMENTS" },
+      "lang":    { "label": "Language & Region",    "sub": "LANGUAGE" },
+      "security":{ "label": "Privacy & Security",   "sub": "SECURITY" },
+      "about":   { "label": "About",                "sub": "ABOUT" }
+    },
+    "profile": {
+      "title": "Profile · PROFILE",
+      "avatarName": "Nour Hassan",
+      "memberSince": "MEMBER SINCE · 2026-01 · CAIRO",
+      "changePhoto": "Change photo · CHANGE PHOTO",
+      "editBtn": "Edit · EDIT",
+      "saveBtn": "Save changes · SAVE",
+      "fields": {
+        "fullName": "Full name",
+        "phone": "Phone number",
+        "email": "Email address",
+        "city": "City"
+      },
+      "fieldValues": {
+        "fullName": "Nour Hassan",
+        "phone": "+20 10xxxxxxxx",
+        "email": "nour@example.com",
+        "city": "Cairo"
+      }
+    },
+    "notifs": {
+      "title": "Notifications · NOTIFICATIONS",
+      "channelsTitle": "Channels · CHANNELS",
+      "prefs": {
+        "booking":    { "label": "Booking updates",    "sub": "Booking updates — confirmations, reminders, cancellations" },
+        "payment":    { "label": "Payment alerts",     "sub": "Payment confirmations, receipts, and refund status" },
+        "weather":    { "label": "Weather alerts",     "sub": "Marine weather alerts affecting your upcoming trips" },
+        "promo":      { "label": "Offers & discounts", "sub": "Promotional offers, loyalty points, and seasonal deals" },
+        "newsletter": { "label": "Newsletter",         "sub": "Monthly SeaConnect newsletter and market updates" }
+      },
+      "channels": {
+        "inApp":    { "label": "In-app notifications", "sub": "In-app push notifications" },
+        "sms":      { "label": "SMS messages",         "sub": "Text messages to your registered phone" },
+        "whatsapp": { "label": "WhatsApp",             "sub": "WhatsApp messages (Egypt only)" },
+        "email":    { "label": "Email",                "sub": "Email digest (weekly summary)" }
+      }
+    },
+    "payments": {
+      "title": "Payment methods · PAYMENT METHODS",
+      "defaultBadge": "DEFAULT",
+      "removeBtn": "Remove · REMOVE",
+      "addMethod": "Add payment method · ADD PAYMENT METHOD",
+      "historyTitle": "Transaction history",
+      "methods": {
+        "fawry":   "Fawry code — sent to you at checkout",
+        "vfCash":  "Vodafone Cash wallet · 010xxxxxxxx",
+        "instapay":"InstaPay · Cairo Bank",
+        "visa":    "Expires 09/28"
+      },
+      "txTypes": {
+        "booking": "Booking",
+        "refund":  "Refund"
+      },
+      "txStatus": {
+        "completed": "COMPLETED"
+      }
+    },
+    "lang": {
+      "title": "Language & Region · LANGUAGE & REGION",
+      "appLang": {
+        "label": "App language",
+        "sub": "Choose your preferred language"
+      },
+      "arabic":  "عربي",
+      "english": "English",
+      "timezone": {
+        "label": "Time zone",
+        "value": "Africa/Cairo (UTC+3)"
+      },
+      "currency": {
+        "label": "Currency",
+        "value": "Egyptian Pound · EGP"
+      },
+      "dateFormat": {
+        "label": "Date format",
+        "value": "DD / MM / YYYY"
+      }
+    },
+    "security": {
+      "title": "Privacy & Security · SECURITY",
+      "yourData": "Your data · YOUR DATA",
+      "twoFactor": {
+        "label": "Two-factor authentication",
+        "sub": "Add a security layer with an SMS verification code"
+      },
+      "biometric": {
+        "label": "Biometric login",
+        "sub": "Fingerprint or face recognition (device must support it)"
+      },
+      "loginAlert": {
+        "label": "Login alerts",
+        "sub": "Get notified when a new device signs in to your account"
+      },
+      "downloadData": {
+        "label": "Download your data",
+        "sub": "Export all your personal data and bookings as JSON",
+        "btn": "Download · EXPORT"
+      },
+      "deleteAccount": {
+        "label": "Delete account",
+        "sub": "Your account and all data will be permanently deleted and cannot be undone.",
+        "btn": "Delete account · DELETE"
+      }
+    },
+    "about": {
+      "title": "About · ABOUT",
+      "appName": "SeaConnect",
+      "version": "v1.0.0 · BETA · BUILD 2026.05",
+      "copyright": "© 2026 SeaConnect Egypt S.A.E. · All rights reserved\nSeaConnect is a licensed maritime platform in the Arab Republic of Egypt.",
+      "links": {
+        "terms": "Terms & Conditions",
+        "termsSub": "Read and accept before use",
+        "privacy": "Privacy Policy",
+        "privacySub": "How we protect your data",
+        "cancellation": "Cancellation & Refund Policy",
+        "cancellationSub": "Terms for cancellations and refunds",
+        "guidelines": "Community & Conduct Guidelines",
+        "guidelinesSub": "Usage standards and reporting",
+        "support": "Contact support",
+        "supportSub": "Help centre and get in touch"
+      }
+    }
+  },
+  "search": {
+    "filtersLabel": "Search & Filters",
+    "activeLabel": "Active filters",
+    "searchPlaceholder": "Search for a boat, destination, type...",
+    "noResults": "No results found",
+    "noResultsSub": "Try adjusting your search or removing some filters.",
+    "resultsMeta": "result",
+    "applyFilters": "Apply filters",
+    "clearAll": "Clear all",
+    "sort": {
+      "recommended": "Best match",
+      "priceAsc": "Price: low to high",
+      "priceDesc": "Price: high to low",
+      "rating": "Rating"
     }
   }
 }

@@ -476,3 +476,128 @@ class TestOrderCreate:
         other_orders = Order.objects.filter(customer=other_user)
         for o in other_orders:
             assert str(o.id) not in customer_order_ids
+
+
+# ---------------------------------------------------------------------------
+# Test: Product price + rating filters (Sprint 10E)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+class TestProductFilters:
+    """GET /api/v1/marketplace/products/ with ?price_min, ?price_max, ?rating."""
+
+    def test_price_min_returns_products_above_threshold(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """?price_min=200 must exclude products whose price < 200."""
+        cheap = _make_product(
+            verified_vendor, gear_category,
+            name="Cheap Rope", name_ar="حبل رخيص",
+            price="99.00",
+        )
+        expensive = _make_product(
+            verified_vendor, gear_category,
+            name="Premium Rod", name_ar="عصا ممتازة",
+            price="350.00",
+        )
+
+        response = api_client.get(PRODUCT_LIST_URL, {"price_min": "200"})
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        assert str(expensive.id) in returned_ids
+        assert str(cheap.id) not in returned_ids
+
+    def test_price_max_returns_products_below_threshold(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """?price_max=300 must exclude products whose price > 300."""
+        affordable = _make_product(
+            verified_vendor, gear_category,
+            name="Budget Hook", name_ar="خطاف اقتصادي",
+            price="150.00",
+        )
+        luxury = _make_product(
+            verified_vendor, gear_category,
+            name="Luxury Buoy", name_ar="عوامة فاخرة",
+            price="800.00",
+        )
+
+        response = api_client.get(PRODUCT_LIST_URL, {"price_max": "300"})
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        assert str(affordable.id) in returned_ids
+        assert str(luxury.id) not in returned_ids
+
+    def test_rating_filter_returns_products_at_or_above_threshold(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """?rating=4 must include products with average_rating >= 4.0 and exclude those below."""
+        high_rated = _make_product(
+            verified_vendor, gear_category,
+            name="Top Net", name_ar="شبكة ممتازة",
+            price="200.00",
+        )
+        high_rated.average_rating = decimal.Decimal("4.50")
+        high_rated.save(update_fields=["average_rating", "updated_at"])
+
+        low_rated = _make_product(
+            verified_vendor, gear_category,
+            name="Basic Float", name_ar="عائم عادي",
+            price="50.00",
+        )
+        low_rated.average_rating = decimal.Decimal("2.80")
+        low_rated.save(update_fields=["average_rating", "updated_at"])
+
+        response = api_client.get(PRODUCT_LIST_URL, {"rating": "4"})
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        assert str(high_rated.id) in returned_ids
+        assert str(low_rated.id) not in returned_ids
+
+    def test_price_range_combined_filter(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """?price_min=100&price_max=500 must return only products within that range."""
+        in_range = _make_product(
+            verified_vendor, gear_category,
+            name="Mid Jacket", name_ar="سترة متوسطة",
+            price="300.00",
+        )
+        too_cheap = _make_product(
+            verified_vendor, gear_category,
+            name="Bargain Line", name_ar="خط رخيص",
+            price="50.00",
+        )
+        too_expensive = _make_product(
+            verified_vendor, gear_category,
+            name="Elite Sonar", name_ar="سونار متقدم",
+            price="999.00",
+        )
+
+        response = api_client.get(PRODUCT_LIST_URL, {"price_min": "100", "price_max": "500"})
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        assert str(in_range.id) in returned_ids
+        assert str(too_cheap.id) not in returned_ids
+        assert str(too_expensive.id) not in returned_ids
+
+    def test_invalid_price_min_is_ignored_returns_200(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """?price_min=abc (non-numeric) must not raise 400 — silently ignored, all active products returned."""
+        product = _make_product(
+            verified_vendor, gear_category,
+            name="Compass", name_ar="بوصلة",
+            price="120.00",
+        )
+
+        response = api_client.get(PRODUCT_LIST_URL, {"price_min": "not-a-number"})
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        # Product must still appear — the invalid param is ignored
+        assert str(product.id) in returned_ids

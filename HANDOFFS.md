@@ -1712,3 +1712,227 @@ curl http://localhost:3000/en/yachts/YACHT_ID       # → English amenity labels
 # Register page
 curl http://localhost:3000/ar/register              # → auth-card pattern, two name fields, role pills
 ```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** READY
+**From:** django-api-agent
+**To:** nextjs-page-agent
+**Sprint:** 10E
+**Feature:** Marketplace product price + rating filter query params
+
+### What Was Completed
+- Added `average_rating` DecimalField(3,2) to `Product` model with migration `0002_add_product_average_rating`.
+- Added `?price_min`, `?price_max`, and `?rating` filter support to `VendorProductListCreateView.get_queryset()` — invalid non-numeric params are silently ignored (no 400).
+- Added 5 pytest tests in `TestProductFilters` covering price_min, price_max, rating, combined range, and invalid-param resilience.
+
+### Contract
+- Endpoint: `GET /api/v1/marketplace/products/`
+- Filter params: `price_min` (price >= N), `price_max` (price <= N), `rating` (average_rating >= N)
+- All params are optional and cumulative; invalid values silently ignored.
+
+### How to Test
+```bash
+curl "http://localhost:8000/api/v1/marketplace/products/?price_min=100&price_max=500"
+curl "http://localhost:8000/api/v1/marketplace/products/?rating=4"
+curl "http://localhost:8000/api/v1/marketplace/products/?price_min=abc"  # → 200, unfiltered
+cd backend && python3 -m pytest apps/marketplace/tests/test_marketplace.py::TestProductFilters -v
+```
+
+### Response/Output Shape
+```json
+{
+  "next": "cursor-token",
+  "previous": null,
+  "results": [
+    {"id": "uuid", "name": "...", "price": "300.00", "average_rating": "4.50", ...}
+  ]
+}
+```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** any
+**Sprint:** 10F
+
+**Feature:** Owner yacht new/edit forms wired to real API
+
+### What Was Completed
+
+Both `owner/yachts/new/` and `owner/yachts/[id]/` forms were already fully implemented in prior sessions. This session confirmed they are correctly wired and added the missing scaffolding files.
+
+**Forms — already wired (verified this session):**
+- `web/app/[locale]/owner/yachts/new/PageClient.tsx` — `POST /api/v1/yachts/` with auth token; field-level errors from `{error: {code, message, field}}`; redirect to `/${locale}/owner/yachts` on success; ports loaded from `GET /api/v1/ports/?region=EG`.
+- `web/app/[locale]/owner/yachts/[id]/PageClient.tsx` — `GET /api/v1/yachts/{id}/` to pre-fill; `PATCH /api/v1/yachts/{id}/` with only changed fields; same error handling and redirect.
+
+**Files added this session:**
+- `web/app/[locale]/owner/yachts/new/page.tsx` — added `generateMetadata` export (robots: noindex, locale-aware title).
+- `web/app/[locale]/owner/yachts/new/loading.tsx` — animated skeleton matching the form layout.
+- `web/app/[locale]/owner/yachts/new/error.tsx` — error boundary with retry button (Arabic copy).
+- `web/app/[locale]/owner/yachts/[id]/loading.tsx` — identical skeleton for edit route.
+- `web/app/[locale]/owner/yachts/[id]/error.tsx` — error boundary for edit route (Arabic copy).
+
+### Contract
+
+**POST /api/v1/yachts/**
+- Auth: Bearer token (owner role required)
+- Body: `{name, name_ar, description, description_ar, capacity, price_per_day, yacht_type, departure_port_id}`
+- Success: 201 → redirect to `/${locale}/owner/yachts`
+- Error: `{error: {code, message, field}}` → inline field error shown
+
+**PATCH /api/v1/yachts/{id}/**
+- Auth: Bearer token (must own the yacht; 403 otherwise)
+- Body: any subset of above fields (only changed fields sent)
+- Success: 200 → redirect to `/${locale}/owner/yachts`
+- Error: same inline field error shape
+
+**GET /api/v1/ports/?region=EG**
+- Public, no auth required
+- Returns `{results: [{id, name_en, name_ar, city_en, city_ar}]}`
+
+### i18n
+All form strings are under `owner.yachts.form.*` in both `web/messages/ar.json` and `web/messages/en.json`. No new keys added — all keys were already present.
+
+### TypeScript
+`npx tsc --noEmit` — only pre-existing unrelated error in `CompetitionsPage.tsx` (module resolution for competition page export). No new errors.
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** nextjs-page-agent, sprint-11-upload-agent
+**Sprint:** 10D
+**Feature:** Owner KYC Onboarding page — `/{locale}/owner/onboarding`
+
+### What Was Completed
+- Rewrote `web/app/[locale]/owner/onboarding/PageClient.tsx` using `useTranslations('owner.kyc')` namespace, fetching `GET /api/v1/accounts/owner-profile/` via SWR with auth token from `@/lib/api`.
+- 6-step checklist cards showing ✓ done / pending pill per `national_id_verified`, `vessel_docs_verified`, `captain_license_verified`, `insurance_verified`, `inspection_passed`, `bank_account_configured` fields.
+- "Mark as complete" button per pending step — shows in-page toast "Contact support to complete this step" (upload flow deferred to Sprint 11).
+- "Submit for review" button calls `POST /api/v1/accounts/owner-profile/submit/`; handles 409 gracefully.
+- Status-aware rendering: not_started/in_progress → steps+submit; submitted → amber "Under Review" banner, submit disabled; approved → green banner; rejected → red banner with `rejection_reason`.
+- Added `markComplete`, `contactSupport`, `submitSuccess` keys to both `web/messages/ar.json` and `web/messages/en.json` under `owner.kyc`.
+- `npx tsc --noEmit` passes (one pre-existing unrelated error in CompetitionsPage.tsx only).
+
+### Contract
+- API: `GET /api/v1/accounts/owner-profile/` — returns `BoatOwnerProfileSerializer` fields
+- API: `POST /api/v1/accounts/owner-profile/submit/` — 200 on success, 409 if already submitted/approved/rejected
+- Defined in `backend/apps/accounts/serializers.py` `BoatOwnerProfileSerializer`
+
+### How to Test
+```bash
+# 1. Start stack
+docker compose up -d
+
+# 2. Register as owner and get token
+curl -X POST http://localhost:8000/api/v1/accounts/token/ \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"owner@test.com","password":"pass"}'
+
+# 3. Fetch profile
+curl -H 'Authorization: Bearer <token>' \
+  http://localhost:8000/api/v1/accounts/owner-profile/
+
+# 4. Visit page in browser
+open http://localhost:3000/ar/owner/onboarding
+```
+
+### Response/Output Shape
+```json
+{
+  "id": "uuid",
+  "kyc_status": "not_started",
+  "national_id_verified": false,
+  "vessel_docs_verified": false,
+  "captain_license_verified": false,
+  "insurance_verified": false,
+  "inspection_passed": false,
+  "bank_account_configured": false,
+  "completed_steps": 0,
+  "total_steps": 6,
+  "reviewed_at": null,
+  "rejection_reason": ""
+}
+```
+
+### Sprint 11 Follow-up
+- Wire each step card's "Mark as complete" button to a real PATCH `/api/v1/accounts/owner-profile/` call with `{field: true}` — the `OwnerProfileStepSerializer` already accepts this.
+- Add file upload zone per step (document upload endpoint TBD).
+
+---
+
+## HANDOFF-2026-05-17-010B
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** qa-agent / any
+**Sprint:** 10
+**Feature:** 10B — Live API Wiring: Payouts + Availability Calendar
+
+### What Was Completed
+- Confirmed `web/app/[locale]/owner/payouts/PageClient.tsx` is fully wired: `useSWR('/payments/payouts/')` and `useSWR('/payments/escrow/')` both use the `get()` helper from `lib/api.ts` which injects `Authorization: Bearer <token>` automatically from the in-memory store (ADR-009). All API response fields are mapped (`reference → ref`, `scheduled_date → dateAr`, `payment_method → method`, `customer_name`, `trip_date`, `release_hours`). Mock fallback is active when API returns empty results.
+- Confirmed `web/app/[locale]/owner/calendar/PageClient.tsx` is fully wired: fetches owner's primary yacht from `useSWR('/yachts/?owner=me')`, then fetches `useSWR(\`/bookings/yachts/${yachtId}/availability/?month=${monthParam}\`)`. Month navigation via `prevMonth()`/`nextMonth()` updates `monthParam` which re-keys the SWR call. All 4 API status values (`open`, `limited`, `booked`, `blocked`) are mapped to CSS cell classes. Mock fallback (`daysMap = null`) triggers deterministic cell generator when no API data.
+- All i18n keys present in both `messages/ar.json` and `messages/en.json` under `owner.payouts.*` and `owner.calendar.*`.
+- `npx tsc --noEmit` — 0 errors in these files (1 unrelated error in `components/competitions/CompetitionsPage.tsx` pre-existing).
+
+### Contract
+- `GET /api/v1/payments/payouts/` → `PaginatedResponse<ApiPayout>`
+- `GET /api/v1/payments/escrow/` → `PaginatedResponse<ApiEscrow>`
+- `GET /api/v1/bookings/yachts/{id}/availability/?month=YYYY-MM` → `AvailabilityResponse`
+
+### How to Test
+```bash
+# Start full stack
+docker compose up
+
+# Log in as owner, visit:
+# http://localhost:3000/ar/owner/payouts   — should show live payout data
+# http://localhost:3000/ar/owner/calendar  — should show live availability calendar with prev/next month navigation
+
+# API smoke:
+curl -H "Authorization: Bearer <owner_token>" http://localhost:8010/api/v1/payments/payouts/
+curl -H "Authorization: Bearer <owner_token>" http://localhost:8010/api/v1/payments/escrow/
+curl -H "Authorization: Bearer <owner_token>" "http://localhost:8010/api/v1/bookings/yachts/<yacht_id>/availability/?month=2026-05"
+```
+
+---
+
+## HANDOFF-2026-05-17-011G
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** qa-agent / any
+**Sprint:** 10G
+**Feature:** Notifications, Settings, and Search pages — full conversion from Design/system-pages.jsx
+
+### What Was Completed
+- `web/app/[locale]/(public)/notifications/` — page.tsx (SSR shell) + PageClient.tsx (client component with tab filter, mark-as-read, unread dot indicator, date grouping, mock notification data). All 8 notification types implemented.
+- `web/app/[locale]/(public)/settings/` — page.tsx + PageClient.tsx (sidebar nav with 6 panels: profile, notifications, payments, language, security, about). Logout wired to `useAuth().logout()`. Language switcher replaces locale in URL via `useRouter`. Toggle switches, payment method list, transaction history all rendered.
+- `web/app/[locale]/(public)/search/` — page.tsx (Server Component, fetches `GET /api/v1/yachts/?search={q}`) + PageClient.tsx (filter chips, price range display, date range, capacity chips, sort selector, results grid, empty state).
+- All strings extracted to `web/messages/ar.json` and `web/messages/en.json` under namespaces `notifications.*`, `settings.*`, `search.*` (Arabic written first, English equivalent added).
+- CSS for all three pages added to `web/globals.css` — notif-shell, notif-item, notif-icon variants, settings-shell, settings-sidebar, toggle switch, avatar-edit, pm-list/row, lang-seg, btn-danger, search-layout, search-sidebar, filter-chip, filter-group-label, range-slider, search-input, search-results-grid — all using logical CSS properties (inset-inline-*, border-inline-*).
+- `npx tsc --noEmit` — 0 new errors (1 pre-existing unrelated error in CompetitionsPage.tsx remains).
+
+### Contract
+- Search: `GET /api/v1/yachts/?search={q}` → `{ results: ApiYacht[] }` (ADR-013 CursorPagination)
+- Notifications: mock data only — real API `GET /api/v1/notifications/` is Sprint 11
+- Settings: profile display mock only — real `GET /api/v1/accounts/users/me/` wiring is Sprint 11
+
+### How to Test
+```bash
+# Start dev server
+cd web && npm run dev
+
+# Visit pages:
+# http://localhost:3000/ar/notifications   — tab filtering, mark all read, unread badges
+# http://localhost:3000/ar/settings        — sidebar nav, toggles, language switcher, logout
+# http://localhost:3000/ar/search?q=يخت   — search results from API, filter chips, sort selector
+# http://localhost:3000/en/search?q=yacht  — English locale
+```

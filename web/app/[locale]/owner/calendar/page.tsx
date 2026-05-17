@@ -9,5 +9,5 @@ interface Props {
 
 export default function Page({ params }: Props): React.ReactElement {
   setRequestLocale(params.locale)
-  return <OwnerCalendarPage />
+  return <OwnerCalendarPage locale={params.locale} />
 }
