@@ -52,6 +52,11 @@ export async function generateMetadata({
         locale === 'ar'
           ? 'متجر العدة | سي كونكت'
           : 'Gear Marketplace | SeaConnect',
+      description:
+        locale === 'ar'
+          ? 'اقتنِ عدة الصيد وكل معداتك البحرية من أكثر من ٢٢٠٠ بائع معتمد في مصر'
+          : 'Source fishing gear and marine equipment from 2,200+ certified vendors in Egypt',
+      images: [{ url: '/og/marketplace.jpg', width: 1200, height: 630 }],
       locale: locale === 'ar' ? 'ar_EG' : 'en_US',
     },
   }

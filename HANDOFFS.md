@@ -2582,3 +2582,124 @@ cd web && npx tsc --noEmit
   ]
 }
 ```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** devops-agent, qa-agent
+**Sprint:** 14B+C
+**Feature:** SEO metadata, sitemap, robots
+
+### What Was Completed
+- Added complete `generateMetadata` (title, description, alternates, openGraph with OG image) to all 7 public pages: `/yachts`, `/yachts/[id]`, `/marketplace`, `/competitions`, `/weather`, `/fishing-guide`, `/map`
+- Added JSON-LD `Product` structured data script to `/yachts/[id]/page.tsx`
+- Created `web/app/sitemap.ts` — static routes × `['ar','en']` + dynamic yacht and competition IDs fetched from internal API with graceful fallback
+- Created `web/app/robots.ts` — disallows `/owner/` and `/vendor/` in all locale prefixes, points to `/sitemap.xml`
+
+### Contract
+- All OG images referenced as static `/og/*.jpg` — need to be placed in `web/public/og/` (yachts.jpg, marketplace.jpg, competitions.jpg, weather.jpg, fishing.jpg, map.jpg)
+- `NEXT_PUBLIC_BASE_URL` env var must be set to `https://seaconnect.eg` in production (falls back to that string if unset)
+- Pre-existing TS error in `register/PageClient.tsx` (phone field) is NOT from this sprint
+
+### How to Test
+```bash
+# TypeScript — no new errors
+cd web && npx tsc --noEmit
+# 200 from sitemap
+curl http://localhost:3000/sitemap.xml
+# 200 from robots
+curl http://localhost:3000/robots.txt
+# JSON-LD on yacht detail
+curl -s http://localhost:3000/ar/yachts/{uuid} | grep application/ld+json
+```
+
+### Response/Output Shape
+- `sitemap.xml` — locale-prefixed URLs for all static routes + dynamic yacht/competition IDs
+- `robots.txt` — disallows owner/vendor paths, allows all else
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** django-api-agent
+**To:** nextjs-page-agent
+**Sprint:** 14A
+**Feature:** pgvector semantic search on yacht and product list endpoints
+
+### What Was Completed
+- `YachtListCreateView.get_queryset()` now accepts `?search=` — calls Ollama (`/api/embeddings`, timeout=5s), orders results by `CosineDistance` when embeddings exist, falls back to `icontains` (name/name_ar/description/description_ar) on any exception
+- `Product.embedding = VectorField(dimensions=768, null=True)` added to model; migration `0004_add_product_embedding.py` created
+- `backend/apps/marketplace/tasks.py` created — `generate_product_embedding` Celery task (same pattern as `generate_yacht_embedding`); triggered via `transaction.on_commit` from `VendorProductListCreateView.perform_create()`
+- `VendorProductListCreateView.get_queryset()` applies same vector/text fallback for `?search=`
+- 3 new tests in `apps/marketplace/tests/test_marketplace.py`: empty-embedding fallback, Ollama timeout, absent param — all patch `apps.marketplace.views.httpx.post` so no real Ollama needed in CI
+
+### Contract
+- `GET /api/v1/yachts/?search=<query>` — public, returns cursor-paginated list ordered by semantic similarity (or text-match fallback)
+- `GET /api/v1/marketplace/products/?search=<query>` — public, same behaviour
+- Both endpoints continue to accept all existing filter params alongside `?search=`
+
+### How to Test
+```bash
+# Collect tests
+cd backend && python3 -m pytest apps/marketplace/tests/test_marketplace.py::TestProductSearchEmptyEmbeddings apps/marketplace/tests/test_marketplace.py::TestProductSearchOllamaTimeout apps/marketplace/tests/test_marketplace.py::TestProductSearchParamAbsent --collect-only
+# System check
+cd backend && python3 manage.py check
+# Live curl (Ollama must be running)
+curl "http://localhost:8000/api/v1/yachts/?search=fishing+hurghada"
+curl "http://localhost:8000/api/v1/marketplace/products/?search=سترة+نجاة"
+```
+
+### Response/Output Shape
+Standard cursor-paginated envelope: `{"results": [...], "next": null, "previous": null}`
+
+---
+
+## HANDOFF-2026-05-17-002
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** qa-agent, backend-agent
+**Sprint:** 14F
+**Feature:** Search page enhancement + CompetitionsPage /register/ fix
+
+### What Was Completed
+- `web/app/[locale]/(public)/search/PageClient.tsx` — Full rewrite. Now SWR-driven with:
+  - Tab switcher (Yachts / Gear pills) updating live via SWR
+  - Yachts tab: `GET /api/v1/yachts/?search={q}&ordering={o}&departure_port_name={r}`
+  - Gear tab: `GET /api/v1/marketplace/products/?search={q}&ordering={o}`
+  - Region facet: pill chips for Hurghada / Alexandria / Sharm / Luxor / Dahab (Yachts tab only); "All regions" deselects
+  - Sort: Relevance / Price Low→High / Price High→Low / Newest (maps to `ordering=` param)
+  - Result count: "{N} نتيجة لـ '{query}'" with Arabic-Indic numerals in ar locale
+  - Loading skeleton: 6 pulsing cards while SWR fetches
+  - Empty state: anchor icon + "{noResults} '{query}'" + sub-hint
+  - Gear cards: product image, category pill, name, vendor, price, rating
+  - Yachts cards: same design as before, uses `next/image` instead of inline background
+- `web/app/[locale]/(public)/search/page.tsx` — Updated to pass 16 new i18n prop keys; removed server-side pre-fetch (client is SWR-driven)
+- `web/messages/ar.json` + `web/messages/en.json` — Replaced `search.*` namespace with full set including: `metaTitle`, `metaTitleQuery`, `metaDescription`, `tabYachts`, `tabGear`, `allRegions`, `regionFacet`, `gearOutOfStock`, `gearVendor`, `resultsFor`, `sort.relevance`, `sort.newest`
+- `web/components/competitions/CompetitionsPage.tsx` — Fixed `/enter/` → `/register/`; added 409 Conflict handler (treats as already-registered); error code check now handles both `ALREADY_REGISTERED` (new) and `ALREADY_ENTERED` (legacy); error body parsing handles both flat `{"code":"..."}` and nested `{"error":{"code":"..."}}` shapes
+
+### Contract
+- `GET /api/v1/marketplace/products/?search=&ordering=` — Sprint 14A delivered this; must support `ordering` param (`price`, `-price`, `-created_at`)
+- `GET /api/v1/yachts/?departure_port_name=` — must support case-insensitive partial match on port name
+- `POST /api/v1/competitions/{id}/register/` — must return 201 on success, 409 on duplicate, 400 with `{"code":"REGISTRATION_CLOSED"}` or `{"code":"COMPETITION_FULL"}`
+
+### How to Test
+```bash
+# Yachts tab — returns yacht cards
+curl "http://localhost:8010/api/v1/yachts/?search=صيد&ordering=-created_at"
+
+# Region facet
+curl "http://localhost:8010/api/v1/yachts/?departure_port_name=Hurghada"
+
+# Gear tab
+curl "http://localhost:8010/api/v1/marketplace/products/?search=rod&ordering=price"
+
+# Register competition
+curl -X POST http://localhost:8010/api/v1/competitions/{id}/register/ \
+  -H "Authorization: Bearer {token}"
+# → 201 on first call, 409 on duplicate
+```

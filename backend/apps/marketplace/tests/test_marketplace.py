@@ -1,10 +1,11 @@
-"""Marketplace integration tests — Sprint 5.
+"""Marketplace integration tests — Sprint 5 / Sprint 14A.
 
 Tests cover:
   - Product listing (active-only, unverified vendor exclusion, category filter)
   - Product detail (404 for draft)
   - Cart CRUD (auth, create, update quantity, remove)
   - Checkout (order creation, empty cart, currency from region, unit price snapshot)
+  - Semantic search: empty-embedding fallback, Ollama timeout, absent param (Sprint 14A)
 
 Rules:
   - Real PostgreSQL test DB — no DB mocking (ADR rule)
@@ -13,6 +14,7 @@ Rules:
   - DRF APIClient for endpoint calls
 """
 import decimal
+from unittest.mock import patch
 
 import pytest
 from rest_framework.test import APIClient
@@ -600,4 +602,106 @@ class TestProductFilters:
         assert response.status_code == 200
         returned_ids = [str(p["id"]) for p in response.data["results"]]
         # Product must still appear — the invalid param is ignored
+        assert str(product.id) in returned_ids
+
+
+# ---------------------------------------------------------------------------
+# Tests: Product semantic search — Sprint 14A (ADR-019)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestProductSearchEmptyEmbeddings:
+    """?search= with no embeddings stored → falls back to icontains text search."""
+
+    def test_search_empty_embedding_db_falls_back_to_text_search(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """When no products have an embedding AND Ollama raises (simulating cold-
+        start before Celery workers generate embeddings), the endpoint falls back
+        to icontains text search and returns 200 with matching results.
+
+        The httpx.post patch forces the Ollama code path to throw, exercising
+        the except-block fallback in ``_apply_search`` (ADR-019 fallback clause).
+        """
+        import httpx
+
+        product = _make_product(
+            verified_vendor, gear_category,
+            name="Life Jacket Special", name_ar="سترة نجاة خاصة",
+            price="300.00",
+        )
+        # Confirm no embedding is stored (field default is null).
+        assert product.embedding is None
+
+        # Simulate Ollama being unreachable so the fallback path is exercised.
+        with patch(
+            "apps.marketplace.views.httpx.post",
+            side_effect=httpx.ConnectError("Ollama unreachable"),
+        ):
+            response = api_client.get(PRODUCT_LIST_URL, {"search": "Life Jacket Special"})
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        assert str(product.id) in returned_ids
+
+
+@pytest.mark.django_db
+class TestProductSearchOllamaTimeout:
+    """?search= when Ollama times out → graceful fallback, returns 200."""
+
+    def test_ollama_timeout_falls_back_gracefully(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """When the Ollama httpx call raises TimeoutException, the view must
+        catch it and fall back to icontains search without returning a 500
+        error (ADR-019: wrap Ollama calls in try/except with timeout).
+        """
+        import httpx
+
+        product = _make_product(
+            verified_vendor, gear_category,
+            name="Fishing Rod", name_ar="عصا صيد",
+            price="180.00",
+        )
+
+        # Patch httpx.post inside marketplace views to simulate a timeout.
+        with patch(
+            "apps.marketplace.views.httpx.post",
+            side_effect=httpx.TimeoutException("Ollama timed out"),
+        ):
+            response = api_client.get(PRODUCT_LIST_URL, {"search": "Fishing Rod"})
+
+        assert response.status_code == 200
+        # Text-search fallback must still find the matching product by name.
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
+        assert str(product.id) in returned_ids
+
+
+@pytest.mark.django_db
+class TestProductSearchParamAbsent:
+    """When ?search= is absent, normal list is returned without calling Ollama."""
+
+    def test_no_search_param_returns_normal_list_without_ollama_call(
+        self, api_client, verified_vendor, gear_category
+    ):
+        """Absence of ?search= must short-circuit the embedding path entirely.
+        Ollama must never be called and the standard active-product list is
+        returned (200), ensuring no performance regression on the common path.
+        """
+        product = _make_product(
+            verified_vendor, gear_category,
+            name="Snorkel Set", name_ar="طقم غطس",
+            price="95.00",
+        )
+
+        # Any call to httpx.post would mean the search path was entered incorrectly.
+        with patch(
+            "apps.marketplace.views.httpx.post",
+            side_effect=AssertionError("Ollama must not be called when search param is absent"),
+        ):
+            response = api_client.get(PRODUCT_LIST_URL)
+
+        assert response.status_code == 200
+        returned_ids = [str(p["id"]) for p in response.data["results"]]
         assert str(product.id) in returned_ids

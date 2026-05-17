@@ -20,8 +20,8 @@
 | **10** | CRUD Wiring, KYC, New Pages | ✅ DONE | KYC onboarding, marketplace filters, notifications/settings/search pages |
 | **11** | KYC Upload, Notifications API, Vendor CRUD | ✅ DONE | KYC upload endpoint, notifications live+badge, settings wired, vendor product/orders/calendar/payouts pages |
 | **12** | Reviews, Weather, Payment Flows, Map | ✅ DONE | YachtReview system, weather + fishing guide, payment flows, Leaflet map, product image upload |
-| **13** | Admin Portal Complete, Competitions, Analytics | 🔲 PLANNED | Disputes, payout approvals, user management, competitions flow |
-| **14** | Search & SEO, pgvector, Performance | 🔲 PLANNED | Semantic search, sitemap, Lighthouse fixes, image optimisation |
+| **13** | Admin Portal Complete, Competitions, Analytics | ✅ DONE | Disputes model+API+page, payout approvals, user mgmt, competitions registration+results, analytics wired |
+| **14** | Search & SEO, pgvector, Performance | ✅ DONE | pgvector semantic search, SEO metadata+JSON-LD+sitemap+robots, Image component, search tabs/facets/sort |
 | **15** | Security, Rate Limiting, UAT | 🔲 PLANNED | OWASP audit, rate limits, Sentry, UAT deploy + checklist |
 | **16** | AI Pricing, Real-time, Cart, Launch | 🔲 PLANNED | AI insight, WebSocket notifications, cart checkout, Egypt launch |
 

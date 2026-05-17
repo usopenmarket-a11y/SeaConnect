@@ -19,6 +19,8 @@ import datetime
 import os
 import uuid as uuid_module
 
+import httpx
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.db import models, transaction
 from django.shortcuts import get_object_or_404
@@ -93,11 +95,52 @@ class YachtListCreateView(generics.ListCreateAPIView):  # type: ignore[type-arg]
         return YachtListSerializer
 
     def get_queryset(self):  # type: ignore[override]
-        return (
+        qs = (
             Yacht.objects.filter(status="active", is_deleted=False)
             .select_related("departure_port", "region", "owner")
             .prefetch_related("media")
         )
+        search_query = self.request.query_params.get("search", "").strip()
+        if not search_query:
+            return qs
+        return self._apply_search(qs, search_query)
+
+    def _apply_search(self, qs, query: str):
+        """Apply vector search with icontains fallback (ADR-019).
+
+        Primary path: fetch embedding from Ollama, order by CosineDistance.
+        Fallback path (Ollama timeout / error / no embeddings): icontains
+        across name + description fields.  Both paths are ORM-only (ADR-001).
+        """
+        try:
+            from pgvector.django import CosineDistance
+
+            ollama_url: str = getattr(settings, "OLLAMA_BASE_URL", "http://ollama:11434")
+            resp = httpx.post(
+                f"{ollama_url}/api/embeddings",
+                json={"model": "nomic-embed-text", "prompt": query},
+                timeout=5.0,
+            )
+            resp.raise_for_status()
+            query_vector: list[float] = resp.json()["embedding"]
+
+            # Only rank by embedding when at least some yachts have embeddings.
+            if qs.filter(embedding__isnull=False).exists():
+                return (
+                    qs.filter(embedding__isnull=False)
+                    .annotate(distance=CosineDistance("embedding", query_vector))
+                    .order_by("distance")
+                )
+            # No embeddings stored yet — fall through to text search.
+            raise ValueError("no embeddings stored")  # noqa: TRY301
+        except Exception:
+            # Graceful fallback: icontains text search (ORM only, ADR-001).
+            return qs.filter(
+                models.Q(name__icontains=query)
+                | models.Q(name_ar__icontains=query)
+                | models.Q(description__icontains=query)
+                | models.Q(description_ar__icontains=query)
+            ).order_by("-created_at")
 
     def perform_create(self, serializer):  # type: ignore[override]
         """Set owner + status server-side; resolve currency from departure port region.

@@ -159,6 +159,9 @@ export async function generateMetadata({
   const name = locale === 'ar' ? (yacht.name_ar || yacht.name) : yacht.name
   const description = locale === 'ar' ? yacht.description_ar : yacht.description
   const primaryMedia = yacht.media?.find((m) => m.is_primary) ?? yacht.media?.[0]
+  const ogImage = primaryMedia
+    ? [{ url: primaryMedia.url, width: 1200, height: 630 }]
+    : [{ url: '/og/yachts.jpg', width: 1200, height: 630 }]
   return {
     title: `${name} | سي كونكت`,
     description: description?.slice(0, 160) ?? undefined,
@@ -169,7 +172,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${name} | SeaConnect`,
       description: description?.slice(0, 160) ?? undefined,
-      images: primaryMedia ? [{ url: primaryMedia.url }] : undefined,
+      images: ogImage,
       locale: locale === 'ar' ? 'ar_EG' : 'en_US',
     },
   }
@@ -230,8 +233,26 @@ export default async function YachtDetailPage({
   const displayReviewCount = yacht.review_count ?? 148
   const coordsDisplay = yacht.coordinates ?? '27.2579°N · 33.8116°E'
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: yacht.name,
+    description: yacht.description,
+    offers: {
+      '@type': 'Offer',
+      price: yacht.price_per_day,
+      priceCurrency: yacht.currency ?? 'EGP',
+    },
+  }
+
   return (
     <div className="page-glass">
+      {/* ── JSON-LD structured data ────────────────────────────────────────── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* ── Gallery ───────────────────────────────────────────────────────── */}
       <div className="detail-gallery" data-screen-label="detail-gallery">
         <div className="main" style={{ backgroundImage: `url(${heroImg})` }} />

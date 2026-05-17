@@ -31,6 +31,18 @@ export async function generateMetadata({
       canonical: `/${locale}/map`,
       languages: { ar: '/ar/map', en: '/en/map' },
     },
+    openGraph: {
+      title:
+        locale === 'ar'
+          ? 'خريطة القوارب | سي كونكت'
+          : 'Yacht Map | SeaConnect',
+      description:
+        locale === 'ar'
+          ? 'استعرض مواقع القوارب المتاحة على الخريطة في مصر'
+          : 'Find available yachts on an interactive map of Egypt',
+      images: [{ url: '/og/map.jpg', width: 1200, height: 630 }],
+      locale: locale === 'ar' ? 'ar_EG' : 'en_US',
+    },
   }
 }
 

@@ -1,6 +1,8 @@
-"""Marketplace models — Sprint 5."""
+"""Marketplace models — Sprint 5 / Sprint 14A (pgvector embedding)."""
 import uuid
 from django.db import models
+from pgvector.django import VectorField
+
 from apps.core.models import Region, TimeStampedModel
 
 
@@ -77,6 +79,14 @@ class Product(TimeStampedModel):
         db_index=True,
     )
     primary_image_url = models.URLField(max_length=1000, blank=True)
+    # ADR-019 — pgvector semantic search. 768 dims = Ollama nomic-embed-text (dev).
+    # null=True so existing products migrate cleanly; embedding generated async via Celery.
+    embedding = VectorField(
+        dimensions=768,
+        null=True,
+        blank=True,
+        help_text="768-dim sentence embedding for semantic search (ADR-019).",
+    )
     average_rating = models.DecimalField(
         max_digits=3,
         decimal_places=2,

@@ -55,7 +55,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
       const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
       const token = getAccessToken()
       const res = await fetch(
-        `${apiUrl}/api/v1/competitions/${competitionId}/enter/`,
+        `${apiUrl}/api/v1/competitions/${competitionId}/register/`,
         {
           method: 'POST',
           headers: {
@@ -71,9 +71,22 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
         return
       }
 
+      // 409 Conflict — already registered (canonical duplicate response)
+      if (res.status === 409) {
+        setRegisteredIds((prev) => new Set(prev).add(competitionId))
+        return
+      }
+
       if (res.status === 400) {
-        const body = await res.json().catch(() => ({}))
-        if (body?.error?.code === 'ALREADY_ENTERED') {
+        const body = (await res.json().catch(() => ({}))) as Record<string, unknown>
+        // Support both nested shape {"error":{"code":"..."}} and flat {"code":"..."}
+        const errorCode =
+          (body?.error as Record<string, unknown> | undefined)?.code ??
+          body?.code
+        if (
+          errorCode === 'ALREADY_REGISTERED' ||
+          errorCode === 'ALREADY_ENTERED'
+        ) {
           setRegisteredIds((prev) => new Set(prev).add(competitionId))
           return
         }

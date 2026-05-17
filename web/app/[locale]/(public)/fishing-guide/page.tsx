@@ -34,12 +34,12 @@ export async function generateMetadata({
   return {
     title:
       locale === 'ar'
-        ? 'دليل الصيد في مصر | سي كونكت'
-        : 'Egypt Fishing Guide | SeaConnect',
+        ? 'دليل الصيد | سي كونكت'
+        : 'Fishing Guide | SeaConnect',
     description:
       locale === 'ar'
         ? 'مواسم أسماك البحر الأحمر والمتوسط والنيل — أحسن وقت للصيد، الأساليب، الأعماق'
-        : 'Red Sea, Mediterranean and Nile fish seasons — best times, methods and depths',
+        : 'Egypt fishing season guide — best times, methods and depths for Red Sea, Mediterranean and Nile',
     alternates: {
       canonical: `/${locale}/fishing-guide`,
       languages: { ar: '/ar/fishing-guide', en: '/en/fishing-guide' },
@@ -47,8 +47,13 @@ export async function generateMetadata({
     openGraph: {
       title:
         locale === 'ar'
-          ? 'دليل الصيد في مصر | سي كونكت'
-          : 'Egypt Fishing Guide | SeaConnect',
+          ? 'دليل الصيد | سي كونكت'
+          : 'Fishing Guide | SeaConnect',
+      description:
+        locale === 'ar'
+          ? 'مواسم أسماك البحر الأحمر والمتوسط والنيل — أحسن وقت للصيد، الأساليب، الأعماق'
+          : 'Egypt fishing season guide — best times, methods and depths for Red Sea, Mediterranean and Nile',
+      images: [{ url: '/og/fishing.jpg', width: 1200, height: 630 }],
       locale: locale === 'ar' ? 'ar_EG' : 'en_US',
     },
   }

@@ -1,96 +1,198 @@
 'use client'
 
 /**
- * SearchPageClient — interactive search and filter UI.
+ * SearchPageClient — interactive search, tab, region, and sort UI.
  *
- * Converted from Design/system-pages.jsx SearchPage() exactly:
- * - Sidebar with filter chips (boat type, region, amenities)
- * - Price range display
- * - Date range inputs
- * - Capacity chips
- * - Sort selector
- * - Results grid (reuses BoatCard layout as inline cards matching design)
- * - Empty state with anchor icon
+ * Converted from Design/system-pages.jsx SearchPage() exactly.
+ * Fully SWR-driven so tabs and region chips trigger live API calls.
  *
- * Receives server-fetched initialResults and initialQuery as props.
- * Client-side filtering applies on top of those results.
- * The search input updates the URL via router.push for shareability.
+ * Tabs:
+ *   - Yachts: GET /api/v1/yachts/?search={q}&ordering={o}&departure_port_name={r}
+ *   - Gear:   GET /api/v1/marketplace/products/?search={q}&ordering={o}
  *
+ * ADR-013: cursor pagination — we display first page results only.
  * ADR-014: logical CSS properties.
- * ADR-015: labels passed as props (resolved server-side via getTranslations).
+ * ADR-015: all labels passed as props (resolved server-side).
  */
 
 import * as React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import useSWR from 'swr'
 import type { BoatCardData } from '@/components/boats/BoatCard'
 
-// ── Filter constants (Arabic, matching design) ────────────────────────────────
+// ── Region constants (Yachts tab only) ───────────────────────────────────────
 
-const BOAT_TYPES = ['قارب صيد', 'يخت فاخر', 'كاتاماران', 'زورق سرعة', 'قارب شراعي', 'قارب غطس']
-const REGIONS    = ['الغردقة', 'شرم الشيخ', 'دهب', 'الإسكندرية', 'الأقصر', 'مرسى مطروح']
-const AMENITIES  = ['صيد سمك', 'غطس', 'شنطة بحرية', 'طاهٍ على متن', 'مكيف هواء', 'ربان خبير']
-const CAPACITIES = ['2–4', '5–8', '9–12', '13+']
+const REGIONS: { ar: string; en: string; param: string }[] = [
+  { ar: 'الغردقة',    en: 'Hurghada',   param: 'Hurghada'   },
+  { ar: 'الإسكندرية', en: 'Alexandria', param: 'Alexandria' },
+  { ar: 'شرم الشيخ', en: "Sharm",      param: 'Sharm'      },
+  { ar: 'الأقصر',    en: 'Luxor',      param: 'Luxor'      },
+  { ar: 'دهب',       en: 'Dahab',      param: 'Dahab'      },
+]
 
-type SortKey = 'recommended' | 'price-asc' | 'price-desc' | 'rating'
+type TabKey  = 'yachts' | 'gear'
+type SortKey = 'relevance' | 'price-asc' | 'price-desc' | 'newest'
+
+// ── API types ─────────────────────────────────────────────────────────────────
+
+interface ApiYacht {
+  id: string
+  name: string
+  name_ar: string
+  yacht_type?: string
+  capacity?: number
+  price_per_day?: string
+  currency?: string
+  primary_image_url?: string | null
+  departure_port?: { id: string; name_ar: string; name_en: string } | null
+  region?: string
+  rating?: number
+}
+
+interface ApiProduct {
+  id: string
+  name: string
+  name_ar?: string
+  category?: string
+  price: string
+  currency?: string
+  primary_image_url?: string | null
+  vendor_name?: string
+  vendor_name_ar?: string
+  average_rating?: number | null
+  stock_quantity?: number
+}
+
+interface PaginatedResponse<T> {
+  results: T[]
+  next_cursor: string | null
+  has_more: boolean
+}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
-interface SearchPageClientProps {
+export interface SearchPageClientProps {
   initialQuery: string
-  initialResults: BoatCardData[]
   locale: string
-  // Labels resolved server-side (avoid useTranslations on client for SSR strings)
+  // Labels resolved server-side via getTranslations
+  tabYachtsLabel: string
+  tabGearLabel: string
   noResultsLabel: string
   noResultsSubLabel: string
-  resultsMetaLabel: string
+  resultsCountLabel: string    // "{count} نتيجة لـ"
+  resultsForLabel: string      // preposition / conjunction (unused in template)
   filtersLabel: string
   activeLabel: string
   searchPlaceholder: string
-  sortRecommended: string
-  sortPriceAsc: string
-  sortPriceDesc: string
-  sortRating: string
+  sortRelevanceLabel: string
+  sortPriceAscLabel: string
+  sortPriceDescLabel: string
+  sortNewestLabel: string
+  allRegionsLabel: string
+  regionFacetLabel: string
+  gearPriceLabel: string
+  gearVendorLabel: string
   applyFiltersLabel: string
   clearAllLabel: string
+}
+
+// ── SWR fetcher ───────────────────────────────────────────────────────────────
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010') + '/api/v1'
+
+async function swrFetcher<T>(url: string): Promise<T> {
+  const res = await fetch(url, { headers: { Accept: 'application/json' } })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json() as Promise<T>
+}
+
+function buildYachtUrl(q: string, sort: SortKey, region: string | null): string {
+  const params = new URLSearchParams()
+  if (q.trim()) params.set('search', q.trim())
+  if (region)   params.set('departure_port_name', region)
+  const ordering =
+    sort === 'price-asc'  ? 'price_per_day'
+    : sort === 'price-desc' ? '-price_per_day'
+    : sort === 'newest'     ? '-created_at'
+    : ''  // relevance — let backend decide
+  if (ordering) params.set('ordering', ordering)
+  return `${API_BASE}/yachts/?${params.toString()}`
+}
+
+function buildGearUrl(q: string, sort: SortKey): string {
+  const params = new URLSearchParams()
+  if (q.trim()) params.set('search', q.trim())
+  const ordering =
+    sort === 'price-asc'  ? 'price'
+    : sort === 'price-desc' ? '-price'
+    : sort === 'newest'     ? '-created_at'
+    : ''
+  if (ordering) params.set('ordering', ordering)
+  return `${API_BASE}/marketplace/products/?${params.toString()}`
+}
+
+// ── Yacht card renderer ───────────────────────────────────────────────────────
+
+function yachtToCard(y: ApiYacht, locale: string): BoatCardData {
+  return {
+    id: y.id,
+    name: locale === 'ar' ? (y.name_ar || y.name) : y.name,
+    nameEn: y.name,
+    type: y.yacht_type ?? '',
+    typeEn: y.yacht_type ?? '',
+    region: y.departure_port?.name_ar ?? y.region ?? '',
+    regionEn: y.departure_port?.name_en ?? y.region ?? '',
+    pax: y.capacity ?? 0,
+    price: parseFloat(y.price_per_day ?? '0'),
+    currency: y.currency ?? 'EGP',
+    rating: y.rating ?? 0,
+    img: y.primary_image_url ?? '',
+  }
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SearchPageClient({
   initialQuery,
-  initialResults,
   locale,
+  tabYachtsLabel,
+  tabGearLabel,
   noResultsLabel,
   noResultsSubLabel,
-  resultsMetaLabel,
+  resultsCountLabel,
   filtersLabel,
   activeLabel,
   searchPlaceholder,
-  sortRecommended,
-  sortPriceAsc,
-  sortPriceDesc,
-  sortRating,
+  sortRelevanceLabel,
+  sortPriceAscLabel,
+  sortPriceDescLabel,
+  sortNewestLabel,
+  allRegionsLabel,
+  regionFacetLabel,
+  gearPriceLabel,
+  gearVendorLabel,
   applyFiltersLabel,
   clearAllLabel,
 }: SearchPageClientProps): React.ReactElement {
   const router = useRouter()
 
-  const [query, setQuery]                   = React.useState(initialQuery)
-  const [activeTypes, setActiveTypes]       = React.useState<string[]>([])
-  const [activeRegions, setActiveRegions]   = React.useState<string[]>([])
-  const [activeAmenities, setActiveAmenities] = React.useState<string[]>([])
-  const [sort, setSort]                     = React.useState<SortKey>('recommended')
+  const [query,       setQuery]       = React.useState(initialQuery)
+  const [tab,         setTab]         = React.useState<TabKey>('yachts')
+  const [activeRegion, setActiveRegion] = React.useState<string | null>(null)
+  const [sort,        setSort]        = React.useState<SortKey>('relevance')
 
-  // Debounce the URL update to avoid hammering the router on every keystroke
+  // Debounce URL sync (for shareability)
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function handleQueryChange(value: string): void {
     setQuery(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      router.push(`/${locale}/search?q=${encodeURIComponent(value)}`, {})
-    }, 400)
+      const params = new URLSearchParams({ q: value })
+      router.push(`/${locale}/search?${params.toString()}`)
+    }, 450)
   }
 
   React.useEffect(() => {
@@ -99,71 +201,30 @@ export function SearchPageClient({
     }
   }, [])
 
-  // Toggle helpers
-  function toggle(
-    arr: string[],
-    setArr: React.Dispatch<React.SetStateAction<string[]>>,
-    val: string,
-  ): void {
-    setArr((prev) =>
-      prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val],
-    )
-  }
+  // SWR keys — null when query is empty prevents initial empty fetch
+  const yachtUrl = tab === 'yachts' ? buildYachtUrl(query, sort, activeRegion) : null
+  const gearUrl  = tab === 'gear'   ? buildGearUrl(query, sort) : null
 
-  // Active tag chips (combined)
-  const activeTags: { label: string; clear: () => void }[] = [
-    ...activeTypes.map((t) => ({
-      label: t,
-      clear: () => toggle(activeTypes, setActiveTypes, t),
-    })),
-    ...activeRegions.map((r) => ({
-      label: r,
-      clear: () => toggle(activeRegions, setActiveRegions, r),
-    })),
-    ...activeAmenities.map((a) => ({
-      label: a,
-      clear: () => toggle(activeAmenities, setActiveAmenities, a),
-    })),
-  ]
+  const { data: yachtData, isLoading: yachtsLoading } =
+    useSWR<PaginatedResponse<ApiYacht>>(yachtUrl, swrFetcher, { keepPreviousData: true })
 
-  // Client-side filtering on top of server results
-  const filtered = initialResults.filter((b) => {
-    const matchQ =
-      !query.trim() ||
-      b.name.includes(query) ||
-      (b.nameEn ?? '').toLowerCase().includes(query.toLowerCase()) ||
-      (b.region ?? '').includes(query) ||
-      (b.regionEn ?? '').toLowerCase().includes(query.toLowerCase()) ||
-      (b.type ?? '').includes(query)
-    const matchR =
-      activeRegions.length === 0 ||
-      activeRegions.some(
-        (r) => (b.region ?? '').includes(r) || (b.regionEn ?? '').includes(r),
-      )
-    return matchQ && matchR
-  })
+  const { data: gearData, isLoading: gearLoading } =
+    useSWR<PaginatedResponse<ApiProduct>>(gearUrl, swrFetcher, { keepPreviousData: true })
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sort === 'price-asc')  return (a.price ?? 0) - (b.price ?? 0)
-    if (sort === 'price-desc') return (b.price ?? 0) - (a.price ?? 0)
-    if (sort === 'rating')     return (b.rating ?? 0) - (a.rating ?? 0)
-    return 0
-  })
+  const isLoading = tab === 'yachts' ? yachtsLoading : gearLoading
 
-  function clearAll(): void {
-    setActiveTypes([])
-    setActiveRegions([])
-    setActiveAmenities([])
-  }
+  const yachtCards: BoatCardData[] =
+    (yachtData?.results ?? []).map((y) => yachtToCard(y, locale))
 
-  const filterGroups = [
-    { labelAr: 'نوع القارب · BOAT TYPE', items: BOAT_TYPES,   arr: activeTypes,     setArr: setActiveTypes     },
-    { labelAr: 'المنطقة · REGION',        items: REGIONS,      arr: activeRegions,   setArr: setActiveRegions   },
-    { labelAr: 'الميزات · AMENITIES',     items: AMENITIES,    arr: activeAmenities, setArr: setActiveAmenities },
-  ]
+  const gearProducts: ApiProduct[] = gearData?.results ?? []
+
+  const resultCount = tab === 'yachts' ? yachtCards.length : gearProducts.length
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div style={{ minHeight: '100vh' }} data-screen-label="search">
+
       {/* Page heading */}
       <div
         style={{
@@ -194,6 +255,7 @@ export function SearchPageClient({
       </div>
 
       <div className="search-layout">
+
         {/* ── Sidebar ── */}
         <aside className="search-sidebar">
           <div className="search-sidebar-title">
@@ -201,122 +263,99 @@ export function SearchPageClient({
             <span>FILTERS</span>
           </div>
 
-          {/* Active tags */}
-          {activeTags.length > 0 && (
-            <div style={{ marginBottom: 22 }}>
-              <div className="filter-group-label">{activeLabel} · ACTIVE</div>
-              <div className="search-active-tags">
-                {activeTags.map((tag, i) => (
-                  <div key={i} className="search-tag">
-                    {tag.label}
-                    <span
-                      className="search-tag-x"
-                      onClick={tag.clear}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') tag.clear() }}
-                      aria-label={`إزالة ${tag.label}`}
-                    >
-                      ×
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Filter chip groups */}
-          {filterGroups.map(({ labelAr, items, arr, setArr }) => (
-            <div className="filter-group" key={labelAr}>
-              <div className="filter-group-label">{labelAr}</div>
-              <div className="filter-chips">
-                {items.map((item) => (
-                  <button
-                    key={item}
-                    className={`filter-chip${arr.includes(item) ? ' active' : ''}`}
-                    onClick={() => toggle(arr, setArr, item)}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* Price range (static display, matching design) */}
-          <div className="filter-group">
-            <div className="filter-group-label">نطاق السعر · PRICE / DAY</div>
-            <div className="range-slider-row">
-              <span className="range-label">500</span>
-              <div className="range-track">
-                <div className="range-fill" />
-                <div className="range-handle" style={{ insetInlineStart: '20%' }} />
-                <div className="range-handle" style={{ insetInlineStart: '85%' }} />
-              </div>
-              <span className="range-label">25k</span>
-            </div>
+          {/* Tab switcher — pill style */}
+          <div style={{ marginBottom: 28 }}>
             <div
-              style={{
-                fontFamily: 'var(--ff-mono)',
-                fontSize: 10,
-                color: 'var(--muted-2)',
-                marginTop: 6,
-                direction: 'ltr',
-                textAlign: 'center',
-              }}
+              className="filter-group-label"
+              style={{ marginBottom: 10 }}
             >
-              1,000 — 20,000 EGP
+              {activeLabel} · CATEGORY
             </div>
-          </div>
-
-          {/* Date availability */}
-          <div className="filter-group">
-            <div className="filter-group-label">تاريخ الإتاحة · DATE</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {['من · FROM', 'إلى · TO'].map((p) => (
-                <div
-                  key={p}
-                  style={{
-                    padding: '9px 12px',
-                    border: '1px solid var(--rule-strong)',
-                    borderRadius: 2,
-                    fontSize: 12,
-                    color: 'var(--muted-2)',
-                    background: 'oklch(1 0 0 / 0.6)',
-                    textAlign: 'center',
-                  }}
-                >
-                  {p}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Capacity chips */}
-          <div className="filter-group">
-            <div className="filter-group-label">عدد الركاب · CAPACITY</div>
-            <div className="filter-chips">
-              {CAPACITIES.map((c) => (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(
+                [
+                  { key: 'yachts', label: tabYachtsLabel },
+                  { key: 'gear',   label: tabGearLabel   },
+                ] as { key: TabKey; label: string }[]
+              ).map(({ key, label }) => (
                 <button
-                  key={c}
-                  className="filter-chip"
-                  style={{ fontFamily: 'var(--ff-mono)', direction: 'ltr' }}
+                  key={key}
+                  className={`filter-chip${tab === key ? ' active' : ''}`}
+                  onClick={() => setTab(key)}
+                  aria-pressed={tab === key}
+                  style={{ flex: 1, textAlign: 'center' }}
                 >
-                  {c}
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Apply / Clear */}
-          <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button className="btn btn-primary" style={{ width: '100%' }}>
-              {applyFiltersLabel}
-            </button>
+          {/* Region facet — Yachts tab only */}
+          {tab === 'yachts' && (
+            <div className="filter-group">
+              <div className="filter-group-label">
+                {regionFacetLabel} · REGION
+              </div>
+              <div className="filter-chips">
+                {/* All regions chip */}
+                <button
+                  className={`filter-chip${activeRegion === null ? ' active' : ''}`}
+                  onClick={() => setActiveRegion(null)}
+                  aria-pressed={activeRegion === null}
+                >
+                  {allRegionsLabel}
+                </button>
+                {REGIONS.map(({ ar, en, param }) => (
+                  <button
+                    key={param}
+                    className={`filter-chip${activeRegion === param ? ' active' : ''}`}
+                    onClick={() =>
+                      setActiveRegion((prev) => (prev === param ? null : param))
+                    }
+                    aria-pressed={activeRegion === param}
+                  >
+                    {locale === 'ar' ? ar : en}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sort */}
+          <div className="filter-group">
+            <div className="filter-group-label">الترتيب · SORT</div>
+            <div className="filter-chips" style={{ flexDirection: 'column', gap: 6 }}>
+              {(
+                [
+                  { key: 'relevance',  label: sortRelevanceLabel  },
+                  { key: 'price-asc',  label: sortPriceAscLabel   },
+                  { key: 'price-desc', label: sortPriceDescLabel  },
+                  { key: 'newest',     label: sortNewestLabel      },
+                ] as { key: SortKey; label: string }[]
+              ).map(({ key, label }) => (
+                <button
+                  key={key}
+                  className={`filter-chip${sort === key ? ' active' : ''}`}
+                  onClick={() => setSort(key)}
+                  aria-pressed={sort === key}
+                  style={{ textAlign: 'start' }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clear all */}
+          <div style={{ marginTop: 28 }}>
             <button
               className="btn btn-ghost"
               style={{ width: '100%' }}
-              onClick={clearAll}
+              onClick={() => {
+                setActiveRegion(null)
+                setSort('relevance')
+              }}
             >
               {clearAllLabel}
             </button>
@@ -325,10 +364,11 @@ export function SearchPageClient({
 
         {/* ── Main results ── */}
         <main className="search-main">
-          {/* Search bar + sort */}
+
+          {/* Search bar */}
           <div className="search-bar-row">
-            <div className="search-input-wrap">
-              <span className="search-input-icon" aria-hidden="true">🔍</span>
+            <div className="search-input-wrap" style={{ flex: 1 }}>
+              <span className="search-input-icon" aria-hidden="true">&#128269;</span>
               <input
                 className="search-input"
                 type="search"
@@ -336,202 +376,420 @@ export function SearchPageClient({
                 value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
                 dir="auto"
+                aria-label={searchPlaceholder}
               />
             </div>
-            <select
-              className="search-sort-select"
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              aria-label="ترتيب النتائج"
-            >
-              <option value="recommended">{sortRecommended}</option>
-              <option value="price-asc">{sortPriceAsc}</option>
-              <option value="price-desc">{sortPriceDesc}</option>
-              <option value="rating">{sortRating}</option>
-            </select>
           </div>
 
-          {/* Results meta */}
+          {/* Results count */}
           <div className="search-results-meta" aria-live="polite">
-            {sorted.length} {resultsMetaLabel}
-            {query ? ` — "${query.toUpperCase()}"` : ''}
+            {isLoading ? (
+              <span style={{ color: 'var(--muted)' }}>…</span>
+            ) : (
+              <>
+                <span style={{ fontFamily: 'var(--ff-mono)' }}>
+                  {locale === 'ar'
+                    ? resultCount.toLocaleString('ar-EG')
+                    : resultCount.toLocaleString('en')}
+                </span>
+                {' '}{resultsCountLabel}
+                {query.trim() ? (
+                  <>
+                    {' '}
+                    <span style={{ fontFamily: 'var(--ff-mono)', color: 'var(--sea)' }}>
+                      &ldquo;{query}&rdquo;
+                    </span>
+                  </>
+                ) : null}
+              </>
+            )}
           </div>
 
-          {/* Results grid */}
-          {sorted.length > 0 ? (
+          {/* Loading skeleton */}
+          {isLoading && (
             <div className="search-results-grid">
-              {sorted.map((b) => (
-                <Link
-                  key={b.id}
-                  href={`/${locale}/yachts/${b.id}`}
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
                   style={{
-                    background: 'oklch(1 0 0 / 0.72)',
-                    backdropFilter: 'blur(6px)',
-                    border: '1px solid var(--rule)',
+                    background: 'var(--sand)',
                     borderRadius: 2,
-                    cursor: 'pointer',
-                    overflow: 'hidden',
-                    textDecoration: 'none',
-                    color: 'var(--ink)',
-                    display: 'block',
-                    transition: 'border-color 0.18s, transform 0.2s, box-shadow 0.2s',
+                    height: 280,
+                    opacity: 0.5,
+                    animation: 'pulse 1.4s ease-in-out infinite',
                   }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget
-                    el.style.borderColor = 'var(--rule-strong)'
-                    el.style.transform = 'translateY(-2px)'
-                    el.style.boxShadow = '0 6px 24px oklch(0.20 0.045 235 / 0.10)'
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget
-                    el.style.borderColor = 'var(--rule)'
-                    el.style.transform = ''
-                    el.style.boxShadow = ''
-                  }}
-                >
-                  {/* Card image */}
-                  <div
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ── Yachts results ── */}
+          {!isLoading && tab === 'yachts' && (
+            yachtCards.length > 0 ? (
+              <div className="search-results-grid">
+                {yachtCards.map((b) => (
+                  <Link
+                    key={b.id}
+                    href={`/${locale}/yachts/${b.id}`}
                     style={{
-                      aspectRatio: '16/9',
-                      backgroundImage: b.img ? `url(${b.img})` : undefined,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      background: b.img ? undefined : 'var(--sand-2)',
-                      position: 'relative',
+                      background: 'oklch(1 0 0 / 0.72)',
+                      backdropFilter: 'blur(6px)',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 2,
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      textDecoration: 'none',
+                      color: 'var(--ink)',
+                      display: 'block',
+                      transition: 'border-color 0.18s, transform 0.2s, box-shadow 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget
+                      el.style.borderColor = 'var(--rule-strong)'
+                      el.style.transform = 'translateY(-2px)'
+                      el.style.boxShadow = '0 6px 24px oklch(0.20 0.045 235 / 0.10)'
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget
+                      el.style.borderColor = 'var(--rule)'
+                      el.style.transform = ''
+                      el.style.boxShadow = ''
                     }}
                   >
+                    {/* Card image */}
                     <div
                       style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background:
-                          'linear-gradient(to top, oklch(0.14 0.04 240 / 0.55) 0%, transparent 55%)',
+                        aspectRatio: '16/9',
+                        position: 'relative',
+                        background: 'var(--sand-2)',
                       }}
-                    />
-                    {b.rating ? (
+                    >
+                      {b.img ? (
+                        <Image
+                          src={b.img}
+                          alt={b.nameEn ?? b.name}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      ) : null}
                       <div
                         style={{
                           position: 'absolute',
-                          bottom: 10,
-                          insetInlineEnd: 12,
+                          inset: 0,
+                          background:
+                            'linear-gradient(to top, oklch(0.14 0.04 240 / 0.55) 0%, transparent 55%)',
+                        }}
+                      />
+                      {b.rating ? (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            bottom: 10,
+                            insetInlineEnd: 12,
+                            fontFamily: 'var(--ff-mono)',
+                            fontSize: 10,
+                            color: 'var(--sand)',
+                            letterSpacing: '0.1em',
+                            direction: 'ltr',
+                          }}
+                        >
+                          &#9733; {b.rating.toFixed(1)}
+                        </div>
+                      ) : null}
+                      {b.typeEn && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: 10,
+                            insetInlineStart: 10,
+                            fontFamily: 'var(--ff-mono)',
+                            fontSize: 9,
+                            letterSpacing: '0.1em',
+                            background: 'var(--clay)',
+                            color: 'var(--foam)',
+                            padding: '3px 8px',
+                            borderRadius: 1,
+                          }}
+                        >
+                          {b.typeEn}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Card body */}
+                    <div style={{ padding: '14px 16px' }}>
+                      <div
+                        style={{
+                          fontFamily: 'var(--ff-display)',
+                          fontSize: 17,
+                          fontWeight: 700,
+                          marginBottom: 3,
+                        }}
+                      >
+                        {b.name}
+                      </div>
+                      <div
+                        style={{
                           fontFamily: 'var(--ff-mono)',
                           fontSize: 10,
-                          color: 'var(--sand)',
-                          letterSpacing: '0.1em',
+                          color: 'var(--muted)',
+                          letterSpacing: '0.08em',
+                          marginBottom: 10,
                           direction: 'ltr',
                         }}
                       >
-                        ★ {b.rating.toFixed(1)}
+                        {(b.regionEn ?? b.region ?? '').toUpperCase()}
                       </div>
-                    ) : null}
-                    {b.typeEn && (
                       <div
                         style={{
-                          position: 'absolute',
-                          top: 10,
-                          insetInlineStart: 10,
-                          fontFamily: 'var(--ff-mono)',
-                          fontSize: 9,
-                          letterSpacing: '0.1em',
-                          background: 'var(--clay)',
-                          color: 'var(--foam)',
-                          padding: '3px 8px',
-                          borderRadius: 1,
+                          display: 'flex',
+                          alignItems: 'baseline',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        {b.typeEn}
+                        <div>
+                          <span
+                            style={{
+                              fontFamily: 'var(--ff-display)',
+                              fontSize: 22,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {locale === 'ar'
+                              ? (b.price ?? 0).toLocaleString('ar-EG')
+                              : (b.price ?? 0).toLocaleString('en')}
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: 10,
+                              color: 'var(--muted)',
+                              marginInlineStart: 4,
+                            }}
+                          >
+                            {b.currency ?? 'EGP'} / {locale === 'ar' ? 'يوم' : 'day'}
+                          </span>
+                        </div>
+                        {b.pax ? (
+                          <div
+                            style={{
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: 10,
+                              color: 'var(--muted-2)',
+                              direction: 'ltr',
+                            }}
+                          >
+                            {b.pax} PAX
+                          </div>
+                        ) : null}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState label={noResultsLabel} subLabel={noResultsSubLabel} query={query} />
+            )
+          )}
 
-                  {/* Card body */}
-                  <div style={{ padding: '14px 16px' }}>
+          {/* ── Gear results ── */}
+          {!isLoading && tab === 'gear' && (
+            gearProducts.length > 0 ? (
+              <div className="search-results-grid">
+                {gearProducts.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/${locale}/marketplace/${p.id}`}
+                    style={{
+                      background: 'oklch(1 0 0 / 0.72)',
+                      backdropFilter: 'blur(6px)',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 2,
+                      overflow: 'hidden',
+                      textDecoration: 'none',
+                      color: 'var(--ink)',
+                      display: 'block',
+                      transition: 'border-color 0.18s, transform 0.2s, box-shadow 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget
+                      el.style.borderColor = 'var(--rule-strong)'
+                      el.style.transform = 'translateY(-2px)'
+                      el.style.boxShadow = '0 6px 24px oklch(0.20 0.045 235 / 0.10)'
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget
+                      el.style.borderColor = 'var(--rule)'
+                      el.style.transform = ''
+                      el.style.boxShadow = ''
+                    }}
+                  >
+                    {/* Product image */}
                     <div
                       style={{
-                        fontFamily: 'var(--ff-display)',
-                        fontSize: 17,
-                        fontWeight: 700,
-                        marginBottom: 3,
+                        aspectRatio: '16/9',
+                        position: 'relative',
+                        background: 'var(--sand-2)',
                       }}
                     >
-                      {b.name}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: 'var(--ff-mono)',
-                        fontSize: 10,
-                        color: 'var(--muted)',
-                        letterSpacing: '0.08em',
-                        marginBottom: 10,
-                        direction: 'ltr',
-                      }}
-                    >
-                      {(b.regionEn ?? b.region ?? '').toUpperCase()}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        justifyContent: 'space-between',
-                      }}
-                    >
-                      <div>
-                        <span
+                      {p.primary_image_url ? (
+                        <Image
+                          src={p.primary_image_url}
+                          alt={locale === 'ar' ? (p.name_ar ?? p.name) : p.name}
+                          fill
+                          style={{ objectFit: 'cover' }}
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      ) : null}
+                      {p.category && (
+                        <div
                           style={{
-                            fontFamily: 'var(--ff-display)',
-                            fontSize: 22,
-                            fontWeight: 700,
+                            position: 'absolute',
+                            top: 10,
+                            insetInlineStart: 10,
+                            fontFamily: 'var(--ff-mono)',
+                            fontSize: 9,
+                            letterSpacing: '0.1em',
+                            background: 'var(--sea)',
+                            color: 'var(--foam)',
+                            padding: '3px 8px',
+                            borderRadius: 1,
+                            textTransform: 'uppercase',
                           }}
                         >
-                          {(b.price ?? 0).toLocaleString('en')}
-                        </span>
-                        <span
+                          {p.category}
+                        </div>
+                      )}
+                      {p.average_rating ? (
+                        <div
                           style={{
+                            position: 'absolute',
+                            bottom: 10,
+                            insetInlineEnd: 12,
                             fontFamily: 'var(--ff-mono)',
                             fontSize: 10,
-                            color: 'var(--muted)',
-                            marginInlineEnd: 4,
+                            color: 'var(--sand)',
+                            letterSpacing: '0.1em',
+                            direction: 'ltr',
                           }}
                         >
-                          {' '}{b.currency ?? 'EGP'} / يوم
-                        </span>
+                          &#9733; {p.average_rating.toFixed(1)}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Product body */}
+                    <div style={{ padding: '14px 16px' }}>
+                      <div
+                        style={{
+                          fontFamily: 'var(--ff-display)',
+                          fontSize: 17,
+                          fontWeight: 700,
+                          marginBottom: 3,
+                        }}
+                      >
+                        {locale === 'ar' ? (p.name_ar ?? p.name) : p.name}
                       </div>
-                      {b.pax ? (
+                      {(p.vendor_name_ar || p.vendor_name) && (
                         <div
                           style={{
                             fontFamily: 'var(--ff-mono)',
                             fontSize: 10,
-                            color: 'var(--muted-2)',
-                            direction: 'ltr',
+                            color: 'var(--muted)',
+                            letterSpacing: '0.08em',
+                            marginBottom: 10,
                           }}
                         >
-                          👥 {b.pax} PAX
+                          {gearVendorLabel}: {locale === 'ar'
+                            ? (p.vendor_name_ar ?? p.vendor_name ?? '')
+                            : (p.vendor_name ?? '')}
                         </div>
-                      ) : null}
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                        <div>
+                          <span
+                            style={{
+                              fontFamily: 'var(--ff-display)',
+                              fontSize: 22,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {locale === 'ar'
+                              ? parseFloat(p.price).toLocaleString('ar-EG')
+                              : parseFloat(p.price).toLocaleString('en')}
+                          </span>
+                          <span
+                            style={{
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: 10,
+                              color: 'var(--muted)',
+                              marginInlineStart: 4,
+                            }}
+                          >
+                            {p.currency ?? 'EGP'}
+                          </span>
+                        </div>
+                        {p.stock_quantity !== undefined && p.stock_quantity === 0 && (
+                          <div
+                            style={{
+                              fontFamily: 'var(--ff-mono)',
+                              fontSize: 10,
+                              color: 'var(--clay)',
+                            }}
+                          >
+                            {gearPriceLabel}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="search-no-results">
-              <div style={{ fontSize: 48, marginBottom: 16 }} aria-hidden="true">⚓</div>
-              <div
-                style={{
-                  fontFamily: 'var(--ff-display)',
-                  fontSize: 24,
-                  fontWeight: 700,
-                  marginBottom: 8,
-                }}
-              >
-                {noResultsLabel}
+                  </Link>
+                ))}
               </div>
-              <div style={{ fontSize: 14, color: 'var(--muted)' }}>
-                {noResultsSubLabel}
-              </div>
-            </div>
+            ) : (
+              <EmptyState label={noResultsLabel} subLabel={noResultsSubLabel} query={query} />
+            )
           )}
         </main>
+      </div>
+    </div>
+  )
+}
+
+// ── Empty state sub-component ─────────────────────────────────────────────────
+
+function EmptyState({
+  label,
+  subLabel,
+  query,
+}: {
+  label: string
+  subLabel: string
+  query: string
+}): React.ReactElement {
+  return (
+    <div className="search-no-results">
+      <div style={{ fontSize: 48, marginBottom: 16 }} aria-hidden="true">&#9875;</div>
+      <div
+        style={{
+          fontFamily: 'var(--ff-display)',
+          fontSize: 24,
+          fontWeight: 700,
+          marginBottom: 8,
+        }}
+      >
+        {label}
+        {query.trim() ? (
+          <>
+            {' '}
+            <span style={{ fontFamily: 'var(--ff-mono)', fontSize: 18, color: 'var(--sea)' }}>
+              &ldquo;{query}&rdquo;
+            </span>
+          </>
+        ) : null}
+      </div>
+      <div style={{ fontSize: 14, color: 'var(--muted)' }}>
+        {subLabel}
       </div>
     </div>
   )

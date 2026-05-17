@@ -1,10 +1,12 @@
-"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload + Sprint 10E filters + Sprint 12F vendor API gaps."""
+"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload + Sprint 10E filters + Sprint 12F vendor API gaps + Sprint 14A semantic search."""
 import os
 import uuid as uuid_module
 from decimal import Decimal, InvalidOperation
 
+import httpx
+from django.conf import settings
 from django.core.files.storage import default_storage
-from django.db import transaction
+from django.db import models, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
@@ -237,12 +239,67 @@ class VendorProductListCreateView(generics.ListCreateAPIView):
             except InvalidOperation:
                 pass  # invalid param — ignore, return unfiltered
 
+        # search: vector search (ADR-019) with icontains fallback.
+        search_query = params.get("search", "").strip()
+        if search_query:
+            qs = self._apply_search(qs, search_query)
+
         return qs
 
+    def _apply_search(self, qs, query: str):
+        """Apply pgvector cosine-distance search with icontains fallback (ADR-019).
+
+        Primary path: fetch embedding from Ollama, filter to products that have
+        an embedding, order by CosineDistance.
+        Fallback path (Ollama timeout / no embeddings): icontains across name +
+        description fields.  Both paths are ORM-only (ADR-001).
+        """
+        try:
+            from pgvector.django import CosineDistance
+
+            ollama_url: str = getattr(settings, "OLLAMA_BASE_URL", "http://ollama:11434")
+            resp = httpx.post(
+                f"{ollama_url}/api/embeddings",
+                json={"model": "nomic-embed-text", "prompt": query},
+                timeout=5.0,
+            )
+            resp.raise_for_status()
+            query_vector: list[float] = resp.json()["embedding"]
+
+            # Only rank by embedding when at least some products have embeddings.
+            if qs.filter(embedding__isnull=False).exists():
+                return (
+                    qs.filter(embedding__isnull=False)
+                    .annotate(distance=CosineDistance("embedding", query_vector))
+                    .order_by("distance")
+                )
+            # No embeddings stored yet — fall through to text search.
+            raise ValueError("no embeddings stored")  # noqa: TRY301
+        except Exception:
+            # Graceful fallback: icontains text search (ORM only, ADR-001).
+            return qs.filter(
+                models.Q(name__icontains=query)
+                | models.Q(name_ar__icontains=query)
+                | models.Q(description__icontains=query)
+                | models.Q(description_ar__icontains=query)
+            ).order_by("-created_at")
+
     def perform_create(self, serializer):
-        """Attach the authenticated vendor's VendorProfile to the new product."""
+        """Attach the authenticated vendor's VendorProfile to the new product.
+
+        After the DB transaction commits, schedule async embedding generation
+        so the product becomes searchable via vector search (ADR-019).
+        """
         vendor_profile = get_object_or_404(VendorProfile, user=self.request.user)
         serializer.save(vendor=vendor_profile, status=ProductStatus.DRAFT)
+
+        # Trigger async embedding generation after the DB transaction commits
+        # so the Celery task always sees the persisted row (ADR-019).
+        from .tasks import generate_product_embedding
+        instance = serializer.instance
+        transaction.on_commit(
+            lambda: generate_product_embedding.delay(str(instance.id))
+        )
 
 
 class VendorProductDetailView(generics.RetrieveUpdateDestroyAPIView):

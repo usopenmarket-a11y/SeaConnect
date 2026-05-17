@@ -43,6 +43,11 @@ export async function generateMetadata({
         locale === 'ar'
           ? 'حالة الطقس البحري | سي كونكت'
           : 'Marine Weather Advisory | SeaConnect',
+      description:
+        locale === 'ar'
+          ? 'تقارير الطقس البحري وحالة الأمواج والرياح لموانئ مصر — يُحدَّث كل ساعة'
+          : 'Marine weather reports, wave height and wind conditions for Egypt ports — updated hourly',
+      images: [{ url: '/og/weather.jpg', width: 1200, height: 630 }],
       locale: locale === 'ar' ? 'ar_EG' : 'en_US',
     },
   }

@@ -1383,18 +1383,30 @@
     "showAll": "عرض كل قوارب"
   },
   "search": {
+    "metaTitle": "البحث والفلترة | سي كونكت",
+    "metaTitleQuery": "نتائج البحث عن \"{query}\" | سي كونكت",
+    "metaDescription": "ابحث عن قوارب ويخوت ومعدات بحرية في مصر",
     "filtersLabel": "بحث وفلترة",
     "activeLabel": "الفلاتر المفعّلة",
-    "searchPlaceholder": "ابحث عن قارب، وجهة، نوع...",
+    "searchPlaceholder": "ابحث عن قارب، معدة، وجهة...",
     "noResults": "لا توجد نتائج",
     "noResultsSub": "حاول تغيير كلمة البحث أو إزالة بعض الفلاتر.",
     "resultsMeta": "نتيجة",
+    "resultsFor": "لـ",
     "applyFilters": "تطبيق الفلاتر",
     "clearAll": "مسح الكل",
+    "tabYachts": "اليخوت",
+    "tabGear": "المعدات",
+    "allRegions": "كل المناطق",
+    "regionFacet": "المنطقة",
+    "gearOutOfStock": "نفد المخزون",
+    "gearVendor": "البائع",
     "sort": {
+      "relevance": "الأكثر ملاءمة",
       "recommended": "الأكثر ملاءمة",
       "priceAsc": "السعر: من الأقل",
       "priceDesc": "السعر: من الأعلى",
+      "newest": "الأحدث",
       "rating": "التقييم"
     }
   },

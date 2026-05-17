@@ -176,11 +176,15 @@
   box-shadow: 0 4px 16px oklch(0.20 0.045 235 / 0.12);
 }
 
-.mapBoatImg {
+.mapBoatImgWrap {
+  position: relative;
   width: 100%;
   height: 120px;
+  overflow: hidden;
+}
+
+.mapBoatImg {
   object-fit: cover;
-  display: block;
 }
 
 .mapBoatBody {

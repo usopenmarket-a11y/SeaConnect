@@ -296,148 +296,37 @@
     }
   },
   "booking": {
-    "title": "Book your sea trip",
-    "yachtNotFound": "Yacht not found",
-    "startDate": "Start date",
-    "endDate": "End date",
-    "passengers": "Passengers",
-    "totalAmount": "Total amount",
-    "perDay": "/day",
-    "nights": "night(s)",
-    "submit": "Confirm booking",
-    "submitting": "Submitting...",
-    "success": "Booking request sent",
-    "error": {
-      "generic": "Could not create booking. Please try again.",
-      "dateRange": "End date must be after start date",
-      "capacity": "Passenger count exceeds yacht capacity"
-    },
-    "checkout": {
-      "title": "Complete your booking",
-      "back": "← Back",
-      "backHome": "← Home",
-      "cancel": "Cancel",
-      "previous": "← Previous",
-      "loading": "Loading",
-      "yachtNotFound": "The requested yacht was not found.",
-      "steps": {
-        "tripDetails": "Trip details",
-        "yourInfo": "Your info",
-        "payment": "Payment",
-        "review": "Confirm"
-      },
-      "tripDate": "Trip date",
-      "guestsCount": "Number of passengers",
-      "departureTime": "Departure time",
-      "returnTime": "Return time",
-      "tripType": "Trip type",
-      "tripTypes": {
-        "deepFishing": "Deep sea fishing",
-        "coastalFishing": "Coastal fishing",
-        "snorkeling": "Swimming & snorkelling"
-      },
-      "time": {
-        "0600am": "06:00 AM",
-        "0700am": "07:00 AM",
-        "0800am": "08:00 AM",
-        "0200pm": "02:00 PM",
-        "0400pm": "04:00 PM",
-        "0600pm": "06:00 PM"
-      },
-      "specialRequests": "Special requests (optional)",
-      "specialRequestsPlaceholder": "Vegetarian meal, infant on board, equipment needs…",
-      "fullName": "Full name",
-      "fullNamePlaceholder": "Name as on ID",
-      "phone": "Phone number",
-      "email": "Email address",
-      "idType": "ID type",
-      "idTypes": {
-        "national": "National ID",
-        "passport": "Passport"
-      },
-      "idNumber": "ID number",
-      "idNumberPlaceholder": "ID card or passport number",
-      "emergencyContact": "Emergency contact",
-      "emergencyName": "Contact name",
-      "emergencyNamePlaceholder": "Name of responsible person",
-      "emergencyPhone": "Emergency phone",
-      "payment": {
-        "fawryTitle": "Fawry",
-        "fawrySubtitle": "Pay at any Fawry outlet",
-        "fawryHowLabel": "HOW FAWRY WORKS · آلية فوري",
-        "fawryStep1": "We send you a Fawry code via SMS",
-        "fawryStep2": "Visit any Fawry outlet (200,000+ locations)",
-        "fawryStep3": "Pay the amount — booking confirmed within 2 minutes",
-        "fawryConfirmLabel": "Fawry · Code sent on confirmation",
-        "cardTitle": "Credit card",
-        "cardSubtitle": "Visa · Mastercard",
-        "cardHowLabel": "SECURE CARD PAYMENT · دفع آمن بالبطاقة",
-        "cardBody": "You will be redirected to a secure payment gateway to enter your card details. All transactions are TLS encrypted.",
-        "cardConfirmLabel": "Credit card · Visa / Mastercard",
-        "instapayTitle": "InstaPay",
-        "instapaySubtitle": "Instant bank transfer",
-        "instapayHowLabel": "HOW INSTAPAY WORKS · آلية InstaPay",
-        "instapayStep1": "We send you the account details via SMS",
-        "instapayStep2": "Transfer via your bank app or InstaPay",
-        "instapayStep3": "Booking confirmed once transfer is received",
-        "instapayConfirmLabel": "InstaPay · Instant bank transfer"
-      },
-      "confirmBook": "Complete booking",
-      "processing": "Processing...",
-      "successTitle": "Booking confirmed!",
-      "bookingRef": "Booking reference",
-      "trackBooking": "Track your booking →",
-      "confirm": {
-        "mainPassenger": "Lead passenger",
-        "email": "Email",
-        "phone": "Phone",
+    "confirmed": {
+      "stamp": "✓ BOOKING CONFIRMED · تأكيد الحجز",
+      "heading": "Booking confirmed!",
+      "subheading": "Your trip details have been sent to your email. Keep this ticket for reference.",
+      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
+      "fields": {
+        "yacht": "Yacht",
         "date": "Date",
         "passengers": "Passengers",
-        "paymentMethod": "Payment method",
-        "fawryBody1": "We sent a Fawry payment code to",
-        "fawryBody2": "Pay within 48 hours to secure your booking. Full details will be sent to your email.",
-        "instapayBody1": "We sent the transfer details to",
-        "instapayBody2": "Complete the transfer within 48 hours to secure your booking.",
-        "cardBody1": "Your card was charged successfully. Booking confirmed — details sent to"
+        "departurePort": "Departure port",
+        "total": "Total",
+        "status": "Status"
       },
-      "ticket": {
-        "title": "Ticket",
-        "date": "DATE · التاريخ",
-        "boarding": "BOARDING · الصعود",
-        "am": "AM",
-        "marina": "MARINA · المرسى",
-        "pax": "PAX · Passengers",
-        "bookingRefLabel": "BOOKING REF",
-        "costSummary": "Cost summary",
-        "base": "base",
-        "fees": "fees",
-        "insurance": "insurance",
-        "whatsNext": "What's next?",
-        "nextFawry": "Pay via Fawry within 48 hours",
-        "nextInstapay": "Complete transfer within 48 hours",
-        "nextConfirm": "You'll receive final confirmation + captain details",
-        "nextArrive": "Arrive at the marina 15 minutes before departure",
-        "nextReview": "After the trip — share your review"
-      },
-      "validation": {
-        "dateRequired": "Please select a trip date.",
-        "passengersRequired": "Please select the number of passengers.",
-        "fullNameRequired": "Please enter your full name.",
-        "phoneRequired": "Please enter your phone number.",
-        "idNumberRequired": "Please enter your ID number.",
-        "noDeparturePort": "No departure port data available for this yacht. Please contact support.",
-        "unexpectedError": "An unexpected error occurred. Please try again."
-      },
-      "summary": {
-        "title": "Booking summary",
-        "with": "with",
-        "passenger": "passenger",
-        "passengers": "passengers",
-        "basePrice": "Base price",
-        "serviceFee": "Service fee",
-        "insurance": "Insurance",
-        "total": "Total"
-      }
+      "confirmedStatus": "✓ Confirmed",
+      "viewBookingsButton": "View my bookings →",
+      "homeLinkSuffix": "to home"
+    },
+    "failed": {
+      "stamp": "✗ PAYMENT FAILED · فشل الدفع",
+      "heading": "Payment failed",
+      "body": "No charge was made. The boat is still temporarily held.",
+      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
+      "possibleReasonsTitle": "⚠ Possible reasons",
+      "reason1": "Insufficient balance — make sure your account covers the full amount.",
+      "reason2": "Code expired — please refresh and try again.",
+      "reason3": "Connection error — check your internet and retry.",
+      "retryButton": "↩ Try again",
+      "contactSupport": "Contact support",
+      "supportEmailSubject": "Failed payment",
+      "supportEmailBody": "Booking reference:",
+      "noCharge": "No amount was charged to your account during this attempt."
     }
   },
   "bookingList": {
@@ -1494,18 +1383,30 @@
     "showAll": "View all yachts in"
   },
   "search": {
+    "metaTitle": "Search & Filters | SeaConnect",
+    "metaTitleQuery": "Results for \"{query}\" | SeaConnect",
+    "metaDescription": "Search for yachts, marine gear, and ports in Egypt",
     "filtersLabel": "Search & Filters",
     "activeLabel": "Active filters",
-    "searchPlaceholder": "Search for a boat, destination, type...",
+    "searchPlaceholder": "Search for a yacht, gear, destination...",
     "noResults": "No results found",
     "noResultsSub": "Try adjusting your search or removing some filters.",
     "resultsMeta": "result",
+    "resultsFor": "for",
     "applyFilters": "Apply filters",
     "clearAll": "Clear all",
+    "tabYachts": "Yachts",
+    "tabGear": "Gear",
+    "allRegions": "All regions",
+    "regionFacet": "Region",
+    "gearOutOfStock": "Out of stock",
+    "gearVendor": "Vendor",
     "sort": {
+      "relevance": "Best match",
       "recommended": "Best match",
       "priceAsc": "Price: low to high",
       "priceDesc": "Price: high to low",
+      "newest": "Newest",
       "rating": "Rating"
     }
   },
@@ -1542,40 +1443,6 @@
       "timeoutEmailSubject": "Pending payment confirmation",
       "timeoutEmailBody": "Booking ID:",
       "noBookingId": "Booking ID not found. Please contact support."
-    }
-  },
-  "booking": {
-    "confirmed": {
-      "stamp": "✓ BOOKING CONFIRMED · تأكيد الحجز",
-      "heading": "Booking confirmed!",
-      "subheading": "Your trip details have been sent to your email. Keep this ticket for reference.",
-      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
-      "fields": {
-        "yacht": "Yacht",
-        "date": "Date",
-        "passengers": "Passengers",
-        "departurePort": "Departure port",
-        "total": "Total",
-        "status": "Status"
-      },
-      "confirmedStatus": "✓ Confirmed",
-      "viewBookingsButton": "View my bookings →",
-      "homeLinkSuffix": "to home"
-    },
-    "failed": {
-      "stamp": "✗ PAYMENT FAILED · فشل الدفع",
-      "heading": "Payment failed",
-      "body": "No charge was made. The boat is still temporarily held.",
-      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
-      "possibleReasonsTitle": "⚠ Possible reasons",
-      "reason1": "Insufficient balance — make sure your account covers the full amount.",
-      "reason2": "Code expired — please refresh and try again.",
-      "reason3": "Connection error — check your internet and retry.",
-      "retryButton": "↩ Try again",
-      "contactSupport": "Contact support",
-      "supportEmailSubject": "Failed payment",
-      "supportEmailBody": "Booking reference:",
-      "noCharge": "No amount was charged to your account during this attempt."
     }
   }
 }

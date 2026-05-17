@@ -42,6 +42,11 @@ export async function generateMetadata({
         locale === 'ar'
           ? 'القوارب المتاحة | سي كونكت'
           : 'Available Yachts | SeaConnect',
+      description:
+        locale === 'ar'
+          ? 'تصفّح قوارب الإيجار المتاحة في مصر واحجز رحلتك البحرية'
+          : 'Browse available charter yachts in Egypt and book your sea trip',
+      images: [{ url: '/og/yachts.jpg', width: 1200, height: 630 }],
       locale: locale === 'ar' ? 'ar_EG' : 'en_US',
     },
   }

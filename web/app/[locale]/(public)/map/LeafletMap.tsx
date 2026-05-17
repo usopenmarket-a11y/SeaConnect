@@ -16,6 +16,7 @@ import 'leaflet/dist/leaflet.css'
 import * as React from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import Image from 'next/image'
 import Link from 'next/link'
 import styles from './map.module.css'
 
@@ -432,12 +433,21 @@ export function LeafletMap(props: LeafletMapProps) {
                     className={styles.mapBoatCard}
                   >
                     {yacht.primary_image && (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={yacht.primary_image}
-                        alt={yacht.name_ar || yacht.name_en}
-                        className={styles.mapBoatImg}
-                      />
+                      <div className={styles.mapBoatImgWrap}>
+                        <Image
+                          src={yacht.primary_image}
+                          alt={yacht.name_ar || yacht.name_en}
+                          fill
+                          sizes="240px"
+                          className={styles.mapBoatImg}
+                          style={{ objectFit: 'cover' }}
+                          unoptimized={
+                            !yacht.primary_image.startsWith('https://images.unsplash.com') &&
+                            !yacht.primary_image.startsWith('http://localhost') &&
+                            !yacht.primary_image.includes('.r2.cloudflarestorage.com')
+                          }
+                        />
+                      </div>
                     )}
                     <div className={styles.mapBoatBody}>
                       <div className={styles.mapBoatName}>
