@@ -1,4 +1,5 @@
 import os
+import uuid as uuid_module
 
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
@@ -520,8 +521,12 @@ class KYCDocumentUploadView(APIView):
         doc_type: str = serializer.validated_data["doc_type"]
 
         # 3. Build storage path and persist the file.
-        original_name = os.path.basename(upload.name)
-        storage_path = f"kyc/{profile.id}/{doc_type}/{original_name}"
+        # SECURITY FIX (Sprint 15B): Discard the user-supplied filename to
+        # prevent path traversal via crafted filenames (e.g. "../../../etc/passwd").
+        # Use a UUID4 + extension pattern identical to yacht photo upload.
+        ext = os.path.splitext(upload.name)[1].lower()
+        safe_filename = f"{uuid_module.uuid4()}{ext}"
+        storage_path = f"kyc/{profile.id}/{doc_type}/{safe_filename}"
         saved_path = default_storage.save(storage_path, upload)
 
         # 4. Create the KYCDocument record.

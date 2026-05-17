@@ -17,6 +17,24 @@ from pathlib import Path
 from decouple import Csv, config
 
 # ---------------------------------------------------------------------------
+# Sentry — error monitoring (ADR-compliant: opt-in via SENTRY_DSN env var)
+# ---------------------------------------------------------------------------
+
+SENTRY_DSN: str = config("SENTRY_DSN", default="")
+if SENTRY_DSN:
+    try:
+        import sentry_sdk  # noqa: PLC0415
+
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            traces_sample_rate=0.1,
+            environment=config("DJANGO_ENV", default="development"),
+            integrations=[],  # Django integration auto-detected by sentry-sdk
+        )
+    except ImportError:
+        pass  # sentry-sdk not installed; Sentry is disabled
+
+# ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 

@@ -450,16 +450,16 @@ class TestCustomExceptionHandler:
     # --- Throttled ---
 
     def test_happy_handler_wraps_throttled(self) -> None:
-        """Throttled must produce code=ERR_THROTTLED."""
+        """Throttled must produce code=RATE_LIMITED (Sprint 15A standard)."""
         exc = drf_exceptions.Throttled(wait=30)
         data = _call_handler(exc)
-        assert data["error"]["code"] == "ERR_THROTTLED"
+        assert data["error"]["code"] == "RATE_LIMITED"
 
-    def test_happy_handler_throttled_message_mentions_seconds(self) -> None:
-        """Throttled message must mention the wait time in seconds."""
+    def test_happy_handler_throttled_includes_retry_after(self) -> None:
+        """Throttled response must include retry_after so clients can back off."""
         exc = drf_exceptions.Throttled(wait=45)
         data = _call_handler(exc)
-        assert "45" in data["error"]["message"]
+        assert data["error"]["retry_after"] == 45
 
     # --- MethodNotAllowed ---
 

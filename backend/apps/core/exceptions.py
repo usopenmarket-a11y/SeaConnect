@@ -26,6 +26,7 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
     error_code = "ERR_UNKNOWN"
     message = "An unexpected error occurred."
     field: str | None = None
+    retry_after: float | None = None
 
     if isinstance(exc, exceptions.ValidationError):
         error_code = "ERR_VALIDATION"
@@ -58,9 +59,9 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         message = "The requested resource was not found."
 
     elif isinstance(exc, exceptions.Throttled):
-        error_code = "ERR_THROTTLED"
-        wait = exc.wait
-        message = f"Request was throttled. Expected available in {wait:.0f}s." if wait else "Request was throttled."
+        error_code = "RATE_LIMITED"
+        message = "Too many requests. Please slow down."
+        retry_after = exc.wait
 
     elif isinstance(exc, exceptions.MethodNotAllowed):
         error_code = "ERR_METHOD_NOT_ALLOWED"
@@ -75,6 +76,8 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
     }
     if field:
         error_body["field"] = field
+    if retry_after is not None:
+        error_body["retry_after"] = retry_after
 
     response.data = {"error": error_body}
     return response

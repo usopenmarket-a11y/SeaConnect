@@ -2703,3 +2703,66 @@ curl -X POST http://localhost:8010/api/v1/competitions/{id}/register/ \
   -H "Authorization: Bearer {token}"
 # → 201 on first call, 409 on duplicate
 ```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** security-auditor-agent
+**To:** api-endpoint-agent, django-model-agent
+**Sprint:** 15B
+**Feature:** OWASP Top 10 Security Audit — auth, payments, KYC, marketplace
+
+### What Was Completed
+
+Sprint 15B full security audit across bookings/views.py, payments/views.py,
+accounts/views.py, accounts/permissions.py, marketplace/views.py, and
+config/settings/base.py.  Two vulnerabilities were found and fixed in-session.
+
+#### Checks: PASS / FIXED / WARNING
+
+| # | Check | Result |
+|---|-------|--------|
+| 1 | Booking detail IDOR | PASS — BookingDetailView.get_queryset() filters by customer=user or yacht__owner=user |
+| 2 | Payout list IDOR | PASS — PayoutListView filters Payout.objects.filter(owner=request.user) |
+| 3 | Owner profile IDOR | PASS — OwnerProfileView.get/patch uses get_or_create(user=request.user); no ID in URL |
+| 4 | KYC upload ownership | PASS — KYCDocumentUploadView fetches profile by user=request.user; no ID param |
+| 5 | Product edit/delete IDOR | PASS — IsProductOwner.has_object_permission checks obj.vendor.user_id == request.user.id |
+| 6 | JWT access token 15 min | PASS — ACCESS_TOKEN_LIFETIME = timedelta(minutes=15) in base.py |
+| 7 | JWT refresh token 30 days | PASS — REFRESH_TOKEN_LIFETIME = timedelta(days=30) in base.py |
+| 8 | JWT RS256 | PASS — ALGORITHM = "RS256" in SIMPLE_JWT config |
+| 9 | ROTATE_REFRESH_TOKENS | PASS — True, with BLACKLIST_AFTER_ROTATION = True |
+| 10 | KYC MIME validation | PASS — KYCDocumentUploadSerializer.validate_file() checks content_type against allowlist |
+| 11 | Product image MIME validation | PASS — ProductImageUploadSerializer delegates to core/validators.validate_image_upload() |
+| 12 | Max file size enforced | PASS — KYC: 10 MB; photos: MAX_PHOTO_SIZE from settings (default 10 MB) |
+| 13 | Fawry webhook HMAC | PASS — FawryWebhookView verifies HMAC before any DB write |
+| 14 | Webhook idempotency | FIXED — Added select_for_update() + early-return guard when payment.status == CAPTURED |
+| 15 | Admin endpoints guarded | PASS — All /admin/ routes use IsAdminRole (checks request.user.role == UserRole.ADMIN) |
+| 16 | KYC path traversal (filename) | FIXED — Replaced os.path.basename(upload.name) with UUID4+ext, discarding user filename |
+
+#### Files Changed
+
+- `backend/apps/payments/views.py` — FawryWebhookView: added select_for_update() idempotency guard (lines ~186-198)
+- `backend/apps/accounts/views.py` — KYCDocumentUploadView: replaced user-supplied filename with UUID4+ext
+
+#### Remaining Medium Findings (next sprint)
+
+1. **Webhook `return_url` allowlist (A08, LOW)** — `PaymentInitiateSerializer.return_url` accepts any URL. The URL is forwarded to Fawry (not fetched server-side) so there is no SSRF, but an open redirect is possible if the frontend renders it after redirect. Add a `ALLOWED_RETURN_URL_PREFIXES` setting and validate against it in the serializer.
+
+2. **No OTP phone rate-limit implementation (A07, MEDIUM)** — The audit requirement specifies "max 5 OTP attempts per 10 minutes per phone number." No OTP/SMS endpoints were found in the current codebase (accounts/views.py). When phone OTP is implemented, a per-phone Redis counter with a 10-minute TTL must be added.
+
+3. **`DEBUG` not in base.py (A05, INFO)** — DEBUG is set per-environment (True in dev.py, False in uat.py). No prod.py exists yet. When prod.py is created, DEBUG = False must be the first line.
+
+4. **Vendor product `return_url` not validated (A10, LOW)** — No SSRF risk currently identified; Ollama URL is configured via `OLLAMA_BASE_URL` env var, not from user input.
+
+### How to Test
+
+```bash
+# Verify idempotency fix — second webhook call with same provider_ref returns 200 without second BookingEvent
+cd backend && pytest apps/payments/tests/test_payments.py -v -k webhook
+
+# Verify KYC upload path no longer includes original filename
+cd backend && pytest apps/accounts/tests/ -v -k kyc
+```
+

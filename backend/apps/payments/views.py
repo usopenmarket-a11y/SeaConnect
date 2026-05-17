@@ -184,6 +184,17 @@ class FawryWebhookView(APIView):
             return Response(status=status.HTTP_200_OK)  # suppress retry storm
 
         with transaction.atomic():
+            # SECURITY FIX (Sprint 15B): Idempotency guard — lock the payment
+            # row and skip re-processing if it is already in a terminal state.
+            # Without this guard a Fawry retry could insert a second
+            # BookingEvent(PAYMENT_RECEIVED), inflating payout amounts.
+            payment = Payment.objects.select_related("booking").select_for_update().get(
+                id=payment.id,
+            )
+            if payment.status == PaymentStatus.CAPTURED:
+                # Already processed — return 200 to suppress further retries.
+                return Response(status=status.HTTP_200_OK)
+
             payment.status = result.status
             payment.metadata = {
                 **(payment.metadata or {}),
