@@ -110,6 +110,62 @@ class CompetitionListSerializer(serializers.ModelSerializer):
         return obj.entries.filter(status="confirmed").count()
 
 
+class CompetitionEntryResultSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for the public results leaderboard.
+
+    Used by ResultsView (GET /api/v1/competitions/<id>/results/).
+    Exposes rank, participant name, and catch_weight only — no PII beyond
+    the display name.
+    """
+
+    participant_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompetitionEntry
+        fields = [
+            "id",
+            "rank",
+            "participant_name",
+            "catch_weight",
+            "status",
+        ]
+        read_only_fields = fields
+
+    def get_participant_name(self, obj: CompetitionEntry) -> str:
+        """Arabic-first: full name or email fallback (ADR-014)."""
+        return obj.user.full_name or obj.user.email
+
+
+class MyEntrySerializer(serializers.ModelSerializer):
+    """Serializer for a single user's entry in a specific competition.
+
+    Used by MyEntryView (GET /api/v1/competitions/<id>/my-entry/).
+    """
+
+    user_name = serializers.SerializerMethodField()
+    competition_title = serializers.CharField(source="competition.title", read_only=True)
+    competition_title_en = serializers.CharField(source="competition.title_en", read_only=True)
+
+    class Meta:
+        model = CompetitionEntry
+        fields = [
+            "id",
+            "competition",
+            "competition_title",
+            "competition_title_en",
+            "user",
+            "user_name",
+            "status",
+            "catch_weight",
+            "rank",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_user_name(self, obj: CompetitionEntry) -> str:
+        return obj.user.full_name or obj.user.email
+
+
 class CompetitionDetailSerializer(CompetitionListSerializer):
     """Full competition detail — extends list serializer with additional fields."""
 

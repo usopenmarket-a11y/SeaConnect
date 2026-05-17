@@ -1,12 +1,15 @@
 from django.urls import path
 
 from .views import (
+    AdminDisputeListView,
+    AdminDisputeResolveView,
     AdminYachtListView,
     BookingCancelView,
     BookingConfirmView,
     BookingDeclineView,
     BookingDetailView,
     BookingListCreateView,
+    DisputeCreateView,
     OwnerReviewsListView,
     YachtAvailabilityView,
     YachtListCreateView,
@@ -78,6 +81,19 @@ urlpatterns = [
         YachtMonthAvailabilityView.as_view(),
         name="yacht-month-availability",
     ),
+    # Sprint 13B — dispute: customer/owner creates a dispute on a booking
+    path(
+        "bookings/<uuid:booking_id>/dispute/",
+        DisputeCreateView.as_view(),
+        name="booking-dispute-create",
+    ),
     # Admin — KYC / operations portal
     path("admin/yachts/", AdminYachtListView.as_view(), name="admin-yacht-list"),
+    # Sprint 13B — admin dispute management
+    path("admin/disputes/", AdminDisputeListView.as_view(), name="admin-dispute-list"),
+    path(
+        "admin/disputes/<uuid:id>/resolve/",
+        AdminDisputeResolveView.as_view(),
+        name="admin-dispute-resolve",
+    ),
 ]

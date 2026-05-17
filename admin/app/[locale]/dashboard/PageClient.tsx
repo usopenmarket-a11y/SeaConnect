@@ -22,6 +22,8 @@ interface AdminStats {
   revenue_total: string
   bookings_total: number
   active_yachts: number
+  active_vendors: number
+  mom_gtv_delta: number
 }
 
 // ── Payout record shape (GET /api/v1/payments/payouts/) ──────────────────────
@@ -55,6 +57,14 @@ function formatGTV(val: string): string {
   if (Number.isNaN(n)) return '—'
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M'
   return (n / 1_000).toFixed(0) + 'K'
+}
+
+// ── MoM delta formatter — converts 0.22 → "+22%" ─────────────────────────────
+
+function formatMomDelta(delta: number): string {
+  if (!Number.isFinite(delta)) return '—'
+  const pct = Math.round(delta * 100)
+  return pct >= 0 ? `+${pct}%` : `${pct}%`
 }
 
 // ── Derive month labels from ISO date string (e.g. "2026-05-10T..." → "MAY") ─
@@ -126,6 +136,12 @@ interface KpiGridProps {
   gtvCurrency: string
   /** Total bookings count from /analytics/stats/ */
   bookingsTotal: number | '—'
+  /** Formatted revenue string from /analytics/stats/ revenue_total */
+  revenueValue: string
+  /** Formatted MoM GTV delta (e.g. "+22%") from /analytics/stats/ mom_gtv_delta */
+  momDelta: string
+  /** Active vendor count from /analytics/stats/ active_vendors */
+  activeVendors: number | '—'
 }
 
 interface KpiItemDef {
@@ -142,6 +158,9 @@ function KpiGrid({
   gtvValue,
   gtvCurrency,
   bookingsTotal,
+  revenueValue,
+  momDelta,
+  activeVendors,
 }: KpiGridProps) {
   const items: KpiItemDef[] = [
     {
@@ -175,18 +194,29 @@ function KpiGrid({
       unit: gtvCurrency,
     },
     {
-      // MoM delta requires historical data — deferred to Sprint 16.
       labelEn: 'REVENUE',
       labelAr: 'الإيرادات',
-      value: '—',
+      value: revenueValue,
+      unit: gtvCurrency,
+    },
+    {
+      // Take rate = revenue / GTV = always 12% in the Egypt-first phase.
+      labelEn: 'TAKE RATE',
+      labelAr: 'نسبة الأخذ',
+      value: '12',
+      unit: '%',
+    },
+    {
+      labelEn: 'MoM GTV DELTA',
+      labelAr: 'نمو الشهر',
+      value: momDelta,
       unit: '',
     },
     {
-      // Take rate requires revenue + GTV delta — deferred to Sprint 16.
-      labelEn: 'TAKE RATE',
-      labelAr: 'نسبة الأخذ',
-      value: '—',
-      unit: '%',
+      labelEn: 'ACTIVE VENDORS',
+      labelAr: 'البائعون النشطون',
+      value: activeVendors,
+      unit: '',
     },
   ]
 
@@ -457,6 +487,9 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
   const gtvValue = statsData ? formatGTV(statsData.gtv_total) : '—'
   const gtvCurrency = statsData?.gtv_currency ?? 'EGP'
   const bookingsTotal: number | '—' = statsData?.bookings_total ?? '—'
+  const revenueValue = statsData ? formatGTV(statsData.revenue_total) : '—'
+  const momDelta = statsData != null ? formatMomDelta(statsData.mom_gtv_delta) : '—'
+  const activeVendors: number | '—' = statsData?.active_vendors ?? '—'
 
   // Build revenue chart data from payouts
   const revenueData: RevenueDataPoint[] | undefined =
@@ -493,6 +526,9 @@ export default function AdminDashboardClient({ locale }: DashboardClientProps) {
           gtvValue={gtvValue}
           gtvCurrency={gtvCurrency}
           bookingsTotal={bookingsTotal}
+          revenueValue={revenueValue}
+          momDelta={momDelta}
+          activeVendors={activeVendors}
         />
 
         {/* Revenue chart + KYC queue */}

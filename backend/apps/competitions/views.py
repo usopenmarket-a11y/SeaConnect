@@ -11,8 +11,10 @@ from .models import CatchLog, Competition, CompetitionEntry
 from .serializers import (
     CatchLogSerializer,
     CompetitionDetailSerializer,
+    CompetitionEntryResultSerializer,
     CompetitionEntrySerializer,
     CompetitionListSerializer,
+    MyEntrySerializer,
 )
 
 
@@ -143,3 +145,150 @@ class LeaderboardView(APIView):
             for rank, entry in enumerate(entries, 1)
         ]
         return Response({"results": data, "competition_id": str(id)})
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13E — new endpoints: /register/, /results/, /my-entry/
+# ---------------------------------------------------------------------------
+
+
+class RegisterView(APIView):
+    """POST /api/v1/competitions/<id>/register/
+
+    Authenticated users register for a competition.
+
+    Guard order:
+      1. Competition must be status=OPEN
+      2. registration_deadline must not have passed
+      3. confirmed participant count must be below max_participants
+      4. User must not already have an entry (returns 409)
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, id):
+        competition = get_object_or_404(Competition, id=id)
+
+        if competition.status != Competition.Status.OPEN:
+            return Response(
+                {
+                    "error": "Competition is not accepting registrations",
+                    "code": "REGISTRATION_CLOSED",
+                    "detail": {"status": competition.status},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if competition.registration_deadline < timezone.now():
+            return Response(
+                {
+                    "error": "Registration deadline has passed",
+                    "code": "REGISTRATION_CLOSED",
+                    "detail": {"deadline": competition.registration_deadline.isoformat()},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        confirmed_count = competition.entries.filter(
+            status=CompetitionEntry.Status.CONFIRMED
+        ).count()
+        if confirmed_count >= competition.max_participants:
+            return Response(
+                {
+                    "error": "Competition has reached its maximum number of participants",
+                    "code": "COMPETITION_FULL",
+                    "detail": {"max_participants": competition.max_participants},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check duplicate before get_or_create to return 409 not 400
+        if CompetitionEntry.objects.filter(
+            competition=competition, user=request.user
+        ).exists():
+            return Response(
+                {
+                    "error": "You are already registered for this competition",
+                    "code": "ALREADY_REGISTERED",
+                    "detail": {},
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        entry = CompetitionEntry.objects.create(
+            competition=competition,
+            user=request.user,
+            status=CompetitionEntry.Status.REGISTERED,
+        )
+        return Response(
+            MyEntrySerializer(entry).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ResultsView(APIView):
+    """GET /api/v1/competitions/<id>/results/
+
+    Public endpoint returning the competition leaderboard.
+
+    If the competition has not yet ended (end_date is in the future),
+    returns an empty list with status='upcoming'.
+    Results are ordered by rank (nulls last) then catch_weight descending.
+    Falls back to CatchLog sum when rank/catch_weight not set on entries.
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, id):
+        competition = get_object_or_404(Competition, id=id)
+        today = timezone.now().date()
+
+        if competition.end_date > today:
+            return Response(
+                {
+                    "status": "upcoming",
+                    "results": [],
+                    "competition_id": str(id),
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        entries = (
+            CompetitionEntry.objects.filter(competition=competition)
+            .exclude(status=CompetitionEntry.Status.WITHDRAWN)
+            .annotate(
+                total_weight=Sum("catches__weight_kg"),
+                catch_count=Count("catches"),
+            )
+            .select_related("user")
+            .order_by("rank", "-catch_weight", "-total_weight")
+        )
+
+        serializer = CompetitionEntryResultSerializer(entries, many=True)
+        return Response(
+            {
+                "status": "completed",
+                "results": serializer.data,
+                "competition_id": str(id),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class MyEntryView(APIView):
+    """GET /api/v1/competitions/<id>/my-entry/
+
+    Returns the authenticated user's entry for the specified competition.
+    Returns 404 if the user has not registered.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, id):
+        competition = get_object_or_404(Competition, id=id)
+        entry = get_object_or_404(
+            CompetitionEntry.objects.select_related("competition", "user"),
+            competition=competition,
+            user=request.user,
+        )
+        return Response(MyEntrySerializer(entry).data, status=status.HTTP_200_OK)

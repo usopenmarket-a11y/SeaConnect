@@ -130,6 +130,18 @@ class CompetitionEntry(TimeStampedModel):
         blank=True,
         help_text="Payment gateway reference for the entry fee transaction.",
     )
+    catch_weight = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Total verified catch weight in kg for leaderboard ranking.",
+    )
+    rank = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Official final rank after competition ends.",
+    )
 
     class Meta:
         db_table = "competitions_entry"

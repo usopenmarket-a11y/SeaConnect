@@ -2366,3 +2366,36 @@ cd web && npx tsc --noEmit 2>&1 | grep reviews  # should be empty
 ```json
 { "results": [{ "id": "uuid", "rating": 5, "title": "...", "body": "...", "customer_name": "Ahmed M.", "created_at": "2026-05-17T..." }], "next_cursor": null, "has_more": false }
 ```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** django-api-agent
+**To:** frontend-admin-agent
+**Sprint:** 13A
+**Feature:** Analytics API completion + admin dashboard live data wiring
+
+### What Was Completed
+- `AdminPlatformStatsView` extended with `active_vendors` (vendor user count) and `mom_gtv_delta` (month-over-month GTV float, 0.0 when no prior month data); all 7 documented fields now returned.
+- `OwnerEarningsSummarySerializer` extended with `month_label` ("YYYY-MM" string) and `mom_delta` (float, computed per-page from adjacent rows); `OwnerEarningsSummaryListView` injects `results_list` context for the serializer.
+- `admin/app/[locale]/dashboard/PageClient.tsx` wired: `revenueValue` from `stats.revenue_total`, `momDelta` from `stats.mom_gtv_delta` (formatted `+22%`), `activeVendors` from `stats.active_vendors`; take rate KPI now shows live `12%`; `AdminStats` interface updated; `formatMomDelta()` helper added.
+- 4 new tests added to `test_analytics_stats.py` covering `active_vendors` count, `mom_gtv_delta` type/zero, `month_label` field, `mom_delta` field, and customer 200-empty on earnings.
+- i18n keys `momDelta` and `activeVendors` added to both `admin/messages/ar.json` and `admin/messages/en.json`.
+
+### Contract
+- `GET /api/v1/analytics/stats/` → `{ gtv_total, gtv_currency, revenue_total, bookings_total, active_yachts, active_vendors, mom_gtv_delta }`
+- `GET /api/v1/analytics/earnings/` → `{ results: [{..., month_label, mom_delta}], next, previous }`
+
+### How to Test
+```bash
+cd backend && python3 manage.py check          # 0 issues
+cd backend && python3 -m pytest apps/analytics/tests/test_analytics_stats.py --collect-only
+cd admin && npx tsc --noEmit                   # 0 errors
+```
+
+### Response/Output Shape
+```json
+{ "gtv_total": "284750.00", "gtv_currency": "EGP", "revenue_total": "34170.00", "bookings_total": 342, "active_yachts": 18, "active_vendors": 7, "mom_gtv_delta": 0.22 }
+```

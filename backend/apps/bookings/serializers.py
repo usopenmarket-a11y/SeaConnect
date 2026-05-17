@@ -6,6 +6,7 @@ from .models import (
     Availability,
     Booking,
     BookingEvent,
+    Dispute,
     Yacht,
     YachtMedia,
     YachtReview,
@@ -397,3 +398,70 @@ class YachtReviewWriteSerializer(serializers.Serializer):  # type: ignore[type-a
         default="",
     )
     body = serializers.CharField(min_length=10, max_length=5000)
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13B — Dispute serializers
+# ---------------------------------------------------------------------------
+
+
+class DisputeSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read serializer for disputes — used in both admin list and create responses.
+
+    ``booking_ref`` returns the short booking UUID string as a reference.
+    ``raised_by_name`` returns the display name of the user who raised it.
+    """
+
+    booking_id = serializers.UUIDField(source="booking.id", read_only=True)
+    booking_ref = serializers.SerializerMethodField()
+    raised_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Dispute
+        fields = [
+            "id",
+            "booking_id",
+            "booking_ref",
+            "raised_by_name",
+            "reason",
+            "status",
+            "resolution",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_booking_ref(self, obj) -> str:  # type: ignore[override]
+        # Short UUID reference (first 8 chars) matching the admin table display.
+        return str(obj.booking_id)[:8].upper()
+
+    def get_raised_by_name(self, obj) -> str:  # type: ignore[override]
+        full = f"{obj.raised_by.first_name} {obj.raised_by.last_name}".strip()
+        return full or obj.raised_by.email
+
+
+class DisputeCreateSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Write serializer for POST /api/v1/bookings/{id}/dispute/.
+
+    Only accepts ``reason`` — ``booking`` comes from the URL and ``raised_by``
+    is set from ``request.user`` in the view.
+    """
+
+    reason = serializers.CharField(
+        min_length=10,
+        max_length=500,
+        help_text="Description of the dispute (10–500 chars; Arabic accommodated).",
+    )
+
+
+class DisputeResolveSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Write serializer for POST /api/v1/admin/disputes/{id}/resolve/.
+
+    Accepts only ``resolution`` text.  Status, resolved_by, and resolved_at
+    are set server-side in the view.
+    """
+
+    resolution = serializers.CharField(
+        min_length=5,
+        max_length=5000,
+        help_text="Admin resolution note (5–5000 chars).",
+    )

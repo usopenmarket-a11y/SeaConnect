@@ -37,7 +37,7 @@ from apps.core.pagination import SeaConnectCursorPagination
 from apps.core.throttles import SearchAnonThrottle, UploadThrottle
 
 from .filters import YachtFilter
-from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtMedia, YachtReview, YachtStatus
+from .models import Availability, BlockedDate, Booking, BookingStatus, Dispute, DisputeStatus, Yacht, YachtMedia, YachtReview, YachtStatus
 from .permissions import IsCustomerRole, IsOwnerRole, IsYachtOwner
 from .serializers import (
     AvailabilitySerializer,
@@ -45,6 +45,9 @@ from .serializers import (
     BookingCreateSerializer,
     BookingDetailSerializer,
     BookingListSerializer,
+    DisputeCreateSerializer,
+    DisputeResolveSerializer,
+    DisputeSerializer,
     YachtCreateSerializer,
     YachtDetailSerializer,
     YachtListSerializer,
@@ -997,3 +1000,119 @@ class OwnerReviewsListView(generics.ListAPIView):  # type: ignore[type-arg]
             .select_related("yacht", "customer")
             .order_by("-created_at")
         )
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13B — Dispute views
+# ---------------------------------------------------------------------------
+
+
+import datetime as _datetime  # noqa: E402 — used only in this section
+
+
+class DisputeCreateView(APIView):
+    """POST /api/v1/bookings/{booking_id}/dispute/
+
+    Authenticated customer or owner of the booking raises a dispute.
+
+    Rules:
+      1. Caller must be authenticated (IsAuthenticated).
+      2. Caller must be the booking's customer OR the yacht's owner — otherwise 403.
+      3. Creates a Dispute with status=OPEN.
+
+    Returns 201 with the DisputeSerializer payload.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, booking_id) -> Response:
+        booking = get_object_or_404(
+            Booking.objects.select_related("yacht__owner", "customer"),
+            id=booking_id,
+        )
+
+        # Only the booking customer or the yacht owner may raise a dispute.
+        is_customer = booking.customer_id == request.user.id
+        is_owner = booking.yacht.owner_id == request.user.id
+        if not (is_customer or is_owner):
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_PERMISSION_DENIED",
+                        "message": "You are not a party to this booking.",
+                    }
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        serializer = DisputeCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        dispute = Dispute.objects.create(
+            booking=booking,
+            raised_by=request.user,
+            reason=serializer.validated_data["reason"],
+            status=DisputeStatus.OPEN,
+        )
+        # Refetch with related fields for the serializer.
+        dispute = Dispute.objects.select_related("booking", "raised_by").get(id=dispute.id)
+        return Response(DisputeSerializer(dispute).data, status=status.HTTP_201_CREATED)
+
+
+class AdminDisputeListView(generics.ListAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/admin/disputes/
+
+    Admin-only paginated list of all disputes.
+    Optional filter: ?status=open|investigating|resolved|closed
+
+    Requires: IsAdminUser (role=admin).
+    Pagination: SeaConnectCursorPagination (ADR-013).
+    """
+
+    permission_classes = [IsAdminUser]
+    pagination_class = SeaConnectCursorPagination
+    serializer_class = DisputeSerializer
+
+    def get_queryset(self):  # type: ignore[override]
+        qs = (
+            Dispute.objects.select_related("booking", "raised_by", "resolved_by")
+            .order_by("-created_at")
+        )
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+
+class AdminDisputeResolveView(APIView):
+    """POST /api/v1/admin/disputes/{id}/resolve/
+
+    Admin resolves a dispute by supplying a resolution note.
+
+    Steps:
+      1. Validate {resolution} via DisputeResolveSerializer.
+      2. Set status=RESOLVED, resolution=..., resolved_by=request.user, resolved_at=now().
+      3. Return updated dispute via DisputeSerializer.
+
+    Requires: IsAdminUser (role=admin).
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request: Request, id) -> Response:
+        dispute = get_object_or_404(
+            Dispute.objects.select_related("booking", "raised_by"),
+            id=id,
+        )
+
+        serializer = DisputeResolveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        dispute.status = DisputeStatus.RESOLVED
+        dispute.resolution = serializer.validated_data["resolution"]
+        dispute.resolved_by = request.user
+        dispute.resolved_at = _datetime.datetime.now(_datetime.timezone.utc)
+        dispute.save(update_fields=["status", "resolution", "resolved_by", "resolved_at", "updated_at"])
+
+        dispute.refresh_from_db()
+        return Response(DisputeSerializer(dispute).data, status=status.HTTP_200_OK)

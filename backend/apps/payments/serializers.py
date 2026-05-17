@@ -57,6 +57,39 @@ class PayoutSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
         read_only_fields = fields
 
 
+class AdminPayoutSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read serializer for the admin payout list endpoint.
+
+    Includes owner identity fields so the admin portal can display the
+    owner name/email without a separate user lookup.
+    """
+
+    owner_name = serializers.SerializerMethodField()
+    owner_email = serializers.EmailField(source="owner.email", read_only=True)
+
+    class Meta:
+        model = Payout
+        fields = [
+            "id",
+            "owner_name",
+            "owner_email",
+            "amount",
+            "currency",
+            "status",
+            "reference",
+            "payment_method",
+            "scheduled_date",
+            "paid_at",
+            "escrow_booking_ids",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_owner_name(self, obj) -> str:  # type: ignore[override]
+        full = f"{obj.owner.first_name} {obj.owner.last_name}".strip()
+        return full or obj.owner.email
+
+
 class EscrowBookingSerializer(serializers.Serializer):  # type: ignore[type-arg]
     """Read serializer for bookings currently in the escrow hold window.
 

@@ -5,6 +5,7 @@ from .models import (
     BlockedDate,
     Booking,
     BookingEvent,
+    Dispute,
     Yacht,
     YachtMedia,
 )
@@ -121,3 +122,50 @@ class BookingEventAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 
     def has_delete_permission(self, request, obj=None) -> bool:  # type: ignore[override]
         return False
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13B — Dispute admin
+# ---------------------------------------------------------------------------
+
+
+@admin.register(Dispute)
+class DisputeAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
+    """Admin registration for customer/owner disputes (Sprint 13B).
+
+    Admins may update status and resolution; the created_at / raised_by fields
+    are read-only to preserve the audit trail.
+    """
+
+    list_display = ["booking", "raised_by", "status", "created_at"]
+    list_filter = ["status"]
+    search_fields = [
+        "booking__id",
+        "raised_by__email",
+        "raised_by__first_name",
+        "raised_by__last_name",
+    ]
+    raw_id_fields = ["booking", "raised_by", "resolved_by"]
+    readonly_fields = ["id", "booking", "raised_by", "reason", "created_at", "updated_at"]
+    fieldsets = [
+        (
+            "Dispute",
+            {
+                "fields": [
+                    "id",
+                    "booking",
+                    "raised_by",
+                    "reason",
+                    "status",
+                    "created_at",
+                    "updated_at",
+                ],
+            },
+        ),
+        (
+            "Resolution",
+            {
+                "fields": ["resolution", "resolved_by", "resolved_at"],
+            },
+        ),
+    ]

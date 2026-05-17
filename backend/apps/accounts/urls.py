@@ -6,6 +6,9 @@ from .views import (
     AdminKYCListView,
     AdminKYCRejectView,
     AdminUserListView,
+    AdminUserRoleView,
+    AdminUserSuspendView,
+    AdminUserUnsuspendView,
     KYCDocumentUploadView,
     LoginView,
     LogoutView,
@@ -26,7 +29,11 @@ urlpatterns = [
     path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
     path("auth/logout/", LogoutView.as_view(), name="auth-logout"),
     path("users/me/", UserMeView.as_view(), name="users-me"),
+    # Sprint 13D — admin user management
     path("admin/users/", AdminUserListView.as_view(), name="admin-user-list"),
+    path("admin/users/<uuid:id>/suspend/", AdminUserSuspendView.as_view(), name="admin-user-suspend"),
+    path("admin/users/<uuid:id>/unsuspend/", AdminUserUnsuspendView.as_view(), name="admin-user-unsuspend"),
+    path("admin/users/<uuid:id>/role/", AdminUserRoleView.as_view(), name="admin-user-role"),
     # Sprint 10C — owner KYC profile
     path("accounts/owner-profile/", OwnerProfileView.as_view(), name="owner-profile"),
     path("accounts/owner-profile/submit/", OwnerProfileSubmitView.as_view(), name="owner-profile-submit"),

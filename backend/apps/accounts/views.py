@@ -16,7 +16,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from apps.core.pagination import SeaConnectCursorPagination
 from apps.core.throttles import AuthAnonThrottle, AuthUserThrottle, UploadThrottle
 
-from .models import BoatOwnerProfile, KYCDocument, KYCStatus, User
+from .models import BoatOwnerProfile, KYCDocument, KYCStatus, User, UserRole
 from .permissions import IsAdminUser as IsAdminRole
 from .permissions import IsOwner
 from .serializers import (
@@ -28,6 +28,7 @@ from .serializers import (
     OwnerProfileStepSerializer,
     RegisterSerializer,
     UserProfileSerializer,
+    UserRoleUpdateSerializer,
 )
 
 # ---------------------------------------------------------------------------
@@ -133,6 +134,107 @@ class AdminUserListView(generics.ListAPIView):  # type: ignore[type-arg]
             qs = qs.filter(email__icontains=search)
 
         return qs
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13D: Admin user suspend/unsuspend/role-change endpoints
+# ---------------------------------------------------------------------------
+
+
+class AdminUserSuspendView(APIView):
+    """POST /api/v1/admin/users/{id}/suspend/
+
+    Sets is_active=False on the target user (soft suspension).
+    Admins cannot suspend themselves or other admins.
+
+    Requires: role == 'admin'.
+    """
+
+    permission_classes = [IsAdminRole]
+
+    def post(self, request: Request, id: str) -> Response:
+        user = get_object_or_404(User, id=id)
+
+        if user == request.user:
+            return Response(
+                {
+                    "error": {
+                        "code": "CANNOT_SUSPEND_SELF",
+                        "message": "An admin cannot suspend their own account.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.role == UserRole.ADMIN:
+            return Response(
+                {
+                    "error": {
+                        "code": "CANNOT_SUSPEND_ADMIN",
+                        "message": "Admin accounts cannot be suspended via the API.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.is_active = False
+        user.save(update_fields=["is_active", "updated_at"])
+
+        serializer = AdminUserSerializer(user)
+        return Response(serializer.data)
+
+
+class AdminUserUnsuspendView(APIView):
+    """POST /api/v1/admin/users/{id}/unsuspend/
+
+    Sets is_active=True on the target user (re-activates account).
+
+    Requires: role == 'admin'.
+    """
+
+    permission_classes = [IsAdminRole]
+
+    def post(self, request: Request, id: str) -> Response:
+        user = get_object_or_404(User, id=id)
+        user.is_active = True
+        user.save(update_fields=["is_active", "updated_at"])
+        serializer = AdminUserSerializer(user)
+        return Response(serializer.data)
+
+
+class AdminUserRoleView(APIView):
+    """PATCH /api/v1/admin/users/{id}/role/
+
+    Reassigns a user's role to customer, owner, or vendor.
+    Promotion to admin is intentionally disallowed here (requires DB access).
+
+    Requires: role == 'admin'.
+    """
+
+    permission_classes = [IsAdminRole]
+
+    def patch(self, request: Request, id: str) -> Response:
+        user = get_object_or_404(User, id=id)
+
+        if user == request.user:
+            return Response(
+                {
+                    "error": {
+                        "code": "CANNOT_CHANGE_OWN_ROLE",
+                        "message": "An admin cannot change their own role.",
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = UserRoleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user.role = serializer.validated_data["role"]
+        user.save(update_fields=["role", "updated_at"])
+
+        out_serializer = AdminUserSerializer(user)
+        return Response(out_serializer.data)
 
 
 # ---------------------------------------------------------------------------

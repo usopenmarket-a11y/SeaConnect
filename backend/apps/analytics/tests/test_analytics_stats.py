@@ -368,15 +368,68 @@ class TestAdminPlatformStatsView:
         assert response.json()["active_yachts"] == 1
 
     def test_stats_response_shape_has_all_keys(self, admin_client: APIClient):
-        """Response must contain exactly the documented keys."""
+        """Response must contain all documented keys including active_vendors and mom_gtv_delta."""
         response = admin_client.get(STATS_URL)
         assert response.status_code == 200
         data = response.json()
         required_keys = {
             "gtv_total", "gtv_currency", "revenue_total",
-            "bookings_total", "active_yachts",
+            "bookings_total", "active_yachts", "active_vendors", "mom_gtv_delta",
         }
         assert required_keys.issubset(set(data.keys()))
+
+    def test_stats_counts_active_vendors(
+        self,
+        admin_client: APIClient,
+        egypt_region: Region,
+    ):
+        """active_vendors must count only users with role='vendor' and is_active=True."""
+        User.objects.create_user(
+            email=f"vendor-active-{uuid.uuid4().hex[:6]}@test.com",
+            password="TestPass123!",
+            first_name="Active",
+            last_name="Vendor",
+            role=UserRole.VENDOR,
+            region=egypt_region,
+            is_active=True,
+        )
+        # Inactive vendor — must NOT be counted.
+        inactive_vendor = User.objects.create_user(
+            email=f"vendor-inactive-{uuid.uuid4().hex[:6]}@test.com",
+            password="TestPass123!",
+            first_name="Inactive",
+            last_name="Vendor",
+            role=UserRole.VENDOR,
+            region=egypt_region,
+        )
+        User.objects.filter(pk=inactive_vendor.pk).update(is_active=False)
+
+        response = admin_client.get(STATS_URL)
+        assert response.status_code == 200
+        # At least 1 active vendor created in this test must appear in the count.
+        assert response.json()["active_vendors"] >= 1
+
+    def test_stats_mom_gtv_delta_zero_with_no_prior_month(
+        self, admin_client: APIClient
+    ):
+        """mom_gtv_delta must be 0.0 when there are no captured payments last month."""
+        response = admin_client.get(STATS_URL)
+        assert response.status_code == 200
+        assert response.json()["mom_gtv_delta"] == 0.0
+
+    def test_stats_mom_gtv_delta_is_float(
+        self,
+        admin_client: APIClient,
+        owner_user: User,
+        customer_user: User,
+        egypt_region: Region,
+        departure_port: DeparturePort,
+    ):
+        """mom_gtv_delta field must be a float (not a string or None)."""
+        response = admin_client.get(STATS_URL)
+        assert response.status_code == 200
+        delta = response.json()["mom_gtv_delta"]
+        assert isinstance(delta, float)
 
     def test_stats_post_not_allowed(self, admin_client: APIClient):
         """Stats endpoint is read-only; POST must return 405."""
@@ -497,3 +550,52 @@ class TestOwnerEarningsSummaryListView:
         client = _auth_client(owner_user)
         response = client.post(EARNINGS_URL, data={})
         assert response.status_code == 405
+
+    def test_earnings_row_includes_month_label(
+        self, owner_user: User, egypt_region: Region
+    ):
+        """Each result row must include month_label in 'YYYY-MM' format."""
+        _make_earnings(owner_user, 2026, 5, egypt_region.currency)
+
+        client = _auth_client(owner_user)
+        response = client.get(EARNINGS_URL)
+
+        assert response.status_code == 200
+        row = response.json()["results"][0]
+        assert "month_label" in row
+        assert row["month_label"] == "2026-05"
+
+    def test_earnings_row_includes_mom_delta(
+        self, owner_user: User, egypt_region: Region
+    ):
+        """Each result row must include mom_delta as a float (0.0 for oldest row)."""
+        _make_earnings(owner_user, 2026, 5, egypt_region.currency)
+        _make_earnings(owner_user, 2026, 4, egypt_region.currency)
+
+        client = _auth_client(owner_user)
+        response = client.get(EARNINGS_URL)
+
+        assert response.status_code == 200
+        results = response.json()["results"]
+        # Both rows must carry mom_delta.
+        for row in results:
+            assert "mom_delta" in row
+            assert isinstance(row["mom_delta"], float)
+        # Oldest row (May 2026 at index 0 = newest, April 2026 at index 1)
+        # May vs April: same net_revenue (4400.00 each) → delta = 0.0
+        assert results[0]["mom_delta"] == 0.0
+        # April is the oldest visible row — no prior context → 0.0
+        assert results[1]["mom_delta"] == 0.0
+
+    def test_earnings_customer_gets_200_empty_results(
+        self, customer_user: User
+    ):
+        """Customer (non-owner) is authenticated but has no earnings rows — returns 200 + []."""
+        client = _auth_client(customer_user)
+        response = client.get(EARNINGS_URL)
+
+        # Permission is IsAuthenticated — customers get 200 with an empty list,
+        # not 403. They simply have no OwnerEarningsSummary rows.
+        assert response.status_code == 200
+        data = response.json()
+        assert data["results"] == []

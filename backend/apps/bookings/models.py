@@ -545,3 +545,86 @@ class YachtReview(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.customer_id} → {self.yacht.name} ({self.rating}★)"
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13B — Dispute (customer or owner raises a dispute on a booking)
+# ---------------------------------------------------------------------------
+
+
+class DisputeStatus(models.TextChoices):
+    OPEN = "open", "Open"
+    INVESTIGATING = "investigating", "Investigating"
+    RESOLVED = "resolved", "Resolved"
+    CLOSED = "closed", "Closed"
+
+
+class Dispute(TimeStampedModel):
+    """A dispute raised against a booking by the customer or the owner.
+
+    Lifecycle:
+      open → investigating → resolved (admin resolves)
+      open → closed (admin closes without formal resolution)
+
+    Only admins may update the status; customers/owners only create.
+    ADR-001: UUID PK.
+    ADR-012: No event-sourcing table needed here — status transitions are
+             admin-only and not subject to the booking-state-machine rules.
+    ADR-013: List endpoints use CursorPagination.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.PROTECT,
+        related_name="disputes",
+        help_text="Booking this dispute concerns.",
+    )
+    raised_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="disputes_raised",
+        help_text="User (customer or owner) who opened the dispute.",
+    )
+    reason = models.CharField(
+        max_length=500,
+        help_text="Short description of the dispute (≤500 chars; Arabic accommodated).",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=DisputeStatus.choices,
+        default=DisputeStatus.OPEN,
+        db_index=True,
+        help_text="Current lifecycle state of the dispute.",
+    )
+    resolution = models.TextField(
+        blank=True,
+        help_text="Admin-written resolution note. Required when status→resolved.",
+    )
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="disputes_resolved",
+        help_text="Admin user who resolved the dispute.",
+    )
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="UTC timestamp when the dispute was resolved.",
+    )
+
+    class Meta:
+        db_table = "bookings_dispute"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"], name="idx_dispute_status"),
+            models.Index(fields=["booking"], name="idx_dispute_booking"),
+            models.Index(fields=["raised_by"], name="idx_dispute_raised_by"),
+        ]
+        verbose_name = "Dispute"
+        verbose_name_plural = "Disputes"
+
+    def __str__(self) -> str:
+        return f"Dispute {self.id} — {self.booking_id} ({self.get_status_display()})"

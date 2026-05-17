@@ -45,3 +45,17 @@ export async function adminPost<T>(path: string, token: string, body?: unknown):
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
+
+export async function adminPatch<T>(path: string, token: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}/api/v1${path}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}

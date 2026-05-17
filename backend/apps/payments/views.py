@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -23,9 +23,12 @@ from apps.bookings.models import (
 from apps.core.pagination import SeaConnectCursorPagination
 from apps.core.throttles import PaymentThrottle
 
-from .models import Payment, PaymentProviderChoices, PaymentStatus, Payout
+from apps.accounts.permissions import IsAdminUser as IsAdminRole
+
+from .models import Payment, PaymentProviderChoices, PaymentStatus, Payout, PayoutStatus
 from .providers.registry import get_provider  # ADR-007 — currency-driven lookup
 from .serializers import (
+    AdminPayoutSerializer,
     EscrowBookingSerializer,
     PaymentInitiateSerializer,
     PaymentSerializer,
@@ -265,3 +268,76 @@ class EscrowListView(APIView):
         )
         serializer = EscrowBookingSerializer(qs, many=True)
         return Response({"results": serializer.data})
+
+
+# ---------------------------------------------------------------------------
+# Sprint 13C: Admin payout management endpoints
+# ---------------------------------------------------------------------------
+
+
+class AdminPayoutListView(generics.ListAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/admin/payouts/
+
+    Lists all payout records across all owners, newest first.
+    Supports filtering by status via ?status=scheduled|processing|paid|failed.
+
+    Requires: role == 'admin'.
+    Pagination: CursorPagination (ADR-013).
+    """
+
+    serializer_class = AdminPayoutSerializer
+    permission_classes = [IsAdminRole]
+    pagination_class = SeaConnectCursorPagination
+
+    def get_queryset(self):  # type: ignore[override]
+        qs = (
+            Payout.objects.select_related("owner")
+            .order_by("-scheduled_date")
+        )
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
+
+
+class AdminPayoutApproveView(APIView):
+    """POST /api/v1/admin/payouts/{id}/approve/
+
+    Transitions a scheduled Payout to 'processing' — the admin manually
+    triggers the payout cycle for a specific record.
+
+    Only 'scheduled' payouts can be approved. Returns 409 otherwise.
+
+    Requires: role == 'admin'.
+    """
+
+    permission_classes = [IsAdminRole]
+
+    def post(self, request: Request, id: str) -> Response:
+        payout = get_object_or_404(Payout.objects.select_related("owner"), id=id)
+
+        if payout.status != PayoutStatus.SCHEDULED:
+            return Response(
+                {
+                    "error": {
+                        "code": "INVALID_PAYOUT_TRANSITION",
+                        "message": (
+                            f"Cannot approve a payout with status '{payout.status}'. "
+                            "Only 'scheduled' payouts can be approved."
+                        ),
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        payout.status = PayoutStatus.PROCESSING
+        payout.save(update_fields=["status", "updated_at"])
+
+        logger.info(
+            "admin_payout_approved payout=%s actor=%s",
+            payout.id,
+            request.user.id,
+        )
+
+        serializer = AdminPayoutSerializer(payout)
+        return Response(serializer.data)

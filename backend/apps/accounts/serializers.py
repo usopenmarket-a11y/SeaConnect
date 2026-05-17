@@ -306,6 +306,21 @@ class AdminKYCRejectSerializer(serializers.Serializer):  # type: ignore[type-arg
     )
 
 
+class UserRoleUpdateSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Write serializer for PATCH /api/v1/admin/users/{id}/role/.
+
+    Accepts only the ``role`` field. Admins can reassign any user to
+    customer, owner, or vendor — not to admin (escalation requires DB access).
+    """
+
+    ASSIGNABLE_ROLES = [UserRole.CUSTOMER, UserRole.OWNER, UserRole.VENDOR]
+
+    role = serializers.ChoiceField(
+        choices=ASSIGNABLE_ROLES,
+        help_text="New role: customer | owner | vendor",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Sprint 11A: KYC document upload serializer
 # ---------------------------------------------------------------------------
