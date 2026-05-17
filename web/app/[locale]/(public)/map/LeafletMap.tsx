@@ -12,10 +12,10 @@
  * - Side panel shows legend when no port is selected; shows yacht popup when a port marker is clicked.
  */
 
-import 'leaflet/dist/leaflet.css'
 import * as React from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import Image from 'next/image'
 import Link from 'next/link'
 import styles from './map.module.css'
