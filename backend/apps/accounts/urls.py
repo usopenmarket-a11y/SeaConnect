@@ -6,6 +6,7 @@ from .views import (
     AdminKYCListView,
     AdminKYCRejectView,
     AdminUserListView,
+    KYCDocumentUploadView,
     LoginView,
     LogoutView,
     OwnerProfileSubmitView,
@@ -29,6 +30,8 @@ urlpatterns = [
     # Sprint 10C — owner KYC profile
     path("accounts/owner-profile/", OwnerProfileView.as_view(), name="owner-profile"),
     path("accounts/owner-profile/submit/", OwnerProfileSubmitView.as_view(), name="owner-profile-submit"),
+    # Sprint 11A — KYC document upload
+    path("accounts/owner-profile/upload/", KYCDocumentUploadView.as_view(), name="owner-profile-upload"),
     # Sprint 10C — admin KYC review queue
     path("admin/kyc/", AdminKYCListView.as_view(), name="admin-kyc-list"),
     path("admin/kyc/<uuid:id>/approve/", AdminKYCApproveView.as_view(), name="admin-kyc-approve"),

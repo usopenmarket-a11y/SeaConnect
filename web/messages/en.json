@@ -542,8 +542,12 @@
       "notVendor": "This page is for vendors only"
     },
     "nav": {
+      "dashboard": "Dashboard",
       "products": "My Products",
-      "dashboard": "Dashboard"
+      "orders": "Orders",
+      "calendar": "Calendar",
+      "payouts": "Payouts",
+      "ariaLabel": "Vendor navigation"
     },
     "dashboard": {
       "title": "Vendor Dashboard",
@@ -564,28 +568,154 @@
     },
     "products": {
       "title": "Product Management",
+      "newTitle": "New Product",
+      "editTitle": "Edit Product",
       "empty": "No products yet",
-      "addProduct": "Add product",
+      "addProduct": "Add New Product",
+      "backToProducts": "Back to products",
       "loadError": "Could not load products",
       "name": "Name",
       "nameAr": "Name (Arabic)",
+      "nameEn": "Name (English)",
+      "category": "Category",
+      "categoryNone": "— Select a category —",
+      "categoryLabel": {
+        "rods_reels": "Rods & Reels",
+        "lures": "Lures",
+        "tackle_boxes": "Tackle Boxes",
+        "clothing": "Clothing",
+        "safety": "Safety",
+        "electronics": "Electronics"
+      },
       "price": "Price",
-      "stock": "Stock",
-      "status": "Status",
+      "stock": "Stock qty",
+      "availability": "Availability",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "isAvailable": "Product is available for sale",
+      "descriptionAr": "Description (Arabic)",
+      "descriptionEn": "Description (English)",
       "image": "Image",
       "actions": "Actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "deleteError": "Could not delete product",
+      "confirmDelete": "Are you sure you want to delete «{name}»?",
       "uploadImage": "Upload image",
       "uploading": "Uploading...",
       "uploadSuccess": "Image uploaded",
       "uploadError": "Could not upload image",
       "create": "Create product",
       "creating": "Creating...",
-      "createSuccess": "Product created",
+      "createSuccess": "Product created successfully",
       "createError": "Could not create product",
+      "saveChanges": "Save changes",
+      "saving": "Saving...",
+      "saveSuccess": "Changes saved successfully",
+      "saveError": "Could not save changes",
+      "cancelBtn": "Cancel",
+      "fieldRequired": "This field is required",
+      "fieldInvalidPrice": "Please enter a valid price greater than zero",
+      "fieldInvalidQty": "Please enter a valid whole number (0 or more)",
       "statusLabel": {
         "active": "Active",
         "draft": "Draft",
         "out_of_stock": "Out of stock"
+      }
+    },
+    "orders": {
+      "title": "Incoming Orders",
+      "empty": "No orders at the moment",
+      "filter": {
+        "all": "All",
+        "pending": "Pending",
+        "processing": "Processing",
+        "shipped": "Shipped",
+        "delivered": "Delivered"
+      },
+      "table": {
+        "ref": "Reference",
+        "customer": "Customer",
+        "products": "Products",
+        "quantity": "Qty",
+        "amount": "Amount",
+        "status": "Status",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "⏱ Pending",
+        "processing": "Processing",
+        "shipped": "Shipped",
+        "delivered": "✓ Delivered",
+        "cancelled": "Cancelled"
+      },
+      "action": {
+        "confirm": "Confirm",
+        "ship": "Ship",
+        "cancel": "Cancel"
+      }
+    },
+    "calendar": {
+      "title": "Delivery Calendar",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "stats": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "delivered": "Delivered"
+      },
+      "weekday": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      },
+      "legend": {
+        "pending": "Pending",
+        "confirmed": "Confirmed / In transit",
+        "delivered": "Delivered"
+      }
+    },
+    "payouts": {
+      "title": "Payouts & Earnings",
+      "nextPayout": "Next payout",
+      "bankAccount": "Bank account",
+      "editBank": "Edit",
+      "addBank": "+ Add account",
+      "payoutSchedule": "Payout schedule",
+      "historyTitle": "Payout ledger",
+      "heldTitle": "Held funds",
+      "heldSubtitle": "orders in transit · released after 24h from delivery",
+      "heldRelease": "Releases in {hours}h",
+      "instantTransfer": "Instant transfer →",
+      "downloadPdf": "PDF receipt",
+      "downloadPdfAria": "Download PDF receipt for payout {ref}",
+      "schedule": {
+        "weekly": "Weekly",
+        "biweekly": "Bi-weekly",
+        "monthly": "Monthly"
+      },
+      "breakdown": {
+        "totalOrders": "Total orders",
+        "escrowHeld": "Held in escrow",
+        "platformFee": "Platform fee",
+        "taxes": "Taxes"
+      },
+      "table": {
+        "ref": "Reference",
+        "date": "Date",
+        "amount": "Amount",
+        "method": "Method",
+        "status": "Status"
+      },
+      "status": {
+        "deposited": "✓ Deposited",
+        "scheduled": "⏱ Scheduled"
       }
     }
   },
@@ -967,6 +1097,8 @@
     "unread": "Unread",
     "unreadCount": "{count} unread",
     "empty": "No notifications in this category yet.",
+    "loadError": "Could not load notifications",
+    "navBellAriaLabel": "Notifications ({count} unread)",
     "tabs": {
       "all": "All",
       "bookings": "Bookings",
@@ -1038,7 +1170,13 @@
       "memberSince": "MEMBER SINCE · 2026-01 · CAIRO",
       "changePhoto": "Change photo · CHANGE PHOTO",
       "editBtn": "Edit · EDIT",
+      "cancelBtn": "Cancel · CANCEL",
       "saveBtn": "Save changes · SAVE",
+      "saving": "Saving...",
+      "saveSuccess": "Changes saved successfully",
+      "saveError": "Failed to save — please try again",
+      "loading": "Loading your profile...",
+      "loadError": "Could not load your profile",
       "fields": {
         "fullName": "Full name",
         "phone": "Phone number",

@@ -1,6 +1,10 @@
+import os
+
+from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status
+from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,9 +14,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.core.pagination import SeaConnectCursorPagination
-from apps.core.throttles import AuthAnonThrottle, AuthUserThrottle
+from apps.core.throttles import AuthAnonThrottle, AuthUserThrottle, UploadThrottle
 
-from .models import BoatOwnerProfile, KYCStatus, User
+from .models import BoatOwnerProfile, KYCDocument, KYCStatus, User
 from .permissions import IsAdminUser as IsAdminRole
 from .permissions import IsOwner
 from .serializers import (
@@ -20,10 +24,24 @@ from .serializers import (
     AdminKYCSerializer,
     AdminUserSerializer,
     BoatOwnerProfileSerializer,
+    KYCDocumentUploadSerializer,
     OwnerProfileStepSerializer,
     RegisterSerializer,
     UserProfileSerializer,
 )
+
+# ---------------------------------------------------------------------------
+# Sprint 11A: doc_type → step boolean field map
+# ---------------------------------------------------------------------------
+
+_DOC_TYPE_FIELD_MAP: dict[str, str] = {
+    "identity": "national_id_verified",
+    "boat_docs": "vessel_docs_verified",
+    "insurance": "insurance_verified",
+    "port_auth": "inspection_passed",
+    "safety_cert": "inspection_passed",
+    "bank_details": "bank_account_configured",
+}
 
 
 class RegisterView(generics.CreateAPIView):  # type: ignore[type-arg]
@@ -327,3 +345,112 @@ class AdminKYCRejectView(APIView):
         )
         serializer_out = AdminKYCSerializer(profile)
         return Response(serializer_out.data)
+
+
+# ---------------------------------------------------------------------------
+# Sprint 11A: KYC document upload
+# ---------------------------------------------------------------------------
+
+
+class KYCDocumentUploadView(APIView):
+    """POST /api/v1/accounts/owner-profile/upload/
+
+    Accepts a multipart/form-data upload containing:
+        file     — the document file (PDF, JPEG, or PNG, max 10 MB)
+        doc_type — one of: identity, boat_docs, insurance, port_auth,
+                   safety_cert, bank_details
+
+    On success:
+      1. Saves the file to the configured storage backend (MinIO / R2) under
+         the path ``kyc/<profile_id>/<doc_type>/<original_filename>``.
+      2. Creates a KYCDocument record referencing the saved path.
+      3. Flips the corresponding step boolean on BoatOwnerProfile to True.
+      4. If the profile was NOT_STARTED, advances kyc_status to IN_PROGRESS.
+      5. Returns document metadata and updated progress counters.
+
+    Error codes:
+        PROFILE_NOT_FOUND  — 404 if the authenticated user has no BoatOwnerProfile.
+        FILE_TOO_LARGE     — 413 if the file exceeds 10 MB.
+        INVALID_FILE_TYPE  — 400 if the MIME type is not PDF/JPEG/PNG.
+        INVALID_DOC_TYPE   — 400 if doc_type is not in the allowed list.
+
+    Requires: IsAuthenticated + role == 'owner'.
+    Throttle: UploadThrottle (30/hour) — bandwidth and abuse protection.
+    """
+
+    permission_classes = [IsAuthenticated, IsOwner]
+    parser_classes = [MultiPartParser]
+    throttle_classes = [UploadThrottle]
+
+    def post(self, request: Request) -> Response:
+        # 1. Resolve the owner's profile — must already exist.
+        try:
+            profile = BoatOwnerProfile.objects.get(user=request.user, is_deleted=False)
+        except BoatOwnerProfile.DoesNotExist:
+            return Response(
+                {"error": {"code": "PROFILE_NOT_FOUND", "message": "No owner profile found for this user."}},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # 2. Validate request payload (file size, content-type, doc_type).
+        serializer = KYCDocumentUploadSerializer(data=request.data)
+        if not serializer.is_valid():
+            # Surface file-size errors as 413; everything else as 400.
+            errors = serializer.errors
+            file_errors = errors.get("file", [])
+            if any(getattr(e, "code", None) == "FILE_TOO_LARGE" or str(e) == "FILE_TOO_LARGE" for e in file_errors):
+                return Response(
+                    {"error": {"code": "FILE_TOO_LARGE", "message": "File exceeds the 10 MB limit."}},
+                    status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                )
+            if any(getattr(e, "code", None) == "INVALID_FILE_TYPE" or str(e) == "INVALID_FILE_TYPE" for e in file_errors):
+                return Response(
+                    {"error": {"code": "INVALID_FILE_TYPE", "message": "Unsupported file type. Allowed: PDF, JPEG, PNG."}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            # doc_type choice validation
+            return Response(
+                {"error": {"code": "INVALID_DOC_TYPE", "message": "Invalid doc_type value.", "detail": errors}},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        upload = serializer.validated_data["file"]
+        doc_type: str = serializer.validated_data["doc_type"]
+
+        # 3. Build storage path and persist the file.
+        original_name = os.path.basename(upload.name)
+        storage_path = f"kyc/{profile.id}/{doc_type}/{original_name}"
+        saved_path = default_storage.save(storage_path, upload)
+
+        # 4. Create the KYCDocument record.
+        doc = KYCDocument.objects.create(
+            owner_profile=profile,
+            doc_type=doc_type,
+            file=saved_path,
+        )
+
+        # 5. Flip the step boolean and advance kyc_status if needed.
+        step_field = _DOC_TYPE_FIELD_MAP.get(doc_type)
+        update_fields = ["updated_at"]
+        if step_field and not getattr(profile, step_field):
+            setattr(profile, step_field, True)
+            update_fields.append(step_field)
+
+        if profile.kyc_status == KYCStatus.NOT_STARTED:
+            profile.kyc_status = KYCStatus.IN_PROGRESS
+            update_fields.append("kyc_status")
+
+        profile.save(update_fields=update_fields)
+
+        # 6. Build the public URL for the uploaded file.
+        document_url = default_storage.url(saved_path) if default_storage.exists(saved_path) else saved_path
+
+        return Response(
+            {
+                "document_url": document_url,
+                "doc_type": doc_type,
+                "completed_steps": profile.completed_steps,
+                "kyc_status": profile.kyc_status,
+            },
+            status=status.HTTP_201_CREATED,
+        )

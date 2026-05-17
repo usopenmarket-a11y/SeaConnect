@@ -37,6 +37,7 @@ from apps.notifications.models import (
 from apps.notifications.services import send_notification
 
 NOTIFICATION_LIST_URL = "/api/v1/notifications/"
+MARK_ALL_READ_URL = "/api/v1/notifications/read-all/"
 
 
 def _read_url(notification_id) -> str:
@@ -857,3 +858,109 @@ class TestNotifyBookingEvent:
             notification_type=NotificationType.BOOKING_CREATED,
         )
         assert not owner_notifications.exists()
+
+
+# ---------------------------------------------------------------------------
+# TestMarkAllReadView — POST /api/v1/notifications/read-all/
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestMarkAllReadView:
+    """Tests for the bulk mark-all-as-read endpoint."""
+
+    def test_happy_marks_all_unread_notifications_as_read(
+        self, auth_client: APIClient, customer_user: User
+    ):
+        """POST read-all must mark all pending/sent in-app notifications as read.
+
+        Creates 3 unread (pending) in-app notifications, calls read-all, and
+        verifies all 3 are now status='read' and read_at is set.
+        """
+        notifs = [
+            _make_in_app(customer_user, status=NotificationStatus.PENDING)
+            for _ in range(3)
+        ]
+
+        response = auth_client.post(MARK_ALL_READ_URL)
+
+        assert response.status_code == 200
+        assert response.json() == {"marked_read": 3}
+
+        for n in notifs:
+            n.refresh_from_db()
+            assert n.status == NotificationStatus.READ
+            assert n.read_at is not None
+
+    def test_happy_empty_returns_zero_when_no_unread(
+        self, auth_client: APIClient, customer_user: User
+    ):
+        """When no unread notifications exist, returns 200 with marked_read=0."""
+        # Create only already-read notifications
+        _make_in_app(customer_user, status=NotificationStatus.READ)
+        _make_in_app(customer_user, status=NotificationStatus.READ)
+
+        response = auth_client.post(MARK_ALL_READ_URL)
+
+        assert response.status_code == 200
+        assert response.json() == {"marked_read": 0}
+
+    def test_sad_unauthenticated_gets_401(self, api_client: APIClient):
+        """Anonymous POST to read-all must return 401 Unauthorized."""
+        response = api_client.post(MARK_ALL_READ_URL)
+        assert response.status_code == 401
+
+    def test_happy_only_marks_own_notifications(
+        self,
+        auth_client: APIClient,
+        customer_user: User,
+        other_user: User,
+    ):
+        """read-all must only mark the requesting user's notifications, not others'."""
+        own_notif = _make_in_app(customer_user, status=NotificationStatus.PENDING)
+        other_notif = _make_in_app(other_user, status=NotificationStatus.PENDING)
+
+        response = auth_client.post(MARK_ALL_READ_URL)
+
+        assert response.status_code == 200
+        assert response.json()["marked_read"] == 1
+
+        own_notif.refresh_from_db()
+        assert own_notif.status == NotificationStatus.READ
+
+        other_notif.refresh_from_db()
+        assert other_notif.status == NotificationStatus.PENDING  # untouched
+
+    def test_happy_ignores_push_channel_notifications(
+        self,
+        auth_client: APIClient,
+        customer_user: User,
+    ):
+        """read-all must not touch push-channel notifications, only in-app ones."""
+        in_app_notif = _make_in_app(customer_user, status=NotificationStatus.PENDING)
+        push_notif = _make_push(customer_user, status=NotificationStatus.PENDING)
+
+        response = auth_client.post(MARK_ALL_READ_URL)
+
+        assert response.status_code == 200
+        assert response.json()["marked_read"] == 1
+
+        in_app_notif.refresh_from_db()
+        assert in_app_notif.status == NotificationStatus.READ
+
+        push_notif.refresh_from_db()
+        assert push_notif.status == NotificationStatus.PENDING  # untouched
+
+    def test_happy_sent_status_also_marked_read(
+        self, auth_client: APIClient, customer_user: User
+    ):
+        """Notifications with status='sent' must also be marked read."""
+        sent_notif = _make_in_app(customer_user, status=NotificationStatus.SENT)
+
+        response = auth_client.post(MARK_ALL_READ_URL)
+
+        assert response.status_code == 200
+        assert response.json()["marked_read"] == 1
+
+        sent_notif.refresh_from_db()
+        assert sent_notif.status == NotificationStatus.READ

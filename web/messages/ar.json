@@ -542,8 +542,12 @@
       "notVendor": "هذه الصفحة مخصصة للبائعين فقط"
     },
     "nav": {
+      "dashboard": "لوحة التحكم",
       "products": "منتجاتي",
-      "dashboard": "لوحة التحكم"
+      "orders": "الطلبات",
+      "calendar": "التقويم",
+      "payouts": "المدفوعات",
+      "ariaLabel": "قائمة البائع"
     },
     "dashboard": {
       "title": "لوحة تحكم البائع",
@@ -564,28 +568,154 @@
     },
     "products": {
       "title": "إدارة المنتجات",
+      "newTitle": "منتج جديد",
+      "editTitle": "تعديل المنتج",
       "empty": "لا توجد منتجات بعد",
-      "addProduct": "إضافة منتج",
+      "addProduct": "إضافة منتج جديد",
+      "backToProducts": "العودة إلى المنتجات",
       "loadError": "تعذر تحميل المنتجات",
       "name": "الاسم",
-      "nameAr": "الاسم (عربي)",
+      "nameAr": "الاسم بالعربية",
+      "nameEn": "الاسم بالإنجليزية",
+      "category": "الفئة",
+      "categoryNone": "— اختر فئة —",
+      "categoryLabel": {
+        "rods_reels": "صنارات وبكرات",
+        "lures": "طعوم",
+        "tackle_boxes": "صناديق معدات",
+        "clothing": "ملابس",
+        "safety": "سلامة",
+        "electronics": "إلكترونيات"
+      },
       "price": "السعر",
-      "stock": "المخزون",
-      "status": "الحالة",
+      "stock": "الكمية المتاحة",
+      "availability": "التوافر",
+      "available": "متاح",
+      "unavailable": "غير متاح",
+      "isAvailable": "المنتج متاح للبيع",
+      "descriptionAr": "الوصف بالعربية",
+      "descriptionEn": "الوصف بالإنجليزية",
       "image": "الصورة",
       "actions": "الإجراءات",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "deleting": "جارٍ الحذف...",
+      "deleteError": "تعذّر حذف المنتج",
+      "confirmDelete": "هل أنت متأكد من حذف المنتج «{name}»؟",
       "uploadImage": "رفع صورة",
-      "uploading": "جاري الرفع...",
+      "uploading": "جارٍ الرفع...",
       "uploadSuccess": "تم رفع الصورة",
       "uploadError": "تعذر رفع الصورة",
-      "create": "إنشاء منتج",
-      "creating": "جاري الإنشاء...",
-      "createSuccess": "تم إنشاء المنتج",
-      "createError": "تعذر إنشاء المنتج",
+      "create": "إنشاء المنتج",
+      "creating": "جارٍ الإنشاء...",
+      "createSuccess": "تم إنشاء المنتج بنجاح",
+      "createError": "تعذّر إنشاء المنتج",
+      "saveChanges": "حفظ التعديلات",
+      "saving": "جارٍ الحفظ...",
+      "saveSuccess": "تم حفظ التعديلات بنجاح",
+      "saveError": "تعذّر حفظ التعديلات",
+      "cancelBtn": "إلغاء",
+      "fieldRequired": "هذا الحقل مطلوب",
+      "fieldInvalidPrice": "يرجى إدخال سعر صحيح أكبر من صفر",
+      "fieldInvalidQty": "يرجى إدخال كمية صحيحة (عدد صحيح لا يقل عن صفر)",
       "statusLabel": {
         "active": "نشط",
         "draft": "مسودة",
         "out_of_stock": "نفد المخزون"
+      }
+    },
+    "orders": {
+      "title": "الطلبات الواردة",
+      "empty": "لا توجد طلبات حالياً",
+      "filter": {
+        "all": "الكل",
+        "pending": "معلّق",
+        "processing": "قيد المعالجة",
+        "shipped": "تم الشحن",
+        "delivered": "تم التسليم"
+      },
+      "table": {
+        "ref": "المرجع",
+        "customer": "العميل",
+        "products": "المنتجات",
+        "quantity": "الكمية",
+        "amount": "المبلغ",
+        "status": "الحالة",
+        "date": "التاريخ",
+        "actions": "الإجراءات"
+      },
+      "status": {
+        "pending": "⏱ معلّق",
+        "processing": "جارٍ المعالجة",
+        "shipped": "SHIPPED",
+        "delivered": "✓ مُسلَّم",
+        "cancelled": "ملغي"
+      },
+      "action": {
+        "confirm": "تأكيد",
+        "ship": "شحن",
+        "cancel": "إلغاء"
+      }
+    },
+    "calendar": {
+      "title": "تقويم التوصيل",
+      "prevMonth": "الشهر السابق",
+      "nextMonth": "الشهر التالي",
+      "stats": {
+        "pending": "معلّق",
+        "confirmed": "مؤكد",
+        "delivered": "مُسلَّم"
+      },
+      "weekday": {
+        "sun": "الأحد",
+        "mon": "الاثنين",
+        "tue": "الثلاثاء",
+        "wed": "الأربعاء",
+        "thu": "الخميس",
+        "fri": "الجمعة",
+        "sat": "السبت"
+      },
+      "legend": {
+        "pending": "معلّق",
+        "confirmed": "مؤكد / قيد الشحن",
+        "delivered": "مُسلَّم"
+      }
+    },
+    "payouts": {
+      "title": "المدفوعات والأرباح",
+      "nextPayout": "الدفعة القادمة",
+      "bankAccount": "حساب البنك",
+      "editBank": "تعديل",
+      "addBank": "+ حساب جديد",
+      "payoutSchedule": "دورة الدفع",
+      "historyTitle": "دفتر السجلات",
+      "heldTitle": "المبالغ المحتجزة",
+      "heldSubtitle": "طلبات قيد التسليم · تُحرَّر بعد ٢٤ ساعة من التسليم",
+      "heldRelease": "يُحرَّر خلال {hours} ساعة",
+      "instantTransfer": "تحويل فوري ←",
+      "downloadPdf": "إيصال PDF",
+      "downloadPdfAria": "تحميل إيصال PDF للدفعة {ref}",
+      "schedule": {
+        "weekly": "أسبوعي",
+        "biweekly": "نصف شهري",
+        "monthly": "شهري"
+      },
+      "breakdown": {
+        "totalOrders": "إجمالي الطلبات",
+        "escrowHeld": "محتجز في الضمان",
+        "platformFee": "عمولة المنصة",
+        "taxes": "ضرائب"
+      },
+      "table": {
+        "ref": "المرجع",
+        "date": "التاريخ",
+        "amount": "المبلغ",
+        "method": "الطريقة",
+        "status": "الحالة"
+      },
+      "status": {
+        "deposited": "✓ محوّل",
+        "scheduled": "⏱ مجدول"
       }
     }
   },
@@ -961,6 +1091,8 @@
     "unread": "غير مقروء",
     "unreadCount": "{count} غير مقروء",
     "empty": "لا توجد إشعارات في هذه الفئة حتى الآن.",
+    "loadError": "تعذّر تحميل الإشعارات",
+    "navBellAriaLabel": "الإشعارات ({count} غير مقروء)",
     "tabs": {
       "all": "الكل",
       "bookings": "الحجوزات",
@@ -1032,7 +1164,13 @@
       "memberSince": "MEMBER SINCE · 2026-01 · CAIRO",
       "changePhoto": "تغيير الصورة · CHANGE PHOTO",
       "editBtn": "تعديل · EDIT",
+      "cancelBtn": "إلغاء · CANCEL",
       "saveBtn": "حفظ التغييرات · SAVE",
+      "saving": "جارٍ الحفظ...",
+      "saveSuccess": "تم حفظ التغييرات بنجاح",
+      "saveError": "تعذّر حفظ البيانات — حاول مجدداً",
+      "loading": "جارٍ تحميل بياناتك...",
+      "loadError": "تعذّر تحميل الملف الشخصي",
       "fields": {
         "fullName": "الاسم الكامل",
         "phone": "رقم الهاتف",

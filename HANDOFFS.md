@@ -1936,3 +1936,216 @@ cd web && npm run dev
 # http://localhost:3000/ar/search?q=يخت   — search results from API, filter chips, sort selector
 # http://localhost:3000/en/search?q=yacht  — English locale
 ```
+
+---
+
+## HANDOFF-2026-05-17-011A
+
+**Status:** READY
+**From:** django-api-agent
+**To:** nextjs-page-agent (owner/onboarding)
+**Sprint:** 11A
+**Feature:** KYC document upload endpoint — POST /api/v1/accounts/owner-profile/upload/
+
+### What Was Completed
+- `POST /api/v1/accounts/owner-profile/upload/` — new `KYCDocumentUploadView(APIView)` with `IsAuthenticated + IsOwner` permission, `UploadThrottle` (30/hour), `MultiPartParser`. Accepts `multipart/form-data` with `file` and `doc_type`. Validates file size (10 MB max) and MIME type (PDF/JPEG/PNG). Saves to `default_storage` at `kyc/<profile_id>/<doc_type>/<filename>`. Creates `KYCDocument` row. Flips the corresponding step boolean on `BoatOwnerProfile`. Advances `kyc_status` from `NOT_STARTED` to `IN_PROGRESS` on first upload.
+- `KYCDocumentUploadSerializer` added to `backend/apps/accounts/serializers.py` — validates `file` (size, content_type) and `doc_type` (ChoiceField against 6 allowed values).
+- URL registered in `backend/apps/accounts/urls.py` at `accounts/owner-profile/upload/`.
+- `backend/apps/accounts/tests/test_kyc_upload.py` — 9 tests: happy path (PDF → step set + kyc_status promoted), file too large (413), invalid MIME (400), invalid doc_type (400), unauthenticated (401), no profile (404), boat_docs mapping, JPEG accepted, customer role rejected (403).
+- `python manage.py check` — PASS, 0 issues.
+
+### doc_type → step boolean mapping
+| doc_type | step boolean |
+|---|---|
+| identity | national_id_verified |
+| boat_docs | vessel_docs_verified |
+| insurance | insurance_verified |
+| port_auth | inspection_passed |
+| safety_cert | inspection_passed |
+| bank_details | bank_account_configured |
+
+Note: `captain_license_verified` is not mapped from any upload — it must be set via PATCH (the license is typically issued by port authority and must be validated by admin review, not self-upload).
+
+### Contract
+- `POST /api/v1/accounts/owner-profile/upload/` — `multipart/form-data` with fields `file` and `doc_type`
+- `file`: PDF, JPEG, or PNG; max 10 MB; `content_type` header must be set correctly by client
+- `doc_type`: one of `identity`, `boat_docs`, `insurance`, `port_auth`, `safety_cert`, `bank_details`
+- Requires: JWT Bearer token (owner role)
+- Creates `BoatOwnerProfile` lazily on first GET, but **does NOT** create it lazily on upload — owner must visit GET endpoint first (or the onboarding wizard creates it). Returns 404 otherwise.
+
+### Error codes
+| Code | Status | Condition |
+|---|---|---|
+| PROFILE_NOT_FOUND | 404 | No BoatOwnerProfile for this user |
+| FILE_TOO_LARGE | 413 | file.size > 10 MB |
+| INVALID_FILE_TYPE | 400 | content_type not in PDF/JPEG/PNG |
+| INVALID_DOC_TYPE | 400 | doc_type not in allowed list |
+
+### How to Test
+```bash
+# Get owner JWT
+ACCESS=$(curl -s -X POST http://localhost:8000/api/v1/auth/login/ \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"owner@seaconnect.local","password":"ownerpass123!"}' | jq -r .access)
+
+# First ensure profile exists
+curl -s -H "Authorization: Bearer $ACCESS" http://localhost:8000/api/v1/accounts/owner-profile/ | jq .kyc_status
+
+# Upload identity document
+curl -s -X POST http://localhost:8000/api/v1/accounts/owner-profile/upload/ \
+  -H "Authorization: Bearer $ACCESS" \
+  -F "file=@/path/to/national_id.pdf" \
+  -F "doc_type=identity" | jq .
+
+# Run tests (inside Docker):
+docker exec seaconnect-api-1 python3 -m pytest apps/accounts/tests/test_kyc_upload.py -v
+# Expected: 9 passed
+
+# System check:
+docker exec seaconnect-api-1 python3 manage.py check
+# Expected: 0 issues
+```
+
+### Response/Output Shape
+```json
+// POST /api/v1/accounts/owner-profile/upload/ → 201
+{
+  "document_url": "http://minio:9000/seaconnect/kyc/<profile-id>/identity/national_id.pdf",
+  "doc_type": "identity",
+  "completed_steps": 1,
+  "kyc_status": "in_progress"
+}
+```
+
+### What the frontend (nextjs-page-agent) needs to do
+- Replace the "Contact support to complete this step" toast on each step card in `web/app/[locale]/owner/onboarding/PageClient.tsx` with a file input zone.
+- On file selection, POST to `/api/v1/accounts/owner-profile/upload/` with `FormData` (`file` field + `doc_type` matching the step).
+- On 201, SWR mutate the `/accounts/owner-profile/` cache so the step boolean re-renders as checked.
+- Show error toast on 413 ("File too large") and 400 ("Invalid file type" / "Invalid doc type").
+- `captain_license_verified` step cannot be completed via upload — show "Contact support" for that step only.
+
+### Build Verification
+- `python manage.py check` — PASS, 0 issues (executed this session in WSL without Docker — no DB needed for check).
+- All imports verified via dry-import check: `from apps.accounts.views import KYCDocumentUploadView` — OK.
+- URL registered and resolved: `accounts/owner-profile/upload/` → `owner-profile-upload`.
+- No migration needed — no new model fields added.
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** django-api-agent
+**To:** nextjs-page-agent
+**Sprint:** 11B
+**Feature:** Notifications — read-all endpoint + live API wiring
+
+### What Was Completed
+- Added `POST /api/v1/notifications/read-all/` (`MarkAllReadView`) — bulk marks all `pending`/`sent` in-app notifications as read for the requesting user; idempotent, returns `{"marked_read": N}`.
+- Registered URL in `backend/apps/notifications/urls.py` before the `<uuid:id>/read/` pattern to avoid routing conflict.
+- Added 5 tests to `backend/apps/notifications/tests/test_notifications_api.py` (`TestMarkAllReadView`): happy bulk-mark, empty/idempotent, unauthenticated 401, isolation from other users, push-channel untouched, sent-status marked.
+- Replaced mock data in `web/app/[locale]/(public)/notifications/PageClient.tsx` with `useSWR('/notifications/', ...)`, per-item `post('/notifications/{id}/read/', {})` on click, and `post('/notifications/read-all/', {})` for the "mark all" button — all with optimistic UI updates and `mutate()` revalidation.
+- Added notification unread count badge to `web/components/layout/Nav.tsx` — bell icon linking to `/notifications`, badge visible when user is authenticated and `notifUnreadCount > 0`.
+- Added `notifications.loadError` and `notifications.navBellAriaLabel` i18n keys to both `ar.json` and `en.json`.
+
+### Contract
+- `POST /api/v1/notifications/read-all/` → `{"marked_read": <int>}`
+- `GET /api/v1/notifications/` → cursor-paginated list of `NotificationSerializer` rows (existing endpoint, unchanged)
+- `POST /api/v1/notifications/<uuid>/read/` → `{"status": "read"}` (existing endpoint, unchanged)
+
+### How to Test
+```bash
+# Backend
+cd backend && python3 manage.py check  # must print 0 issues
+docker compose exec backend pytest apps/notifications/tests/test_notifications_api.py::TestMarkAllReadView -v
+
+# Curl (with valid JWT)
+curl -X POST http://localhost:8000/api/v1/notifications/read-all/ \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json"
+# → {"marked_read": 3}
+
+# Frontend TS gate
+cd web && npx tsc --noEmit  # no new errors introduced
+```
+
+### Response/Output Shape
+```json
+{ "marked_read": 3 }
+```
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** api-endpoint-agent (Sprint 12)
+**Sprint:** 11
+**Feature:** Vendor area pages (orders, calendar, payouts) + CSS for owner booking requests
+
+### What Was Completed
+- Created `web/app/[locale]/vendor/orders/page.tsx` + `PageClient.tsx` — orders table with status filter tabs (All / Pending / Processing / Shipped / Delivered) and per-row Confirm / Ship / Cancel actions; mock data, Sprint 12 API TODOs in place.
+- Created `web/app/[locale]/vendor/calendar/page.tsx` + `PageClient.tsx` — month-view delivery calendar with pending/confirmed/delivered colour coding and day-event display; mock data.
+- Created `web/app/[locale]/vendor/payouts/page.tsx` + `PageClient.tsx` — dark-gradient next-payout card, bank account card with schedule selector, payout history table, held-funds escrow section; wired to `useSWR('/payments/payouts/')` and `useSWR('/payments/escrow/')` with mock fallback.
+- Updated `web/components/vendor/VendorSidebar.tsx` — added Orders, Calendar, Payouts nav links with active-state detection.
+- Added CSS classes to `web/globals.css`: `.booking-request-card`, `.brq-*`, `.btn-accept`, `.btn-decline`, `.earnings-*`, `.chart-bar*`, `.payout-list`, `.payout-row` — all using logical CSS (`border-inline-start`, not `border-right`).
+- Added `vendor.orders.*`, `vendor.calendar.*`, `vendor.payouts.*` i18n keys to both `web/messages/ar.json` and `web/messages/en.json`.
+- Owner bookings page (`web/app/[locale]/owner/bookings/`) verified — already exists with real API wiring and correct i18n.
+
+### Contract
+Sprint 12 API endpoints needed to replace mock data:
+- `GET /api/v1/marketplace/orders/` — vendor's incoming orders (already used in vendor dashboard; extend with delivery_date field)
+- `POST /api/v1/marketplace/orders/{id}/confirm/`
+- `POST /api/v1/marketplace/orders/{id}/ship/`
+- `POST /api/v1/marketplace/orders/{id}/cancel/`
+- `GET /api/v1/payments/payouts/` — already spec'd in owner payouts; vendor reuses the same endpoint
+- `GET /api/v1/payments/escrow/` — same as above
+
+### How to Test
+```bash
+# TS gate — no new errors
+cd web && npx tsc --noEmit
+
+# Visual check (with docker compose up)
+open http://localhost:3000/ar/vendor/orders
+open http://localhost:3000/ar/vendor/calendar
+open http://localhost:3000/ar/vendor/payouts
+```
+
+### Response/Output Shape
+Vendor orders reuse the existing order shape from `GET /marketplace/orders/` (see vendor dashboard). Payouts/escrow reuse the owner payout shapes (see owner payouts page).
+
+---
+
+## HANDOFF-2026-05-17-002
+
+**Status:** DONE
+**From:** nextjs-page-agent
+**To:** api-endpoint-agent, django-model-agent
+**Sprint:** 11D
+**Feature:** Vendor product management — list, new, edit pages
+
+### What Was Completed
+- `web/app/[locale]/vendor/products/PageClient.tsx` — replaced stub with full product table (name AR+EN, category, price, stock qty, availability badge, Edit link, Delete button with confirm). Fetches `GET /marketplace/vendor/products/` with automatic 404 fallback to `GET /marketplace/products/`.
+- `web/app/[locale]/vendor/products/new/page.tsx` + `PageClient.tsx` — new product creation form (name_ar, name, category select, price, stock_quantity, description_ar, description, is_available toggle). POSTs to `POST /marketplace/products/`. Field-level and generic error display.
+- `web/app/[locale]/vendor/products/[id]/page.tsx` + `PageClient.tsx` — edit form pre-filled from `GET /marketplace/products/{id}/`. PATCHes only changed fields to `PATCH /marketplace/products/{id}/`.
+- `web/messages/ar.json` + `web/messages/en.json` — added `vendor.nav.{orders,calendar,payouts,ariaLabel}` (sidebar keys), and full set of `vendor.products.*` keys for the new/edit forms (nameAr, nameEn, category, categoryLabel.*, availability, isAvailable, descriptionAr, descriptionEn, edit, delete, confirmDelete, fieldRequired, fieldInvalidPrice, fieldInvalidQty, saveChanges, saving, saveSuccess, saveError, cancelBtn, backToProducts, newTitle, editTitle).
+
+### Contract
+- API spec: `03-Technical-Product/02-API-Specification.md` — Marketplace endpoints
+- Product fields expected: `{id, name, name_ar, description, description_ar, price, currency, category, stock_quantity, is_available, average_rating, vendor_id, created_at}`
+- `GET /marketplace/vendor/products/` must return `PaginatedResponse<Product>` (results[], next_cursor, has_more)
+- Delete uses `DELETE /marketplace/products/{id}/` — returns 204 No Content
+
+### How to Test
+```bash
+cd web && npx tsc --noEmit  # only pre-existing register/phone error remains
+
+# With docker compose up:
+open http://localhost:3000/ar/vendor/products
+open http://localhost:3000/ar/vendor/products/new
+open http://localhost:3000/ar/vendor/products/<uuid>
+```
+
+### Response/Output Shape
+Product list response: `{"results": [{id, name, name_ar, price, currency, category, stock_quantity, is_available, ...}], "next_cursor": null, "has_more": false}`

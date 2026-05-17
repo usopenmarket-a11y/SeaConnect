@@ -5,17 +5,25 @@
  *
  * Converted from Design/system-pages.jsx SettingsPage() exactly.
  * Sidebar navigation: profile | notifs | payments | lang | security | about.
- * Language switcher wired to Next.js locale routing.
- * Logout wired to useAuth().logout().
  *
- * ADR-014: logical CSS (inset-inline-*, border-inline-*, etc.).
+ * Sprint 11C changes:
+ *   - Profile panel fetches GET /api/v1/users/me/ via SWR on mount.
+ *   - Name + phone fields switch to editable inputs on "Edit".
+ *   - "Save" calls PATCH /api/v1/users/me/ with {first_name, last_name, phone}.
+ *   - "Cancel" reverts to display state without saving.
+ *   - Logout button shows a loading spinner while the logout request is in flight.
+ *   - Language switcher replaces the locale segment in the current path.
+ *
+ * ADR-014: logical CSS (inset-inline-*, border-inline-*, ms-/me-/ps-/pe-).
  * ADR-015: all strings via useTranslations('settings').
  */
 
 import * as React from 'react'
+import useSWR from 'swr'
 import { useTranslations } from 'next-intl'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAuth } from '@/lib/auth'
+import { useAuth, type AuthUser } from '@/lib/auth'
+import { get, patch } from '@/lib/api'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +44,12 @@ interface ChannelToggle {
   on: boolean
 }
 
+interface ProfileDraft {
+  first_name: string
+  last_name: string
+  phone: string
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function SettingsPageClient(): React.ReactElement {
@@ -44,7 +58,19 @@ export function SettingsPageClient(): React.ReactElement {
   const router = useRouter()
   const pathname = usePathname()
 
+  const currentLocale = pathname.split('/')[1] ?? 'ar'
+
+  // ── SWR — fetch current user profile ───────────────────────────────────
+  const { data: profile, mutate } = useSWR<AuthUser>(
+    '/users/me/',
+    (path: string) => get<AuthUser>(path),
+    { revalidateOnFocus: false },
+  )
+
+  // ── Sidebar state ───────────────────────────────────────────────────────
   const [active, setActive] = React.useState<SidebarId>('profile')
+
+  // ── Notification toggles ────────────────────────────────────────────────
   const [notifToggles, setNotifToggles] = React.useState<NotifToggles>({
     booking: true,
     payment: true,
@@ -59,6 +85,33 @@ export function SettingsPageClient(): React.ReactElement {
     { key: 'email',    labelKey: 'notifs.channels.email.label',    subKey: 'notifs.channels.email.sub',    on: false },
   ])
 
+  // ── Profile edit state ──────────────────────────────────────────────────
+  const [isEditing, setIsEditing] = React.useState(false)
+  const [isSaving, setIsSaving] = React.useState(false)
+  const [saveSuccess, setSaveSuccess] = React.useState(false)
+  const [saveError, setSaveError] = React.useState<string | null>(null)
+  const [draft, setDraft] = React.useState<ProfileDraft>({
+    first_name: '',
+    last_name: '',
+    phone: '',
+  })
+
+  // Sync draft when profile loads or edit mode opens
+  React.useEffect(() => {
+    if (profile && isEditing) {
+      setDraft({
+        first_name: profile.first_name ?? '',
+        last_name: profile.last_name ?? '',
+        phone: profile.phone ?? '',
+      })
+    }
+  }, [profile, isEditing])
+
+  // ── Logout state ────────────────────────────────────────────────────────
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false)
+
+  // ── Handlers ────────────────────────────────────────────────────────────
+
   function toggleNotif(key: keyof NotifToggles): void {
     setNotifToggles((prev) => ({ ...prev, [key]: !prev[key] }))
   }
@@ -70,20 +123,61 @@ export function SettingsPageClient(): React.ReactElement {
   }
 
   async function handleLogout(): Promise<void> {
-    await logout()
-    // Navigate to login after logout — replace locale segment from pathname
-    const locale = pathname.split('/')[1] ?? 'ar'
-    router.push(`/${locale}/login`)
+    setIsLoggingOut(true)
+    try {
+      await logout()
+    } finally {
+      setIsLoggingOut(false)
+    }
+    router.push(`/${currentLocale}/login`)
   }
 
-  // Language switcher: change locale by replacing the locale segment in the URL
   function switchLocale(locale: string): void {
     const segments = pathname.split('/')
     segments[1] = locale
     router.push(segments.join('/'))
   }
 
-  const currentLocale = pathname.split('/')[1] ?? 'ar'
+  function handleEditClick(): void {
+    setSaveSuccess(false)
+    setSaveError(null)
+    setDraft({
+      first_name: profile?.first_name ?? '',
+      last_name: profile?.last_name ?? '',
+      phone: profile?.phone ?? '',
+    })
+    setIsEditing(true)
+  }
+
+  function handleCancelClick(): void {
+    setIsEditing(false)
+    setSaveError(null)
+  }
+
+  async function handleSave(): Promise<void> {
+    setIsSaving(true)
+    setSaveError(null)
+    setSaveSuccess(false)
+    try {
+      const updated = await patch<AuthUser>('/users/me/', {
+        first_name: draft.first_name,
+        last_name: draft.last_name,
+        phone: draft.phone || null,
+      })
+      // Update SWR cache with server-confirmed data
+      await mutate(updated, false)
+      setIsEditing(false)
+      setSaveSuccess(true)
+      // Clear success banner after 4 s
+      setTimeout(() => setSaveSuccess(false), 4000)
+    } catch {
+      setSaveError(t('profile.saveError'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // ── Sidebar config ───────────────────────────────────────────────────────
 
   const sidebar: { id: SidebarId; icon: string; labelKey: string; subKey: string }[] = [
     { id: 'profile',  icon: '👤', labelKey: 'sidebar.profile.label',   subKey: 'sidebar.profile.sub'   },
@@ -93,6 +187,14 @@ export function SettingsPageClient(): React.ReactElement {
     { id: 'security', icon: '🔐', labelKey: 'sidebar.security.label',  subKey: 'sidebar.security.sub'  },
     { id: 'about',    icon: 'ℹ️', labelKey: 'sidebar.about.label',     subKey: 'sidebar.about.sub'     },
   ]
+
+  // ── Derived display values ───────────────────────────────────────────────
+
+  const displayName = profile
+    ? `${profile.first_name} ${profile.last_name}`.trim() || profile.email
+    : '—'
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="settings-shell" data-screen-label="settings">
@@ -156,8 +258,28 @@ export function SettingsPageClient(): React.ReactElement {
               className="btn-danger"
               style={{ width: '100%', justifyContent: 'center', fontSize: 13 }}
               onClick={handleLogout}
+              disabled={isLoggingOut}
+              aria-busy={isLoggingOut}
             >
-              ⏻ {t('logoutBtn')}
+              {isLoggingOut ? (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: 14,
+                    height: 14,
+                    border: '2px solid currentColor',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.7s linear infinite',
+                    marginInlineEnd: 6,
+                    verticalAlign: 'middle',
+                  }}
+                  aria-hidden="true"
+                />
+              ) : (
+                <span aria-hidden="true">⏻ </span>
+              )}
+              {t('logoutBtn')}
             </button>
           </div>
         </div>
@@ -165,32 +287,109 @@ export function SettingsPageClient(): React.ReactElement {
         {/* ── Content panels ── */}
         <div className="settings-content">
 
-          {/* Profile */}
+          {/* ── Profile ──────────────────────────────────────────────── */}
           {active === 'profile' && (
             <>
               <div className="settings-section-title">{t('profile.title')}</div>
+
+              {/* Avatar row — shows live name from API */}
               <div className="avatar-edit-row">
-                <div className="avatar-big" aria-hidden="true">ن</div>
+                <div className="avatar-big" aria-hidden="true">
+                  {profile ? (profile.first_name?.[0] ?? profile.email[0]).toUpperCase() : '…'}
+                </div>
                 <div className="avatar-edit-info">
-                  <div className="name">{t('profile.avatarName')}</div>
-                  <div className="since">{t('profile.memberSince')}</div>
+                  <div className="name">
+                    {profile ? displayName : t('profile.loading')}
+                  </div>
+                  <div className="since">
+                    {profile
+                      ? profile.email
+                      : '—'}
+                  </div>
                   <div className="change-photo">{t('profile.changePhoto')}</div>
                 </div>
               </div>
 
-              {[
-                { labelKey: 'profile.fields.fullName',  valueKey: 'profile.fieldValues.fullName', dir: 'inherit' },
-                { labelKey: 'profile.fields.phone',     valueKey: 'profile.fieldValues.phone',    dir: 'ltr'     },
-                { labelKey: 'profile.fields.email',     valueKey: 'profile.fieldValues.email',    dir: 'ltr'     },
-                { labelKey: 'profile.fields.city',      valueKey: 'profile.fieldValues.city',     dir: 'inherit' },
-              ].map(({ labelKey, valueKey, dir }) => (
-                <div className="settings-row" key={labelKey}>
-                  <div className="settings-row-info">
-                    <div className="label">{t(labelKey)}</div>
-                    <div className="sub" style={{ direction: dir as React.CSSProperties['direction'] }}>
-                      {t(valueKey)}
+              {/* Success / Error banners */}
+              {saveSuccess && (
+                <div
+                  style={{
+                    padding: '10px 16px',
+                    background: 'oklch(0.94 0.06 155)',
+                    color: 'oklch(0.30 0.12 155)',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    marginBottom: 12,
+                  }}
+                  role="status"
+                >
+                  {t('profile.saveSuccess')}
+                </div>
+              )}
+              {saveError && (
+                <div
+                  style={{
+                    padding: '10px 16px',
+                    background: 'oklch(0.94 0.06 28)',
+                    color: 'oklch(0.40 0.16 28)',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    marginBottom: 12,
+                  }}
+                  role="alert"
+                >
+                  {saveError}
+                </div>
+              )}
+
+              {/* Full name row */}
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <div className="label">{t('profile.fields.fullName')}</div>
+                  {isEditing ? (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                      <input
+                        type="text"
+                        value={draft.first_name}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, first_name: e.target.value }))
+                        }
+                        placeholder={profile?.first_name ?? ''}
+                        style={{
+                          fontFamily: 'var(--ff-sans)',
+                          fontSize: 13,
+                          padding: '6px 10px',
+                          border: '1px solid var(--rule-strong)',
+                          borderRadius: 4,
+                          width: 120,
+                        }}
+                        aria-label="First name"
+                      />
+                      <input
+                        type="text"
+                        value={draft.last_name}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, last_name: e.target.value }))
+                        }
+                        placeholder={profile?.last_name ?? ''}
+                        style={{
+                          fontFamily: 'var(--ff-sans)',
+                          fontSize: 13,
+                          padding: '6px 10px',
+                          border: '1px solid var(--rule-strong)',
+                          borderRadius: 4,
+                          width: 120,
+                        }}
+                        aria-label="Last name"
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div className="sub">
+                      {profile ? displayName : t('profile.loading')}
+                    </div>
+                  )}
+                </div>
+                {!isEditing && (
                   <button
                     style={{
                       fontFamily: 'var(--ff-mono)',
@@ -200,24 +399,108 @@ export function SettingsPageClient(): React.ReactElement {
                       border: '1px solid var(--clay)',
                       padding: '6px 14px',
                     }}
+                    onClick={handleEditClick}
                   >
                     {t('profile.editBtn')}
                   </button>
-                </div>
-              ))}
+                )}
+              </div>
 
-              <div style={{ marginTop: 28 }}>
-                <button
-                  className="btn btn-primary"
-                  style={{ padding: '12px 32px' }}
-                >
-                  {t('profile.saveBtn')}
-                </button>
+              {/* Phone row */}
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <div className="label">{t('profile.fields.phone')}</div>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={draft.phone}
+                      onChange={(e) =>
+                        setDraft((d) => ({ ...d, phone: e.target.value }))
+                      }
+                      placeholder="+201012345678"
+                      style={{
+                        fontFamily: 'var(--ff-mono)',
+                        fontSize: 13,
+                        padding: '6px 10px',
+                        border: '1px solid var(--rule-strong)',
+                        borderRadius: 4,
+                        marginTop: 4,
+                        width: 200,
+                        direction: 'ltr',
+                      }}
+                      dir="ltr"
+                      aria-label="Phone number"
+                    />
+                  ) : (
+                    <div className="sub" style={{ direction: 'ltr' }}>
+                      {profile?.phone ?? '—'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email row — read-only, never editable */}
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <div className="label">{t('profile.fields.email')}</div>
+                  <div className="sub" style={{ direction: 'ltr' }}>
+                    {profile?.email ?? '—'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Role row */}
+              <div className="settings-row">
+                <div className="settings-row-info">
+                  <div className="label">{t('profile.fields.city')}</div>
+                  <div className="sub">
+                    {profile?.role ?? '—'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ marginTop: 28, display: 'flex', gap: 12 }}>
+                {isEditing ? (
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      style={{ padding: '12px 32px' }}
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      aria-busy={isSaving}
+                    >
+                      {isSaving ? t('profile.saving') : t('profile.saveBtn')}
+                    </button>
+                    <button
+                      style={{
+                        fontFamily: 'var(--ff-mono)',
+                        fontSize: 11,
+                        letterSpacing: '0.08em',
+                        color: 'var(--muted)',
+                        border: '1px solid var(--rule)',
+                        padding: '12px 24px',
+                      }}
+                      onClick={handleCancelClick}
+                      disabled={isSaving}
+                    >
+                      {t('profile.cancelBtn')}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    style={{ padding: '12px 32px' }}
+                    onClick={handleEditClick}
+                  >
+                    {t('profile.editBtn')}
+                  </button>
+                )}
               </div>
             </>
           )}
 
-          {/* Notifications */}
+          {/* ── Notifications ─────────────────────────────────────────── */}
           {active === 'notifs' && (
             <>
               <div className="settings-section-title">{t('notifs.title')}</div>
@@ -266,7 +549,7 @@ export function SettingsPageClient(): React.ReactElement {
             </>
           )}
 
-          {/* Payments */}
+          {/* ── Payments ──────────────────────────────────────────────── */}
           {active === 'payments' && (
             <>
               <div className="settings-section-title">{t('payments.title')}</div>
@@ -340,7 +623,7 @@ export function SettingsPageClient(): React.ReactElement {
             </>
           )}
 
-          {/* Language & Region */}
+          {/* ── Language & Region ─────────────────────────────────────── */}
           {active === 'lang' && (
             <>
               <div className="settings-section-title">{t('lang.title')}</div>
@@ -391,7 +674,7 @@ export function SettingsPageClient(): React.ReactElement {
             </>
           )}
 
-          {/* Security */}
+          {/* ── Security ──────────────────────────────────────────────── */}
           {active === 'security' && (
             <>
               <div className="settings-section-title">{t('security.title')}</div>
@@ -453,7 +736,7 @@ export function SettingsPageClient(): React.ReactElement {
             </>
           )}
 
-          {/* About */}
+          {/* ── About ─────────────────────────────────────────────────── */}
           {active === 'about' && (
             <>
               <div className="settings-section-title">{t('about.title')}</div>
@@ -540,6 +823,9 @@ export function SettingsPageClient(): React.ReactElement {
 
         </div>
       </div>
+
+      {/* Spinner keyframe — injected once via a style tag */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

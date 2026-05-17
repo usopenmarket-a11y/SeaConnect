@@ -17,7 +17,8 @@ import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import useSWR from 'swr'
 import { ScrollProgress } from '@/components/layout/ScrollProgress'
-import { get } from '@/lib/api'
+import { get, getAccessToken } from '@/lib/api'
+import type { PaginatedResponse } from '@/lib/api'
 
 /** Returns true once the page has scrolled past the hero (≥80px). */
 function useScrolledPastHero(): boolean {
@@ -42,7 +43,13 @@ interface CartBadgeData {
   item_count: number
 }
 
+// Minimal notification shape — only need status to derive unread count
+interface NotifBadgeItem {
+  status: string
+}
+
 const CART_KEY = '/marketplace/cart/'
+const NOTIF_KEY = '/notifications/'
 
 interface NavProps {
   locale: string
@@ -58,8 +65,12 @@ const NAV_LINKS = [
 
 export function Nav({ locale }: NavProps): React.ReactElement {
   const t = useTranslations('nav')
+  const tNotif = useTranslations('notifications')
   const pathname = usePathname()
   const scrolledPastHero = useScrolledPastHero()
+
+  // Detect whether the user is authenticated (token present in memory)
+  const isAuthenticated = getAccessToken() !== null
 
   // Cart badge — silently fails when user is not logged in (data is undefined)
   const { data: cartData } = useSWR<CartBadgeData>(
@@ -73,6 +84,15 @@ export function Nav({ locale }: NavProps): React.ReactElement {
     },
   )
   const cartCount = cartData?.item_count ?? 0
+
+  // Notification unread badge — only fetch when authenticated
+  const { data: notifData } = useSWR<PaginatedResponse<NotifBadgeItem>>(
+    isAuthenticated ? NOTIF_KEY : null,
+    (path: string) => get<PaginatedResponse<NotifBadgeItem>>(path),
+    { shouldRetryOnError: false, refreshInterval: 60_000 },
+  )
+  const notifUnreadCount =
+    notifData?.results.filter((n) => n.status !== 'read').length ?? 0
 
   function isActive(href: string): boolean {
     const fullHref = `/${locale}${href}`
@@ -114,8 +134,68 @@ export function Nav({ locale }: NavProps): React.ReactElement {
           ))}
         </div>
 
-        {/* Right side: cart badge, lang toggle, list-your-boat ghost btn, avatar */}
+        {/* Right side: bell, cart badge, lang toggle, list-your-boat ghost btn, avatar */}
         <div className="nav-right">
+          {/* Notification bell — only shown when authenticated */}
+          {isAuthenticated && (
+            <Link
+              href={`/${locale}/notifications`}
+              aria-label={tNotif('navBellAriaLabel', { count: notifUnreadCount })}
+              style={{
+                position: 'relative',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 36,
+                height: 36,
+                textDecoration: 'none',
+                color: 'var(--ink)',
+              }}
+            >
+              {/* Bell SVG icon */}
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {/* Unread count badge */}
+              {notifUnreadCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    insetInlineEnd: 0,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    background: 'var(--clay)',
+                    color: '#fff',
+                    fontFamily: 'var(--ff-mono)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 3px',
+                    lineHeight: 1,
+                  }}
+                >
+                  {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
+                </span>
+              )}
+            </Link>
+          )}
+
           {/* Cart icon with item count badge */}
           <Link
             href={`/${locale}/cart`}

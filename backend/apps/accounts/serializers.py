@@ -306,6 +306,66 @@ class AdminKYCRejectSerializer(serializers.Serializer):  # type: ignore[type-arg
     )
 
 
+# ---------------------------------------------------------------------------
+# Sprint 11A: KYC document upload serializer
+# ---------------------------------------------------------------------------
+
+ALLOWED_DOC_TYPES = [
+    "identity",
+    "boat_docs",
+    "insurance",
+    "port_auth",
+    "safety_cert",
+    "bank_details",
+]
+
+ALLOWED_CONTENT_TYPES = [
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+]
+
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+class KYCDocumentUploadSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Write serializer for the KYC document upload endpoint.
+
+    Validates file size, content-type, and doc_type before the view
+    touches the storage backend.  All errors raised here surface
+    through the standard DRF exception handler as 400 responses.
+
+    Allowed doc_type values:
+        identity, boat_docs, insurance, port_auth, safety_cert, bank_details
+
+    Allowed content types:
+        application/pdf, image/jpeg, image/jpg, image/png
+    """
+
+    file = serializers.FileField(
+        help_text="The document file.  Maximum 10 MB.",
+    )
+    doc_type = serializers.ChoiceField(
+        choices=ALLOWED_DOC_TYPES,
+        help_text="Document category.  Must be one of: " + ", ".join(ALLOWED_DOC_TYPES),
+    )
+
+    def validate_file(self, value):  # type: ignore[override]
+        if value.size > MAX_UPLOAD_SIZE:
+            raise serializers.ValidationError(
+                "FILE_TOO_LARGE",
+                code="FILE_TOO_LARGE",
+            )
+        content_type = getattr(value, "content_type", None)
+        if content_type not in ALLOWED_CONTENT_TYPES:
+            raise serializers.ValidationError(
+                "INVALID_FILE_TYPE",
+                code="INVALID_FILE_TYPE",
+            )
+        return value
+
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Extends the standard JWT serializer to embed role and region in the token.
 

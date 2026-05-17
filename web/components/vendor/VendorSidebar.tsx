@@ -12,12 +12,16 @@ interface Props {
 interface NavItem {
   hrefSegment: string
   exact?: boolean
-  labelKey: 'products' | 'dashboard'
+  labelKey: 'products' | 'dashboard' | 'orders' | 'calendar' | 'payouts'
+  badge?: number | null
 }
 
 const items: NavItem[] = [
   { hrefSegment: 'vendor', exact: true, labelKey: 'dashboard' },
   { hrefSegment: 'vendor/products', labelKey: 'products' },
+  { hrefSegment: 'vendor/orders', labelKey: 'orders', badge: null },
+  { hrefSegment: 'vendor/calendar', labelKey: 'calendar' },
+  { hrefSegment: 'vendor/payouts', labelKey: 'payouts' },
 ]
 
 export function VendorSidebar({ locale }: Props): React.ReactElement {
@@ -31,7 +35,7 @@ export function VendorSidebar({ locale }: Props): React.ReactElement {
         <span>سي كونكت</span>
         <span style={{ fontSize: 10, fontFamily: 'var(--ff-mono)', opacity: 0.6, letterSpacing: '0.1em', marginInlineStart: 'auto' }}>VENDOR</span>
       </div>
-      <nav aria-label="Vendor navigation">
+      <nav aria-label={t('ariaLabel')}>
         {items.map((item) => {
           const href = `/${locale}/${item.hrefSegment}`
           const active = item.exact ? pathname === href : pathname.startsWith(href)
@@ -42,6 +46,9 @@ export function VendorSidebar({ locale }: Props): React.ReactElement {
               className={`nav-item${active ? ' active' : ''}`}
             >
               <span>{t(item.labelKey)}</span>
+              {item.badge !== null && item.badge !== undefined && (
+                <span className="n">{item.badge}</span>
+              )}
             </Link>
           )
         })}

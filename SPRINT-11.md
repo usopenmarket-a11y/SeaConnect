@@ -1,20 +1,21 @@
 # Sprint 11 — KYC Upload Flow, Notifications API, Vendor Dashboard, File Upload
 
 **Sprint:** 11
-**Date:** TBD
+**Date:** 2026-05-17 (started)
 **Theme:** Complete the owner onboarding loop, wire the notifications page to live data, build the vendor dashboard, and add file/image upload infrastructure.
 
 ---
 
-## Pre-Sprint State
+## Pre-Sprint Audit (2026-05-17)
 
-Sprints 1–10 complete. Key gaps entering Sprint 11:
-- KYC onboarding page exists but "Mark as Complete" buttons are no-ops (deferred from Sprint 10D)
-- Notifications page shows mock data — `GET /api/v1/notifications/` not yet wired
-- Settings page shows mock profile — `GET /api/v1/accounts/users/me/` not yet wired
-- Vendor dashboard has a stub (`vendor/DashboardClient.tsx`) but no real pages
-- No file/image upload infrastructure (MinIO pre-signed URLs)
-- `CompetitionsPage.tsx` TypeScript module resolution error (carry-over)
+| Item | Status |
+|------|--------|
+| `GET /api/v1/notifications/` list + `POST /id/read/` | ✅ Already exists (`InAppNotificationListView`, `MarkReadView`) |
+| `POST /api/v1/notifications/read-all/` | 🔲 Missing — needs adding |
+| `GET /api/v1/users/me/` | ✅ Already exists (Sprint 2) |
+| `PATCH /api/v1/users/me/` | 🔲 Missing — needs adding |
+| Vendor product CRUD API | 🔲 Partial — check `VendorProductListCreateView` |
+| `CompetitionsPage.tsx` TS error | 🔲 Import path issue — `@/app/[locale]/competitions/page` vs `@/app/[locale]/(public)/competitions/page` |
 
 ---
 

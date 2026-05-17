@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { getAccessToken } from '@/lib/api'
 
-import type { Competition } from '@/app/[locale]/competitions/page'
+import type { Competition } from '@/app/[locale]/(public)/competitions/page'
 
 interface Props {
   competitions: Competition[]

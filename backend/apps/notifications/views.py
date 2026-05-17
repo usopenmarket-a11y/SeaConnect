@@ -3,6 +3,7 @@
 Endpoints:
   GET  /api/v1/notifications/           — list authenticated user's in-app notifications
   POST /api/v1/notifications/<id>/read/ — mark a single in-app notification as read
+  POST /api/v1/notifications/read-all/  — bulk mark all unread in-app notifications as read
 
 Only IN_APP channel notifications are surfaced through the REST API.
 Push and email deliveries are fire-and-forget via Celery tasks.
@@ -78,3 +79,28 @@ class MarkReadView(APIView):
             logger.debug("Notification %s marked as read by user %s.", id, request.user.id)
 
         return Response({"status": "read"}, status=status.HTTP_200_OK)
+
+
+class MarkAllReadView(APIView):
+    """Bulk-mark all unread in-app notifications as read for the requesting user.
+
+    Idempotent: if no unread notifications exist, returns 200 with ``{"marked_read": 0}``.
+
+    Only ``channel=in_app`` notifications with status ``pending`` or ``sent`` are
+    updated — failed rows and already-read rows are untouched.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        count = Notification.objects.filter(
+            recipient=request.user,
+            channel=NotificationChannel.IN_APP,
+            status__in=[NotificationStatus.PENDING, NotificationStatus.SENT],
+        ).update(status=NotificationStatus.READ, read_at=timezone.now())
+        logger.debug(
+            "Bulk-marked %d notifications as read for user %s.",
+            count,
+            request.user.id,
+        )
+        return Response({"marked_read": count}, status=status.HTTP_200_OK)

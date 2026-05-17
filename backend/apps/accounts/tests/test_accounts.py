@@ -505,3 +505,39 @@ class TestMeEndpoint:
         auth_client.patch(ME_URL, data={"preferred_lang": "en"})
         customer_user.refresh_from_db()
         assert customer_user.preferred_lang == "en"
+
+    # -----------------------------------------------------------------------
+    # Sprint 11C — four additional PATCH /users/me/ contract tests
+    # -----------------------------------------------------------------------
+
+    def test_happy_me_patch_phone_returns_updated_user(self, auth_client, customer_user):
+        """PATCH phone persists the new value and response body reflects it."""
+        response = auth_client.patch(ME_URL, data={"phone": "+201099887766"})
+        assert response.status_code == 200
+        assert response.data["phone"] == "+201099887766"
+        customer_user.refresh_from_db()
+        assert customer_user.phone == "+201099887766"
+
+    def test_happy_me_patch_first_name_response_body(self, auth_client, customer_user):
+        """PATCH first_name returns the updated first_name in the response body."""
+        response = auth_client.patch(ME_URL, data={"first_name": "Renamed"})
+        assert response.status_code == 200
+        assert response.data["first_name"] == "Renamed"
+
+    def test_sad_me_patch_email_not_updated(self, auth_client, customer_user):
+        """PATCH with email field must NOT update the stored email (read-only).
+
+        The serializer marks email as read_only so the field is silently
+        ignored rather than returning 400 — but the DB value must stay the
+        same, and the response must still be 200 (valid partial update).
+        """
+        original = customer_user.email
+        response = auth_client.patch(ME_URL, data={"email": "attacker@evil.com"})
+        assert response.status_code == 200
+        customer_user.refresh_from_db()
+        assert customer_user.email == original
+
+    def test_sad_me_patch_unauthenticated_returns_401(self, api_client):
+        """PATCH /users/me/ without a Bearer token must return 401."""
+        response = api_client.patch(ME_URL, data={"first_name": "Ghost"})
+        assert response.status_code == 401
