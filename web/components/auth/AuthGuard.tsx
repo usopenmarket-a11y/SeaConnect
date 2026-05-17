@@ -19,6 +19,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useAuth } from '@/lib/auth'
 
 interface AuthGuardProps {
@@ -30,6 +31,7 @@ interface AuthGuardProps {
 export function AuthGuard({ children, locale }: AuthGuardProps): React.ReactElement | null {
   const { user, isLoading } = useAuth()
   const router = useRouter()
+  const tAuth = useTranslations('auth')
 
   React.useEffect(() => {
     if (!isLoading && !user) {
@@ -42,7 +44,7 @@ export function AuthGuard({ children, locale }: AuthGuardProps): React.ReactElem
     return (
       <div
         role="status"
-        aria-label="جارٍ التحقق من الجلسة"
+        aria-label={tAuth('loading')}
         className="flex min-h-[calc(100dvh-8rem)] items-center justify-center"
       >
         <span

@@ -19,6 +19,7 @@ import useSWR from 'swr'
 import { ScrollProgress } from '@/components/layout/ScrollProgress'
 import { get, getAccessToken } from '@/lib/api'
 import type { PaginatedResponse } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
 
 /** Returns true once the page has scrolled past the hero (≥80px). */
 function useScrolledPastHero(): boolean {
@@ -68,9 +69,16 @@ export function Nav({ locale }: NavProps): React.ReactElement {
   const tNotif = useTranslations('notifications')
   const pathname = usePathname()
   const scrolledPastHero = useScrolledPastHero()
+  const { user } = useAuth()
 
   // Detect whether the user is authenticated (token present in memory)
   const isAuthenticated = getAccessToken() !== null
+
+  // Avatar initial — use first letter of first name, or email, or fallback '?'
+  const avatarInitial =
+    user?.first_name?.[0]?.toUpperCase() ??
+    user?.email?.[0]?.toUpperCase() ??
+    '?'
 
   // Cart badge — silently fails when user is not logged in (data is undefined)
   const { data: cartData } = useSWR<CartBadgeData>(
@@ -274,7 +282,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
             className="avatar"
             aria-label={t('accountAriaLabel')}
           >
-            ن
+            {avatarInitial}
           </Link>
         </div>
       </nav>

@@ -117,18 +117,34 @@
     }
   },
   "auth": {
+    "loading": "جارٍ التحقق من الجلسة",
     "login": {
-      "title": "تسجيل الدخول",
+      "eyebrow": "SIGN IN · تسجيل الدخول",
+      "title": "مرحباً بك.",
+      "subtitle": "ادخل بريدك الإلكتروني وكلمة المرور للمتابعة.",
+      "emailLabel": "البريد الإلكتروني · EMAIL",
+      "passwordLabel": "كلمة المرور · PASSWORD",
+      "showPassword": "إظهار كلمة المرور",
+      "hidePassword": "إخفاء كلمة المرور",
+      "submit": "تسجيل الدخول",
+      "submitting": "جارٍ تسجيل الدخول…",
+      "divider": "أو · OR",
+      "noAccount": "ليس لديك حساب؟",
+      "joinNow": "اشترك الآن · JOIN",
+      "comingSoon": "قريباً",
       "email": "البريد الإلكتروني",
       "password": "كلمة المرور",
-      "submit": "دخول",
-      "noAccount": "ليس لديك حساب؟",
       "register": "سجّل الآن"
     },
     "register": {
       "eyebrow": "JOIN · إنشاء حساب",
       "title": "أهلاً وسهلاً.",
       "subtitle": "أنشئ حسابك للبدء في الحجز.",
+      "pwWeak": "ضعيفة · WEAK",
+      "pwFair": "متوسطة · FAIR",
+      "pwStrong": "قوية · STRONG",
+      "divider": "أو · OR",
+      "comingSoon": "قريباً",
       "firstName": "الاسم الأول",
       "firstNamePlaceholder": "محمد",
       "lastName": "اسم العائلة",
@@ -543,6 +559,12 @@
     "viewDetails": "عرض البطولة"
   },
   "profile": {
+    "status": {
+      "pendingReview": "قيد المراجعة",
+      "cancelled": "ملغاة"
+    },
+    "defaultName": "مستخدم سي كونكت",
+    "defaultBoat": "قارب",
     "tabs": {
       "all": "كل الحجوزات",
       "upcoming": "القادمة",
@@ -1411,6 +1433,46 @@
       "priceDesc": "السعر: من الأعلى",
       "newest": "الأحدث",
       "rating": "التقييم"
+    }
+  },
+  "marquee": {
+    "vessels":     "قارب معتمد · VESSELS",
+    "regions":     "منطقة بحرية · REGIONS",
+    "rating":      "متوسط التقييم · RATING",
+    "escrow":      "حماية الضمان · ESCROW",
+    "insurance":   "EGP تأمين لكل مسافر",
+    "tournaments": "بطولات هذا الموسم · TOURNAMENTS",
+    "commission":  "عمولة · أول ٣ شهور",
+    "hours":       "ساعة إبحار · LOGGED"
+  },
+  "calendar": {
+    "availabilityAndWeather": "الإتاحة والطقس",
+    "prevMonth": "الشهر السابق",
+    "nextMonth": "الشهر التالي",
+    "legend": {
+      "available": "متاح",
+      "limited": "محدود",
+      "hold": "معلّق",
+      "booked": "محجوز"
+    },
+    "weather": {
+      "wind": "رياح",
+      "waves": "أمواج",
+      "rain": "أمطار",
+      "visibility": "رؤية",
+      "windDir": "شمال شرق",
+      "calm": "هادئ",
+      "possible": "محتمل",
+      "clear": "صافٍ",
+      "excellent": "ممتازة",
+      "lowTemp": "أقل درجة {temp}° · مناسب للإبحار"
+    },
+    "selected": "SELECTED · التاريخ المختار",
+    "price": "PRICE · السعر",
+    "pill": {
+      "available": "✓ متاح للحجز",
+      "limited": "⚡ آخر فرصة · طلب عالٍ",
+      "hold": "⏱ معلّق · راجع الربان"
     }
   },
   "payment": {

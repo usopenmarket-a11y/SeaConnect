@@ -5,32 +5,37 @@
  * Uses CSS animation @keyframes marquee-x (already in globals.css).
  * Items are doubled to create seamless infinite loop.
  * Server Component — pure CSS animation, no client state needed.
+ *
+ * ADR-015: all strings via i18n keys. Receives locale to resolve the
+ * correct label from the marquee namespace.
  */
 
 import * as React from 'react'
+import { getTranslations } from 'next-intl/server'
 
-const MARQUEE_ITEMS = [
-  ['183', 'قارب معتمد · VESSELS'],
-  ['12', 'منطقة بحرية · REGIONS'],
-  ['4.92', 'متوسط التقييم · RATING'],
-  ['24H', 'حماية الضمان · ESCROW'],
-  ['100K', 'EGP تأمين لكل مسافر'],
-  ['12', 'بطولات هذا الموسم · TOURNAMENTS'],
-  ['0%', 'عمولة · أول ٣ شهور'],
-  ['8,400+', 'ساعة إبحار · LOGGED'],
+const MARQUEE_NUMS = ['183', '12', '4.92', '24H', '100K', '12', '0%', '8,400+'] as const
+const MARQUEE_KEYS = [
+  'vessels', 'regions', 'rating', 'escrow',
+  'insurance', 'tournaments', 'commission', 'hours',
 ] as const
 
-// Double items for seamless loop
-const ALL_ITEMS = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
+interface MarqueeBandProps {
+  locale: string
+}
 
-export function MarqueeBand(): React.ReactElement {
+export async function MarqueeBand({ locale }: MarqueeBandProps): Promise<React.ReactElement> {
+  const t = await getTranslations({ locale, namespace: 'marquee' })
+
+  const items = MARQUEE_NUMS.map((num, i) => ({ num, label: t(MARQUEE_KEYS[i]) }))
+  const allItems = [...items, ...items]
+
   return (
     <div className="marquee-band" data-screen-label="marquee-band">
       <div className="marquee-viewport">
         <div className="marquee-track">
-          {ALL_ITEMS.map(([n, l], i) => (
+          {allItems.map(({ num, label }, i) => (
             <span key={i} className="item">
-              <span className="n num">{n}</span>
+              <span className="n num">{num}</span>
               <span
                 style={{
                   fontSize: 13,
@@ -40,7 +45,7 @@ export function MarqueeBand(): React.ReactElement {
                   textTransform: 'uppercase',
                 }}
               >
-                {l}
+                {label}
               </span>
               <span className="sep" />
             </span>

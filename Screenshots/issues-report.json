@@ -1,0 +1,531 @@
+{
+  "timestamp": "2026-05-17T20:48:23.623Z",
+  "base_url": "http://localhost:3010",
+  "admin_url": "http://localhost:3011",
+  "total": 35,
+  "clean": 4,
+  "with_issues": 31,
+  "issues": [
+    {
+      "page": "01-home-ar",
+      "url": "http://localhost:3010/ar",
+      "final_url": "http://localhost:3010/ar",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1561643028-02e42b8eb7e8?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1564419320408-49c30c47a2e7?auto=format&fit=crop&w=600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1559285988-b11d3ab6ccc0?auto=format&fit=crop&w=600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1527484702778-7d9bbbc5e3ab?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1606251801-3e21d6e3a8b6?auto=format&fit=crop&w=1600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1513039464697-c75e46a88020?auto=format&fit=crop&w=600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        }
+      ]
+    },
+    {
+      "page": "02-home-en",
+      "url": "http://localhost:3010/en",
+      "final_url": "http://localhost:3010/en",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1561643028-02e42b8eb7e8?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1527484702778-7d9bbbc5e3ab?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1513039464697-c75e46a88020?auto=format&fit=crop&w=600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1559285988-b11d3ab6ccc0?auto=format&fit=crop&w=600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1564419320408-49c30c47a2e7?auto=format&fit=crop&w=600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1606251801-3e21d6e3a8b6?auto=format&fit=crop&w=1600&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "03-yachts-ar",
+      "url": "http://localhost:3010/ar/yachts",
+      "final_url": "http://localhost:3010/ar/yachts",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1561643028-02e42b8eb7e8?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1527484702778-7d9bbbc5e3ab?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "04-yachts-en",
+      "url": "http://localhost:3010/en/yachts",
+      "final_url": "http://localhost:3010/en/yachts",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1561643028-02e42b8eb7e8?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1527484702778-7d9bbbc5e3ab?auto=format&fit=crop&w=1400&q=80",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "05-marketplace-ar",
+      "url": "http://localhost:3010/ar/marketplace",
+      "final_url": "http://localhost:3010/ar/marketplace",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "06-competitions-ar",
+      "url": "http://localhost:3010/ar/competitions",
+      "final_url": "http://localhost:3010/ar/competitions",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "07-weather-ar",
+      "url": "http://localhost:3010/ar/weather",
+      "final_url": "http://localhost:3010/ar/weather",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+        }
+      ]
+    },
+    {
+      "page": "08-fishing-guide-ar",
+      "url": "http://localhost:3010/ar/fishing-guide",
+      "final_url": "http://localhost:3010/ar/fishing-guide",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "09-map-ar",
+      "url": "http://localhost:3010/ar/map",
+      "final_url": "http://localhost:3010/ar/map",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "10-search-ar",
+      "url": "http://localhost:3010/ar/search?q=صيد",
+      "final_url": "http://localhost:3010/ar/search?q=%D8%B5%D9%8A%D8%AF",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        },
+        {
+          "type": "unexpected-redirect",
+          "from": "http://localhost:3010/ar/search?q=صيد",
+          "to": "http://localhost:3010/ar/search?q=%D8%B5%D9%8A%D8%AF"
+        }
+      ]
+    },
+    {
+      "page": "11-search-en",
+      "url": "http://localhost:3010/en/search?q=fishing",
+      "final_url": "http://localhost:3010/en/search?q=fishing",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "page": "12-notifications-ar",
+      "url": "http://localhost:3010/ar/notifications",
+      "final_url": "http://localhost:3010/ar/notifications",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "13-settings-ar",
+      "url": "http://localhost:3010/ar/settings",
+      "final_url": "http://localhost:3010/ar/settings",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "14-login-ar",
+      "url": "http://localhost:3010/ar/login",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "15-login-en",
+      "url": "http://localhost:3010/en/login",
+      "final_url": "http://localhost:3010/en/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "16-register-ar",
+      "url": "http://localhost:3010/ar/register",
+      "final_url": "http://localhost:3010/ar/register",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "17-register-en",
+      "url": "http://localhost:3010/en/register",
+      "final_url": "http://localhost:3010/en/register",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "18-owner-dashboard",
+      "url": "http://localhost:3010/ar/owner/dashboard",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "19-owner-calendar",
+      "url": "http://localhost:3010/ar/owner/calendar",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "20-owner-payouts",
+      "url": "http://localhost:3010/ar/owner/payouts",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "21-owner-yachts",
+      "url": "http://localhost:3010/ar/owner/yachts",
+      "final_url": "http://localhost:3010/ar/owner/yachts",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "22-owner-onboarding",
+      "url": "http://localhost:3010/ar/owner/onboarding",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "http://localhost:3010/ar/login?_rsc=yiyqc",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "23-owner-new-yacht",
+      "url": "http://localhost:3010/ar/owner/yachts/new",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "http://localhost:3010/ar/login?_rsc=1ggv8",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "24-vendor-dashboard",
+      "url": "http://localhost:3010/ar/vendor",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "25-vendor-products",
+      "url": "http://localhost:3010/ar/vendor/products",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "http://localhost:3010/ar/login?_rsc=axmy8",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "26-vendor-orders",
+      "url": "http://localhost:3010/ar/vendor/orders",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "http://localhost:3010/ar/login?_rsc=axmy8",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "27-vendor-calendar",
+      "url": "http://localhost:3010/ar/vendor/calendar",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "28-vendor-payouts",
+      "url": "http://localhost:3010/ar/vendor/payouts",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "http://localhost:3010/ar/login?_rsc=2gdk8",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "type": "network-fail",
+          "url": "http://localhost:3010/ar/login?_rsc=axmy8",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "29-cart-ar",
+      "url": "http://localhost:3010/ar/cart",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "30-checkout-ar",
+      "url": "http://localhost:3010/ar/checkout",
+      "final_url": "http://localhost:3010/ar/login",
+      "status": 200,
+      "issues": [
+        {
+          "type": "js-error",
+          "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+        }
+      ]
+    },
+    {
+      "page": "31-admin-dashboard",
+      "url": "http://localhost:3011/ar",
+      "final_url": "http://localhost:3011/ar/dashboard",
+      "status": 200,
+      "issues": [
+        {
+          "type": "network-fail",
+          "url": "https://images.unsplash.com/photo-1530939027401-cca9c1098bbe?w=80&h=80&fit=crop",
+          "reason": "net::ERR_BLOCKED_BY_ORB"
+        },
+        {
+          "type": "unexpected-redirect",
+          "from": "http://localhost:3011/ar",
+          "to": "http://localhost:3011/ar/dashboard"
+        }
+      ]
+    }
+  ]
+}

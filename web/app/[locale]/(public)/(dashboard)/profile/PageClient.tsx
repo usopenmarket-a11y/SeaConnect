@@ -31,7 +31,7 @@ type TabKey = 'all' | 'upcoming' | 'completed' | 'orders' | 'tournaments' | 'fav
 const TAB_KEYS: TabKey[] = ['all', 'upcoming', 'completed', 'orders', 'tournaments', 'favourites']
 
 function getInitial(profile: UserProfile): string {
-  return profile.first_name?.[0] ?? profile.email[0]?.toUpperCase() ?? 'م'
+  return profile.first_name?.[0]?.toUpperCase() ?? profile.email[0]?.toUpperCase() ?? '?'
 }
 
 export function ProfilePage(): React.ReactElement {
@@ -41,8 +41,8 @@ export function ProfilePage(): React.ReactElement {
   const STATUS_MAP: Record<string, string> = {
     confirmed: t('upcomingTrips'),
     completed: t('pastTrips'),
-    pending_owner: 'قيد المراجعة',
-    cancelled: 'ملغاة',
+    pending_owner: t('status.pendingReview'),
+    cancelled: t('status.cancelled'),
   }
 
   const { data: profile, isLoading: profileLoading } = useSWR<UserProfile>(
@@ -84,10 +84,10 @@ export function ProfilePage(): React.ReactElement {
           className="profile-avatar"
           style={{ backgroundColor: 'var(--clay)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--foam)', fontFamily: 'var(--ff-display)', fontSize: 56, fontWeight: 700 }}
         >
-          {profile ? getInitial(profile) : 'م'}
+          {profile ? getInitial(profile) : '?'}
         </div>
         <div className="profile-info">
-          <h2>{displayName || 'مستخدم سي كونكت'}</h2>
+          <h2>{displayName || t('defaultName')}</h2>
           {/* TODO: i18n for since/location */}
           <div className="since">
             MEMBER SINCE · {profile ? new Date(profile.date_joined).getFullYear() : '2026'} · EGYPT
@@ -146,7 +146,7 @@ export function ProfilePage(): React.ReactElement {
               <div key={b.id} className="booking-list-item">
                 <div className="thumb" />
                 <div>
-                  <div className="name">{b.yacht_name ?? 'قارب'}</div>
+                  <div className="name">{b.yacht_name ?? t('defaultBoat')}</div>
                   <div className="sub">{b.start_date} · {b.pax ?? '—'} PAX</div>
                 </div>
                 <div className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 24, fontWeight: 700 }}>
@@ -173,7 +173,7 @@ export function ProfilePage(): React.ReactElement {
               <div key={b.id} className="booking-list-item">
                 <div className="thumb" />
                 <div>
-                  <div className="name">{b.yacht_name ?? 'قارب'}</div>
+                  <div className="name">{b.yacht_name ?? t('defaultBoat')}</div>
                   <div className="sub">{b.start_date} · {b.pax ?? '—'} PAX</div>
                 </div>
                 <div className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 24, fontWeight: 700 }}>

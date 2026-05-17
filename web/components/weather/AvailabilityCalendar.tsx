@@ -18,6 +18,7 @@
 
 import * as React from 'react'
 import useSWR from 'swr'
+import { useTranslations } from 'next-intl'
 
 // ── Weather SVG icons (converted from Design/availability.jsx) ─────────────
 
@@ -116,6 +117,7 @@ interface AvailabilityCalendarProps {
   boat: BoatData
   region?: string
   yachtId?: string
+  locale?: string
 }
 
 type DayStatus = 'open' | 'limited' | 'hold' | 'booked'
@@ -159,15 +161,57 @@ export function AvailabilityCalendar({
   boat,
   region = '',
   yachtId,
+  locale = 'ar',
 }: AvailabilityCalendarProps): React.ReactElement {
+  const tCal = useTranslations('calendar')
   const [month, setMonth] = React.useState(4) // May = idx 4
   const [selected, setSelected] = React.useState(12)
 
-  const months = [
-    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
-  ]
+  // Generate month names using Intl — no hardcoded arrays
+  const intlLocale = locale === 'ar' ? 'ar-EG' : 'en-US'
+  const months = React.useMemo(
+    () => Array.from({ length: 12 }, (_, i) =>
+      new Intl.DateTimeFormat(intlLocale, { month: 'long' }).format(new Date(2026, i, 1))
+    ),
+    [intlLocale],
+  )
   const monthsEn = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+
+  // Generate weekday abbreviations using Intl — no hardcoded array
+  // Calendar starts on Friday (index 5 in JS Date where 0=Sun)
+  const weekdayOrder = [5, 6, 0, 1, 2, 3, 4] // Fri … Thu
+  const weekdays = React.useMemo(
+    () => weekdayOrder.map((dow) => {
+      // Use a known date with that day-of-week: 2026-05-01 is a Friday
+      const base = new Date(2026, 4, 1) // May 1 = Friday
+      const d = new Date(base)
+      d.setDate(base.getDate() + ((dow - 5 + 7) % 7))
+      return new Intl.DateTimeFormat(intlLocale, { weekday: 'narrow' }).format(d)
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [intlLocale],
+  )
+  const weekdaysEn = React.useMemo(
+    () => weekdayOrder.map((dow) => {
+      const base = new Date(2026, 4, 1)
+      const d = new Date(base)
+      d.setDate(base.getDate() + ((dow - 5 + 7) % 7))
+      return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(d).toUpperCase()
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+
+  // Forecast weekday labels (7 consecutive days from selected)
+  function getForecastWeekdays(startDow: number): string[] {
+    return Array.from({ length: 7 }, (_, i) => {
+      const dow = (startDow + i) % 7
+      const base = new Date(2026, 4, 1)
+      const d = new Date(base)
+      d.setDate(base.getDate() + ((dow - 5 + 7) % 7))
+      return new Intl.DateTimeFormat(intlLocale, { weekday: 'short' }).format(d)
+    })
+  }
 
   // ── Real availability data from API ────────────────────────────────────────
   const year = 2026
@@ -230,8 +274,9 @@ export function AvailabilityCalendar({
     region === 'luxor' ? { temp: 32, wind: 8 } :
     { temp: 27, wind: 12 }
 
-  const weekDays = ['الجمعة', 'السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس']
-  const weekDaysEn = ['FRI', 'SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU']
+  // Determine starting day-of-week for selected date (May 1 = Friday = 5)
+  const selectedDow = (5 + selected - 1) % 7
+  const forecastWeekdays = getForecastWeekdays(selectedDow)
 
   const forecast: ForecastDay[] = Array.from({ length: 7 }, (_, i) => {
     const d = selected + i
@@ -264,7 +309,7 @@ export function AvailabilityCalendar({
       <div className="avail-head">
         <div>
           <div className="subhead" style={{ margin: 0, paddingBottom: 0, border: 0 }}>
-            الإتاحة والطقس
+            {tCal('availabilityAndWeather')}
           </div>
           <div
             style={{
@@ -281,12 +326,12 @@ export function AvailabilityCalendar({
           </div>
         </div>
         <div className="month-nav">
-          <button onClick={() => setMonth(Math.max(0, month - 1))} aria-label="الشهر السابق">←</button>
+          <button onClick={() => setMonth(Math.max(0, month - 1))} aria-label={tCal('prevMonth')}>←</button>
           <div className="month-label">
-            <div className="ar">{months[month]} ٢٠٢٦</div>
+            <div className="ar">{months[month]} {locale === 'ar' ? '٢٠٢٦' : '2026'}</div>
             <div className="en">{monthsEn[month]} 2026</div>
           </div>
-          <button onClick={() => setMonth(Math.min(11, month + 1))} aria-label="الشهر التالي">→</button>
+          <button onClick={() => setMonth(Math.min(11, month + 1))} aria-label={tCal('nextMonth')}>→</button>
         </div>
       </div>
 
@@ -294,7 +339,7 @@ export function AvailabilityCalendar({
         {/* Calendar panel */}
         <div className="cal-panel">
           <div className="cal-weekdays">
-            {['ج', 'س', 'ح', 'ن', 'ث', 'ر', 'خ'].map((d, i) => (
+            {weekdays.map((d, i) => (
               <div key={i}>{d}</div>
             ))}
           </div>
@@ -320,10 +365,10 @@ export function AvailabilityCalendar({
             })}
           </div>
           <div className="cal-legend">
-            <span className="lg"><span className="sw open" />متاح</span>
-            <span className="lg"><span className="sw limited" />محدود</span>
-            <span className="lg"><span className="sw hold" />معلّق</span>
-            <span className="lg"><span className="sw booked" />محجوز</span>
+            <span className="lg"><span className="sw open" />{tCal('legend.available')}</span>
+            <span className="lg"><span className="sw limited" />{tCal('legend.limited')}</span>
+            <span className="lg"><span className="sw hold" />{tCal('legend.hold')}</span>
+            <span className="lg"><span className="sw booked" />{tCal('legend.booked')}</span>
           </div>
         </div>
 
@@ -349,7 +394,7 @@ export function AvailabilityCalendar({
                 <span className="deg">°C</span>
               </div>
               <div style={{ fontSize: 13, color: 'var(--muted-2)' }}>
-                أقل درجة {forecast[0].lowTemp}° · مناسب للإبحار
+                {tCal('weather.lowTemp', { temp: forecast[0].lowTemp })}
               </div>
             </div>
             <div className="weather-icon-big">
@@ -360,24 +405,24 @@ export function AvailabilityCalendar({
           {/* Metrics row */}
           <div className="weather-metrics">
             <div className="wm">
-              <div className="l">رياح</div>
+              <div className="l">{tCal('weather.wind')}</div>
               <div className="v num">{forecast[0].wind}<span>KT</span></div>
-              <div className="dir">شمال شرق</div>
+              <div className="dir">{tCal('weather.windDir')}</div>
             </div>
             <div className="wm">
-              <div className="l">أمواج</div>
+              <div className="l">{tCal('weather.waves')}</div>
               <div className="v num">0.8<span>M</span></div>
-              <div className="dir">هادئ</div>
+              <div className="dir">{tCal('weather.calm')}</div>
             </div>
             <div className="wm">
-              <div className="l">أمطار</div>
+              <div className="l">{tCal('weather.rain')}</div>
               <div className="v num">{forecast[0].precip}<span>%</span></div>
-              <div className="dir">{forecast[0].precip > 15 ? 'محتمل' : 'صافٍ'}</div>
+              <div className="dir">{forecast[0].precip > 15 ? tCal('weather.possible') : tCal('weather.clear')}</div>
             </div>
             <div className="wm">
-              <div className="l">رؤية</div>
+              <div className="l">{tCal('weather.visibility')}</div>
               <div className="v num">10<span>KM</span></div>
-              <div className="dir">ممتازة</div>
+              <div className="dir">{tCal('weather.excellent')}</div>
             </div>
           </div>
 
@@ -435,8 +480,8 @@ export function AvailabilityCalendar({
           <div className="forecast-row">
             {forecast.map((f, i) => (
               <div key={i} className={`fc${i === 0 ? ' active' : ''}`}>
-                <div className="day-ar">{weekDays[i % 7]}</div>
-                <div className="day-en">{weekDaysEn[i % 7]} {f.d}</div>
+                <div className="day-ar">{forecastWeekdays[i]}</div>
+                <div className="day-en">{weekdaysEn[i % 7]} {f.d}</div>
                 <div className="ico">{iconMap[f.iconKey]}</div>
                 <div className="temps">
                   <span className="hi num">{f.temp}°</span>
@@ -463,7 +508,7 @@ export function AvailabilityCalendar({
                 color: 'var(--muted)',
               }}
             >
-              SELECTED · التاريخ المختار
+              {tCal('selected')}
             </div>
             <div
               style={{
@@ -473,7 +518,7 @@ export function AvailabilityCalendar({
                 marginTop: 4,
               }}
             >
-              {selected} {months[month]} · {weekDays[0]}
+              {selected} {months[month]} · {forecastWeekdays[0]}
             </div>
           </div>
           <div style={{ textAlign: 'left' }}>
@@ -485,7 +530,7 @@ export function AvailabilityCalendar({
                 color: 'var(--muted)',
               }}
             >
-              PRICE · السعر
+              {tCal('price')}
             </div>
             <div
               style={{
@@ -512,10 +557,10 @@ export function AvailabilityCalendar({
           </div>
           <div className={`avail-pill ${sel.status}`}>
             {sel.status === 'open'
-              ? '✓ متاح للحجز'
+              ? tCal('pill.available')
               : sel.status === 'limited'
-              ? '⚡ آخر فرصة · طلب عالٍ'
-              : '⏱ معلّق · راجع الربان'}
+              ? tCal('pill.limited')
+              : tCal('pill.hold')}
           </div>
         </div>
       )}

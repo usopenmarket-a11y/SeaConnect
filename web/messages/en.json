@@ -117,18 +117,34 @@
     }
   },
   "auth": {
+    "loading": "Verifying your session",
     "login": {
-      "title": "Log In",
+      "eyebrow": "SIGN IN · Log In",
+      "title": "Welcome back.",
+      "subtitle": "Enter your email and password to continue.",
+      "emailLabel": "Email · البريد",
+      "passwordLabel": "Password · كلمة المرور",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "divider": "OR · أو",
+      "noAccount": "Don't have an account?",
+      "joinNow": "Join now · اشترك",
+      "comingSoon": "Coming soon",
       "email": "Email address",
       "password": "Password",
-      "submit": "Log In",
-      "noAccount": "Don't have an account?",
       "register": "Register now"
     },
     "register": {
       "eyebrow": "JOIN · Create account",
       "title": "Welcome aboard.",
       "subtitle": "Create your account to start booking.",
+      "pwWeak": "WEAK · ضعيفة",
+      "pwFair": "FAIR · متوسطة",
+      "pwStrong": "STRONG · قوية",
+      "divider": "OR · أو",
+      "comingSoon": "Coming soon",
       "firstName": "First name",
       "firstNamePlaceholder": "Mohammed",
       "lastName": "Last name",
@@ -543,6 +559,12 @@
     "viewDetails": "View Tournament"
   },
   "profile": {
+    "status": {
+      "pendingReview": "Under review",
+      "cancelled": "Cancelled"
+    },
+    "defaultName": "SeaConnect User",
+    "defaultBoat": "Boat",
     "tabs": {
       "all": "All bookings",
       "upcoming": "Upcoming",
@@ -1411,6 +1433,46 @@
       "priceDesc": "Price: high to low",
       "newest": "Newest",
       "rating": "Rating"
+    }
+  },
+  "marquee": {
+    "vessels":     "Verified Vessels · قارب",
+    "regions":     "Maritime Regions · منطقة",
+    "rating":      "Average Rating · التقييم",
+    "escrow":      "Escrow Protection · ضمان",
+    "insurance":   "EGP insurance per passenger",
+    "tournaments": "Tournaments this season · بطولات",
+    "commission":  "Commission · first 3 months",
+    "hours":       "Sailing hours logged · ساعة"
+  },
+  "calendar": {
+    "availabilityAndWeather": "Availability & Weather",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "legend": {
+      "available": "Available",
+      "limited": "Limited",
+      "hold": "On hold",
+      "booked": "Booked"
+    },
+    "weather": {
+      "wind": "Wind",
+      "waves": "Waves",
+      "rain": "Rain",
+      "visibility": "Visibility",
+      "windDir": "NE",
+      "calm": "Calm",
+      "possible": "Possible",
+      "clear": "Clear",
+      "excellent": "Excellent",
+      "lowTemp": "Low {temp}° · Good for sailing"
+    },
+    "selected": "SELECTED · التاريخ المختار",
+    "price": "PRICE · السعر",
+    "pill": {
+      "available": "✓ Available to book",
+      "limited": "⚡ Last chance · High demand",
+      "hold": "⏱ On hold · Check with captain"
     }
   },
   "payment": {

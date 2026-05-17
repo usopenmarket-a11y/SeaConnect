@@ -40,21 +40,21 @@ const REGIONS = [
 ] as const
 
 const GEAR = [
-  { brand: 'SHIMANO', title: 'سنارة ستيلا 8000', price: 12400, img: 'https://images.unsplash.com/photo-1545056453-f0359c3df6db?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'DAIWA', title: 'بكرة سالتيجا 14000', price: 8900, img: 'https://images.unsplash.com/photo-1559285988-b11d3ab6ccc0?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'PENN', title: 'طقم صنارة كاملة', price: 3200, img: 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'RAPALA', title: 'طعوم صناعية × 12', price: 780, img: 'https://images.unsplash.com/photo-1513039464697-c75e46a88020?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'GARMIN', title: 'جهاز كشف أسماك STRIKER', price: 6400, img: 'https://images.unsplash.com/photo-1568205612837-017257d2310a?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'PLANO', title: 'صندوق معدات مزدوج', price: 540, img: 'https://images.unsplash.com/photo-1564419320408-49c30c47a2e7?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'COLUMBIA', title: 'قميص صيد طويل الكم', price: 890, img: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?auto=format&fit=crop&w=600&q=80' },
-  { brand: 'MUSTAD', title: 'صناصيل بحرية × 50', price: 120, img: 'https://images.unsplash.com/photo-1580137189272-c9379f8864fd?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'SHIMANO', title: 'سنارة ستيلا 8000', titleEn: 'Stella 8000 Rod', price: 12400, img: 'https://images.unsplash.com/photo-1545056453-f0359c3df6db?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'DAIWA', title: 'بكرة سالتيجا 14000', titleEn: 'Saltiga 14000 Reel', price: 8900, img: 'https://images.unsplash.com/photo-1559285988-b11d3ab6ccc0?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'PENN', title: 'طقم صنارة كاملة', titleEn: 'Complete Rod Set', price: 3200, img: 'https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'RAPALA', title: 'طعوم صناعية × 12', titleEn: 'Artificial Lures × 12', price: 780, img: 'https://images.unsplash.com/photo-1513039464697-c75e46a88020?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'GARMIN', title: 'جهاز كشف أسماك STRIKER', titleEn: 'STRIKER Fish Finder', price: 6400, img: 'https://images.unsplash.com/photo-1568205612837-017257d2310a?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'PLANO', title: 'صندوق معدات مزدوج', titleEn: 'Dual Tackle Box', price: 540, img: 'https://images.unsplash.com/photo-1564419320408-49c30c47a2e7?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'COLUMBIA', title: 'قميص صيد طويل الكم', titleEn: 'Long-sleeve Fishing Shirt', price: 890, img: 'https://images.unsplash.com/photo-1556906781-9a412961c28c?auto=format&fit=crop&w=600&q=80' },
+  { brand: 'MUSTAD', title: 'صناصيل بحرية × 50', titleEn: 'Marine Hooks × 50', price: 120, img: 'https://images.unsplash.com/photo-1580137189272-c9379f8864fd?auto=format&fit=crop&w=600&q=80' },
 ] as const
 
 const COMPETITIONS = [
-  { d: 12, m: 'MAY', title: 'بطولة البحر الأحمر للصيد الكبير', sub: 'SAFAGA MARINA · 14 HRS · 3 ROUNDS', participants: 84, prize: '120K', fee: 500 },
-  { d: 26, m: 'MAY', title: 'كأس الاسكندرية السنوي', sub: 'ABU QIR · 8 HRS · DEEP SEA', participants: 56, prize: '60K', fee: 300 },
-  { d: 8, m: 'JUN', title: 'بطولة شرم للتونة', sub: 'SHARM MARINA · 12 HRS · PELAGIC', participants: 42, prize: '90K', fee: 450 },
-  { d: 19, m: 'JUN', title: 'مهرجان النيل للصيد الرياضي', sub: 'LUXOR · 6 HRS · CATCH & RELEASE', participants: 120, prize: '40K', fee: 150 },
+  { d: 12, m: 'MAY', title: 'بطولة البحر الأحمر للصيد الكبير', titleEn: 'Red Sea Big Game Tournament', sub: 'SAFAGA MARINA · 14 HRS · 3 ROUNDS', participants: 84, prize: '120K', fee: 500 },
+  { d: 26, m: 'MAY', title: 'كأس الاسكندرية السنوي', titleEn: 'Alexandria Annual Cup', sub: 'ABU QIR · 8 HRS · DEEP SEA', participants: 56, prize: '60K', fee: 300 },
+  { d: 8, m: 'JUN', title: 'بطولة شرم للتونة', titleEn: 'Sharm Tuna Tournament', sub: 'SHARM MARINA · 12 HRS · PELAGIC', participants: 42, prize: '90K', fee: 450 },
+  { d: 19, m: 'JUN', title: 'مهرجان النيل للصيد الرياضي', titleEn: 'Nile Sport Fishing Festival', sub: 'LUXOR · 6 HRS · CATCH & RELEASE', participants: 120, prize: '40K', fee: 150 },
 ] as const
 
 // Fallback boats when API is unavailable (matches Design/data.jsx)
@@ -192,7 +192,7 @@ export default async function HomePage({
       />
 
       {/* ── Marquee band ─────────────────────────────────────────────────── */}
-      <MarqueeBand />
+      <MarqueeBand locale={locale} />
 
       {/* ── Featured boats grid ──────────────────────────────────────────── */}
       <div className="section" data-screen-label="featured-boats">
@@ -237,24 +237,27 @@ export default async function HomePage({
           </div>
         </Reveal>
         <div className="gear-grid">
-          {GEAR.slice(0, 8).map((g, i) => (
-            <Reveal key={i} delay={i * 50}>
-              <div className="gear-card">
-                <div
-                  className="img"
-                  style={{ backgroundImage: `url(${g.img})` }}
-                  role="img"
-                  aria-label={g.title}
-                />
-                <div className="brand">{g.brand}</div>
-                <div className="title">{g.title}</div>
-                <div className="price">
-                  <span className="num">{g.price.toLocaleString('en')}</span>
-                  <span className="unit"> EGP</span>
+          {GEAR.slice(0, 8).map((g, i) => {
+            const gearTitle = locale === 'ar' ? g.title : g.titleEn
+            return (
+              <Reveal key={i} delay={i * 50}>
+                <div className="gear-card">
+                  <div
+                    className="img"
+                    style={{ backgroundImage: `url(${g.img})` }}
+                    role="img"
+                    aria-label={gearTitle}
+                  />
+                  <div className="brand">{g.brand}</div>
+                  <div className="title">{gearTitle}</div>
+                  <div className="price">
+                    <span className="num">{g.price.toLocaleString('en')}</span>
+                    <span className="unit"> EGP</span>
+                  </div>
                 </div>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            )
+          })}
         </div>
       </div>
 
@@ -278,29 +281,32 @@ export default async function HomePage({
           </div>
         </Reveal>
         <div style={{ background: 'var(--foam)', border: '1px solid var(--rule)' }}>
-          {COMPETITIONS.map((c, i) => (
-            <Reveal key={i} delay={i * 70}>
-              <div className="comp-row">
-                <div className="date">
-                  <div className="d num">{c.d}</div>
-                  <div className="m">{c.m} 2026</div>
+          {COMPETITIONS.map((c, i) => {
+            const compTitle = locale === 'ar' ? c.title : c.titleEn
+            return (
+              <Reveal key={i} delay={i * 70}>
+                <div className="comp-row">
+                  <div className="date">
+                    <div className="d num">{c.d}</div>
+                    <div className="m">{c.m} 2026</div>
+                  </div>
+                  <div className="title">
+                    <div className="t">{compTitle}</div>
+                    <div className="sub">{c.sub}</div>
+                  </div>
+                  <div className="meta">
+                    <span className="n num">{c.participants}</span>
+                    <span className="l">{tComps('participants')}</span>
+                  </div>
+                  <div className="meta">
+                    <span className="n num">{c.prize}</span>
+                    <span className="l">{tComps('prizes')}</span>
+                  </div>
+                  <button className="cta">{tComps('register')} · {c.fee} EGP</button>
                 </div>
-                <div className="title">
-                  <div className="t">{c.title}</div>
-                  <div className="sub">{c.sub}</div>
-                </div>
-                <div className="meta">
-                  <span className="n num">{c.participants}</span>
-                  <span className="l">{tComps('participants')}</span>
-                </div>
-                <div className="meta">
-                  <span className="n num">{c.prize}</span>
-                  <span className="l">{tComps('prizes')}</span>
-                </div>
-                <button className="cta">{tComps('register')} · {c.fee} EGP</button>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            )
+          })}
         </div>
       </div>
 
