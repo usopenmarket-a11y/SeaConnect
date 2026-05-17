@@ -3,9 +3,9 @@
 /**
  * Register page — Client Component.
  *
- * Visual matches Design/system-pages.jsx auth card pattern exactly.
- * Same auth-outer → auth-card structure as login/PageClient.tsx.
- *
+ * Matches Design/system-pages.jsx auth card pattern.
+ * Fields: first name, last name, phone (+20 Egypt prefix), email, password,
+ * confirm password, role selector, terms checkbox.
  * ADR-009 — JWT in module memory, never localStorage.
  * ADR-014 — Logical CSS for RTL.
  * ADR-015 — All strings via i18n keys.
@@ -27,10 +27,24 @@ type UserRole = 'customer' | 'owner'
 interface FieldErrors {
   first_name?: string
   last_name?: string
+  phone?: string
   email?: string
   password?: string
   confirm_password?: string
-  role?: string
+  terms?: string
+}
+
+function passwordStrength(pw: string): { score: number; label: string; color: string } {
+  if (!pw) return { score: 0, label: '', color: 'var(--rule-strong)' }
+  let score = 0
+  if (pw.length >= 8) score++
+  if (pw.length >= 12) score++
+  if (/[A-Z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+  if (score <= 1) return { score, label: 'ضعيفة · WEAK', color: 'oklch(0.55 0.18 25)' }
+  if (score <= 3) return { score, label: 'متوسطة · FAIR', color: 'oklch(0.65 0.15 60)' }
+  return { score, label: 'قوية · STRONG', color: 'oklch(0.50 0.14 150)' }
 }
 
 export function RegisterPage({
@@ -43,31 +57,36 @@ export function RegisterPage({
 
   const [firstName, setFirstName] = React.useState('')
   const [lastName, setLastName] = React.useState('')
+  const [phone, setPhone] = React.useState('')
   const [email, setEmail] = React.useState('')
   const [password, setPassword] = React.useState('')
   const [confirmPassword, setConfirmPassword] = React.useState('')
   const [showPass, setShowPass] = React.useState(false)
   const [showConfirm, setShowConfirm] = React.useState(false)
   const [role, setRole] = React.useState<UserRole>('customer')
+  const [termsAccepted, setTermsAccepted] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [globalError, setGlobalError] = React.useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({})
   const [touched, setTouched] = React.useState<Record<string, boolean>>({})
 
-  // ---------------------------------------------------------------------------
-  // Validation
-  // ---------------------------------------------------------------------------
+  const pwStrength = passwordStrength(password)
+
+  // ── Validation ─────────────────────────────────────────────────────────────
 
   function validate(): FieldErrors {
     const errors: FieldErrors = {}
     if (!firstName.trim()) errors.first_name = t('errorFirstName')
     if (!lastName.trim()) errors.last_name = t('errorLastName')
+    if (!phone.trim()) errors.phone = t('errorPhone')
+    else if (!/^[0-9]{10,11}$/.test(phone.replace(/\s/g, ''))) errors.phone = t('errorPhoneInvalid')
     if (!email.trim()) errors.email = t('errorEmail')
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = t('errorEmailInvalid')
     if (!password) errors.password = t('errorPassword')
     else if (password.length < 8) errors.password = t('errorPasswordLength')
     if (!confirmPassword) errors.confirm_password = t('errorConfirmPassword')
     else if (password !== confirmPassword) errors.confirm_password = t('errorPasswordMismatch')
+    if (!termsAccepted) errors.terms = t('errorTerms')
     return errors
   }
 
@@ -76,44 +95,33 @@ export function RegisterPage({
     setFieldErrors(validate())
   }
 
-  // ---------------------------------------------------------------------------
-  // Submit
-  // ---------------------------------------------------------------------------
+  // ── Submit ──────────────────────────────────────────────────────────────────
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
     setTouched({
-      first_name: true,
-      last_name: true,
-      email: true,
-      password: true,
-      confirm_password: true,
+      first_name: true, last_name: true, phone: true,
+      email: true, password: true, confirm_password: true, terms: true,
     })
-
     const errors = validate()
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      return
-    }
-
+    if (Object.keys(errors).length > 0) { setFieldErrors(errors); return }
     setGlobalError(null)
     setIsLoading(true)
-
     const payload: RegisterPayload = {
       first_name: firstName,
       last_name: lastName,
+      phone: `+20${phone.replace(/\s/g, '')}`,
       email,
       password,
       role,
     }
-
     try {
       await register(payload)
       router.push(`/${locale}/bookings`)
     } catch (err) {
       if (err instanceof ApiError) {
-        const knownFields: Array<keyof FieldErrors> = ['first_name', 'last_name', 'email', 'password']
-        if (err.field && knownFields.includes(err.field as keyof FieldErrors)) {
+        const known: Array<keyof FieldErrors> = ['first_name', 'last_name', 'phone', 'email', 'password']
+        if (err.field && known.includes(err.field as keyof FieldErrors)) {
           setFieldErrors({ [err.field]: err.message })
         } else {
           setGlobalError(err.message)
@@ -128,9 +136,7 @@ export function RegisterPage({
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Shared styles (mirror login page exactly)
-  // ---------------------------------------------------------------------------
+  // ── Shared styles ────────────────────────────────────────────────────────────
 
   const fieldStyle: React.CSSProperties = {
     width: '100%',
@@ -144,12 +150,7 @@ export function RegisterPage({
     transition: 'border-color 0.2s',
     display: 'block',
   }
-
-  const fieldErrorStyle: React.CSSProperties = {
-    ...fieldStyle,
-    borderColor: 'oklch(0.55 0.16 25)',
-  }
-
+  const fieldErrorStyle: React.CSSProperties = { ...fieldStyle, borderColor: 'oklch(0.55 0.16 25)' }
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--ff-mono)',
     fontSize: 10,
@@ -158,21 +159,20 @@ export function RegisterPage({
     display: 'block',
     marginBottom: 8,
   }
-
-  const fieldErrorTextStyle: React.CSSProperties = {
+  const errorTextStyle: React.CSSProperties = {
     fontSize: 11,
     color: 'oklch(0.45 0.15 25)',
     marginTop: 5,
     fontFamily: 'var(--ff-mono)',
   }
 
-  function fieldHasError(field: keyof FieldErrors): boolean {
-    return !!(touched[field] && fieldErrors[field])
+  function hasErr(f: keyof FieldErrors): boolean {
+    return !!(touched[f] && fieldErrors[f])
   }
 
   return (
     <div className="auth-outer">
-      <div className="auth-card">
+      <div className="auth-card" style={{ maxWidth: 500 }}>
 
         {/* ── Logo ── */}
         <div className="auth-logo">
@@ -182,9 +182,9 @@ export function RegisterPage({
         </div>
 
         {/* ── Eyebrow + Title ── */}
-        <div className="auth-eyebrow">{t('eyebrow')}</div>
-        <div className="auth-title">{t('title')}</div>
-        <div className="auth-sub">{t('subtitle')}</div>
+        <div className="auth-eyebrow">JOIN · إنشاء حساب</div>
+        <div className="auth-title">انضم إلينا.</div>
+        <div className="auth-sub">أنشئ حسابك في ثوانٍ وابدأ في حجز رحلتك البحرية.</div>
 
         {/* ── Global error ── */}
         {globalError && (
@@ -204,19 +204,10 @@ export function RegisterPage({
           </div>
         )}
 
-        {/* ── Form ── */}
         <form onSubmit={handleSubmit} noValidate>
 
-          {/* Name row — side by side on desktop */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: 12,
-              marginBottom: 16,
-            }}
-          >
-            {/* First name */}
+          {/* ── Name row ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
             <div>
               <label htmlFor="firstName" style={labelStyle}>
                 {t('firstName')} · FIRST NAME
@@ -229,18 +220,12 @@ export function RegisterPage({
                 value={firstName}
                 onChange={(e) => { setFirstName(e.target.value); if (touched.first_name) setFieldErrors(validate()) }}
                 onBlur={() => handleBlur('first_name')}
-                aria-invalid={fieldHasError('first_name')}
-                style={fieldHasError('first_name') ? fieldErrorStyle : fieldStyle}
+                aria-invalid={hasErr('first_name')}
+                style={hasErr('first_name') ? fieldErrorStyle : fieldStyle}
                 placeholder={t('firstNamePlaceholder')}
               />
-              {fieldHasError('first_name') && (
-                <p role="alert" style={fieldErrorTextStyle}>
-                  {fieldErrors.first_name}
-                </p>
-              )}
+              {hasErr('first_name') && <p role="alert" style={errorTextStyle}>{fieldErrors.first_name}</p>}
             </div>
-
-            {/* Last name */}
             <div>
               <label htmlFor="lastName" style={labelStyle}>
                 {t('lastName')} · LAST NAME
@@ -253,19 +238,66 @@ export function RegisterPage({
                 value={lastName}
                 onChange={(e) => { setLastName(e.target.value); if (touched.last_name) setFieldErrors(validate()) }}
                 onBlur={() => handleBlur('last_name')}
-                aria-invalid={fieldHasError('last_name')}
-                style={fieldHasError('last_name') ? fieldErrorStyle : fieldStyle}
+                aria-invalid={hasErr('last_name')}
+                style={hasErr('last_name') ? fieldErrorStyle : fieldStyle}
                 placeholder={t('lastNamePlaceholder')}
               />
-              {fieldHasError('last_name') && (
-                <p role="alert" style={fieldErrorTextStyle}>
-                  {fieldErrors.last_name}
-                </p>
-              )}
+              {hasErr('last_name') && <p role="alert" style={errorTextStyle}>{fieldErrors.last_name}</p>}
             </div>
           </div>
 
-          {/* Email */}
+          {/* ── Phone ── */}
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="phone" style={labelStyle}>
+              {t('phone')} · PHONE
+            </label>
+            <div style={{ display: 'flex', gap: 0 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '13px 12px',
+                  background: 'oklch(0.93 0.008 210)',
+                  border: `1px solid ${hasErr('phone') ? 'oklch(0.55 0.16 25)' : 'var(--rule-strong)'}`,
+                  borderInlineEnd: 'none',
+                  fontFamily: 'var(--ff-mono)',
+                  fontSize: 13,
+                  color: 'var(--ink)',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                🇪🇬 +20
+              </div>
+              <input
+                id="phone"
+                type="tel"
+                autoComplete="tel-national"
+                required
+                value={phone}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '').slice(0, 11)
+                  setPhone(v)
+                  if (touched.phone) setFieldErrors(validate())
+                }}
+                onBlur={() => handleBlur('phone')}
+                aria-invalid={hasErr('phone')}
+                style={{
+                  ...( hasErr('phone') ? fieldErrorStyle : fieldStyle),
+                  flex: 1,
+                  fontFamily: 'var(--ff-mono)',
+                  letterSpacing: '0.05em',
+                  direction: 'ltr',
+                }}
+                placeholder="10xxxxxxxx"
+                inputMode="numeric"
+              />
+            </div>
+            {hasErr('phone') && <p role="alert" style={errorTextStyle}>{fieldErrors.phone}</p>}
+          </div>
+
+          {/* ── Email ── */}
           <div style={{ marginBottom: 16 }}>
             <label htmlFor="email" style={labelStyle}>
               {t('email')} · EMAIL
@@ -278,18 +310,14 @@ export function RegisterPage({
               value={email}
               onChange={(e) => { setEmail(e.target.value); if (touched.email) setFieldErrors(validate()) }}
               onBlur={() => handleBlur('email')}
-              aria-invalid={fieldHasError('email')}
-              style={fieldHasError('email') ? fieldErrorStyle : fieldStyle}
+              aria-invalid={hasErr('email')}
+              style={hasErr('email') ? fieldErrorStyle : fieldStyle}
               placeholder="you@example.com"
             />
-            {fieldHasError('email') && (
-              <p role="alert" style={fieldErrorTextStyle}>
-                {fieldErrors.email}
-              </p>
-            )}
+            {hasErr('email') && <p role="alert" style={errorTextStyle}>{fieldErrors.email}</p>}
           </div>
 
-          {/* Password */}
+          {/* ── Password ── */}
           <div style={{ marginBottom: 16 }}>
             <label htmlFor="password" style={labelStyle}>
               {t('password')} · PASSWORD
@@ -304,40 +332,48 @@ export function RegisterPage({
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); if (touched.password) setFieldErrors(validate()) }}
                 onBlur={() => handleBlur('password')}
-                aria-invalid={fieldHasError('password')}
-                style={{ ...(fieldHasError('password') ? fieldErrorStyle : fieldStyle), paddingInlineEnd: 44 }}
+                aria-invalid={hasErr('password')}
+                style={{ ...(hasErr('password') ? fieldErrorStyle : fieldStyle), paddingInlineEnd: 54 }}
                 placeholder="••••••••"
               />
               <button
                 type="button"
                 onClick={() => setShowPass((v) => !v)}
-                style={{
-                  position: 'absolute',
-                  insetInlineEnd: 14,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--muted)',
-                  fontSize: 12,
-                  fontFamily: 'var(--ff-mono)',
-                  letterSpacing: '0.05em',
-                  padding: 0,
-                }}
                 aria-label={showPass ? t('hidePassword') : t('showPassword')}
+                style={{
+                  position: 'absolute', insetInlineEnd: 14, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)',
+                  fontSize: 12, fontFamily: 'var(--ff-mono)', letterSpacing: '0.05em', padding: 0,
+                }}
               >
                 {showPass ? 'HIDE' : 'SHOW'}
               </button>
             </div>
-            {fieldHasError('password') && (
-              <p role="alert" style={fieldErrorTextStyle}>
-                {fieldErrors.password}
-              </p>
+            {/* Password strength bar */}
+            {password && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        height: 3,
+                        background: i <= pwStrength.score ? pwStrength.color : 'var(--rule-strong)',
+                        transition: 'background 0.2s',
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontFamily: 'var(--ff-mono)', fontSize: 10, color: pwStrength.color, letterSpacing: '0.08em' }}>
+                  {pwStrength.label}
+                </span>
+              </div>
             )}
+            {hasErr('password') && <p role="alert" style={errorTextStyle}>{fieldErrors.password}</p>}
           </div>
 
-          {/* Confirm password */}
+          {/* ── Confirm password ── */}
           <div style={{ marginBottom: 24 }}>
             <label htmlFor="confirmPassword" style={labelStyle}>
               {t('confirmPassword')} · CONFIRM
@@ -351,55 +387,46 @@ export function RegisterPage({
                 value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); if (touched.confirm_password) setFieldErrors(validate()) }}
                 onBlur={() => handleBlur('confirm_password')}
-                aria-invalid={fieldHasError('confirm_password')}
-                style={{ ...(fieldHasError('confirm_password') ? fieldErrorStyle : fieldStyle), paddingInlineEnd: 44 }}
+                aria-invalid={hasErr('confirm_password')}
+                style={{ ...(hasErr('confirm_password') ? fieldErrorStyle : fieldStyle), paddingInlineEnd: 54 }}
                 placeholder="••••••••"
               />
+              {/* match indicator */}
+              {confirmPassword && password && (
+                <span
+                  style={{
+                    position: 'absolute', insetInlineEnd: 44, top: '50%', transform: 'translateY(-50%)',
+                    fontSize: 15, lineHeight: 1,
+                  }}
+                  aria-hidden="true"
+                >
+                  {confirmPassword === password ? '✓' : '✗'}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => setShowConfirm((v) => !v)}
-                style={{
-                  position: 'absolute',
-                  insetInlineEnd: 14,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'var(--muted)',
-                  fontSize: 12,
-                  fontFamily: 'var(--ff-mono)',
-                  letterSpacing: '0.05em',
-                  padding: 0,
-                }}
                 aria-label={showConfirm ? t('hidePassword') : t('showPassword')}
+                style={{
+                  position: 'absolute', insetInlineEnd: 14, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)',
+                  fontSize: 12, fontFamily: 'var(--ff-mono)', letterSpacing: '0.05em', padding: 0,
+                }}
               >
                 {showConfirm ? 'HIDE' : 'SHOW'}
               </button>
             </div>
-            {fieldHasError('confirm_password') && (
-              <p role="alert" style={fieldErrorTextStyle}>
-                {fieldErrors.confirm_password}
-              </p>
-            )}
+            {hasErr('confirm_password') && <p role="alert" style={errorTextStyle}>{fieldErrors.confirm_password}</p>}
           </div>
 
-          {/* Role selector — two pill buttons */}
+          {/* ── Role selector ── */}
           <div style={{ marginBottom: 24 }}>
-            <div
-              style={{
-                fontFamily: 'var(--ff-mono)',
-                fontSize: 10,
-                letterSpacing: '0.1em',
-                color: 'var(--muted)',
-                marginBottom: 10,
-              }}
-            >
+            <div style={{ ...labelStyle, marginBottom: 10 }}>
               {t('roleLabel')} · ACCOUNT TYPE
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               {(['customer', 'owner'] as UserRole[]).map((r) => {
-                const isActive = role === r
+                const active = role === r
                 return (
                   <label
                     key={r}
@@ -408,13 +435,14 @@ export function RegisterPage({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      gap: 8,
                       padding: '11px 16px',
-                      border: `1px solid ${isActive ? 'var(--ink)' : 'var(--rule-strong)'}`,
-                      background: isActive ? 'var(--ink)' : 'var(--foam)',
-                      color: isActive ? 'var(--sand)' : 'var(--ink)',
+                      border: `1px solid ${active ? 'var(--ink)' : 'var(--rule-strong)'}`,
+                      background: active ? 'var(--ink)' : 'var(--foam)',
+                      color: active ? 'var(--sand)' : 'var(--ink)',
                       fontFamily: 'var(--ff-sans)',
                       fontSize: 14,
-                      fontWeight: isActive ? 600 : 400,
+                      fontWeight: active ? 600 : 400,
                       cursor: 'pointer',
                       transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                     }}
@@ -423,18 +451,68 @@ export function RegisterPage({
                       type="radio"
                       name="role"
                       value={r}
-                      checked={isActive}
+                      checked={active}
                       onChange={() => setRole(r)}
                       style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
                     />
+                    <span aria-hidden="true">{r === 'customer' ? '⚓' : '🚢'}</span>
                     {r === 'customer' ? t('roleCustomer') : t('roleOwner')}
                   </label>
                 )
               })}
             </div>
+            <p style={{ ...errorTextStyle, marginTop: 8, fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--ff-sans)' }}>
+              {role === 'customer' ? t('roleCustomerHint') : t('roleOwnerHint')}
+            </p>
           </div>
 
-          {/* Submit */}
+          {/* ── Terms checkbox ── */}
+          <div style={{ marginBottom: 24 }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 12,
+                cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => {
+                  setTermsAccepted(e.target.checked)
+                  if (touched.terms) setFieldErrors(validate())
+                }}
+                onBlur={() => handleBlur('terms')}
+                style={{
+                  width: 18, height: 18, marginTop: 2, flexShrink: 0,
+                  accentColor: 'var(--ink)', cursor: 'pointer',
+                }}
+                aria-invalid={hasErr('terms')}
+              />
+              <span style={{ fontSize: 13, color: 'var(--muted-2)', lineHeight: 1.7 }}>
+                {t('termsPrefix')}{' '}
+                <Link
+                  href={`/${locale}/terms`}
+                  style={{ color: 'var(--clay)', borderBottom: '1px solid currentColor', paddingBottom: 1 }}
+                  target="_blank"
+                >
+                  {t('termsLink')}
+                </Link>
+                {' '}{t('termsMid')}{' '}
+                <Link
+                  href={`/${locale}/privacy`}
+                  style={{ color: 'var(--clay)', borderBottom: '1px solid currentColor', paddingBottom: 1 }}
+                  target="_blank"
+                >
+                  {t('privacyLink')}
+                </Link>
+              </span>
+            </label>
+            {hasErr('terms') && <p role="alert" style={{ ...errorTextStyle, marginTop: 6 }}>{fieldErrors.terms}</p>}
+          </div>
+
+          {/* ── Submit ── */}
           <button
             type="submit"
             disabled={isLoading}
@@ -460,8 +538,7 @@ export function RegisterPage({
               <>
                 <span
                   style={{
-                    width: 16,
-                    height: 16,
+                    width: 16, height: 16,
                     border: '2px solid oklch(1 0 0 / 0.3)',
                     borderTopColor: '#fff',
                     borderRadius: '50%',
@@ -485,14 +562,14 @@ export function RegisterPage({
           <span>أو · OR</span>
         </div>
 
-        {/* ── Social buttons (disabled) ── */}
+        {/* ── Social buttons ── */}
         <div className="social-row">
           <button className="social-btn" type="button" disabled title="قريباً">
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6-4.53z"/>
             </svg>
             Google
           </button>
@@ -503,17 +580,14 @@ export function RegisterPage({
             Apple
           </button>
           <button
-            className="social-btn"
-            type="button"
-            disabled
-            title="قريباً"
+            className="social-btn" type="button" disabled title="قريباً"
             style={{ fontFamily: 'var(--ff-mono)', fontSize: 11, letterSpacing: '0.06em' }}
           >
             FAWRY ID
           </button>
         </div>
 
-        {/* ── Footer link → login ── */}
+        {/* ── Footer link ── */}
         <div className="auth-footer-link">
           {t('hasAccount')}{' '}
           <Link
@@ -526,7 +600,6 @@ export function RegisterPage({
 
       </div>
 
-      {/* spinner keyframe */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )

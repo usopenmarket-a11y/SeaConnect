@@ -152,7 +152,17 @@
       "errorPassword": "يرجى إدخال كلمة المرور",
       "errorPasswordLength": "كلمة المرور يجب أن تكون ٨ أحرف على الأقل",
       "errorConfirmPassword": "يرجى تأكيد كلمة المرور",
-      "errorPasswordMismatch": "كلمة المرور وتأكيدها غير متطابقتين"
+      "errorPasswordMismatch": "كلمة المرور وتأكيدها غير متطابقتين",
+      "phone": "رقم الهاتف",
+      "errorPhone": "يرجى إدخال رقم الهاتف",
+      "errorPhoneInvalid": "رقم الهاتف غير صحيح — أدخل ١٠ أو ١١ رقماً",
+      "roleCustomerHint": "تصفّح القوارب واحجز رحلاتك البحرية",
+      "roleOwnerHint": "أضف قاربك وابدأ في قبول الحجوزات",
+      "termsPrefix": "بإنشائك الحساب توافق على",
+      "termsLink": "شروط الاستخدام",
+      "termsMid": "و",
+      "privacyLink": "سياسة الخصوصية",
+      "errorTerms": "يجب الموافقة على الشروط والأحكام للمتابعة"
     }
   },
   "bookings": {

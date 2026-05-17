@@ -152,7 +152,17 @@
       "errorPassword": "Please enter a password",
       "errorPasswordLength": "Password must be at least 8 characters",
       "errorConfirmPassword": "Please confirm your password",
-      "errorPasswordMismatch": "Passwords do not match"
+      "errorPasswordMismatch": "Passwords do not match",
+      "phone": "Phone number",
+      "errorPhone": "Please enter your phone number",
+      "errorPhoneInvalid": "Please enter a valid 10–11 digit Egyptian phone number",
+      "roleCustomerHint": "Browse yachts and book your sea trips",
+      "roleOwnerHint": "List your boat and start accepting bookings",
+      "termsPrefix": "By creating an account you agree to our",
+      "termsLink": "Terms of Service",
+      "termsMid": "and",
+      "privacyLink": "Privacy Policy",
+      "errorTerms": "You must accept the terms and conditions to continue"
     }
   },
   "bookings": {
