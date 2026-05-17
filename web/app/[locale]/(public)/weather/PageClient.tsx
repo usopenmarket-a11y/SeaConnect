@@ -43,12 +43,12 @@ interface Port {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const PORTS: Port[] = [
-  { id: 'hurghada',   nameAr: 'الغردقة',     nameEn: 'Hurghada'        },
-  { id: 'sharm',      nameAr: 'شرم الشيخ',   nameEn: 'Sharm el Sheikh' },
-  { id: 'dahab',      nameAr: 'دهب',         nameEn: 'Dahab'           },
-  { id: 'alexandria', nameAr: 'الإسكندرية',  nameEn: 'Alexandria'      },
-  { id: 'portsaid',   nameAr: 'بورسعيد',     nameEn: 'Port Said'       },
-  { id: 'luxor',      nameAr: 'الأقصر',      nameEn: 'Luxor (Nile)'   },
+  { id: '28e27115-939c-4a59-af8f-990719a7402b', nameAr: 'الغردقة',     nameEn: 'Hurghada'        },
+  { id: '3d76a35f-a443-4630-8b8b-c985cabe0c01', nameAr: 'شرم الشيخ',   nameEn: 'Sharm El-Sheikh' },
+  { id: '8d952add-4d12-4527-b8a1-44c66adce1d0', nameAr: 'الإسكندرية',  nameEn: 'Alexandria'      },
+  { id: '0209ddee-8ad9-45b0-b345-831bb13608a9', nameAr: 'بورسعيد',     nameEn: 'Port Said'       },
+  { id: '6d59dfd5-2cc3-4a74-bfbf-df1c3a258ea0', nameAr: 'ميناء السويس', nameEn: 'Suez Port'      },
+  { id: '77d7abf5-927c-43b9-bcb2-ef63cbd4a01e', nameAr: 'رأس سدر',     nameEn: 'Ras Sidr'        },
 ]
 
 // WMO code → emoji icon (subset covering common codes)
