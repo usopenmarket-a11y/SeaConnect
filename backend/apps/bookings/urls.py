@@ -7,12 +7,14 @@ from .views import (
     BookingDeclineView,
     BookingDetailView,
     BookingListCreateView,
+    OwnerReviewsListView,
     YachtAvailabilityView,
     YachtListCreateView,
     YachtMonthAvailabilityView,
     YachtPhotoDeleteView,
     YachtPhotoUploadView,
     YachtRetrieveUpdateView,
+    YachtReviewListCreateView,
     YachtSemanticSearchView,
 )
 
@@ -21,6 +23,8 @@ app_name = "bookings"
 urlpatterns = [
     # Sprint 13C — semantic search (must be before yacht-list to avoid UUID clash)
     path("yachts/search/", YachtSemanticSearchView.as_view(), name="yacht-search"),
+    # Sprint 12A — owner reviews list (MUST be before <uuid:yacht_id> pattern)
+    path("yachts/reviews/", OwnerReviewsListView.as_view(), name="owner-reviews-list"),
     # Sprint 2 / Sprint 10A — yachts (public GET, owner POST/PATCH)
     path("yachts/", YachtListCreateView.as_view(), name="yacht-list"),
     path("yachts/<uuid:id>/", YachtRetrieveUpdateView.as_view(), name="yacht-detail"),
@@ -28,6 +32,12 @@ urlpatterns = [
         "yachts/<uuid:id>/availability/",
         YachtAvailabilityView.as_view(),
         name="yacht-availability",
+    ),
+    # Sprint 12A — yacht reviews (customer GET/POST per yacht)
+    path(
+        "yachts/<uuid:yacht_id>/reviews/",
+        YachtReviewListCreateView.as_view(),
+        name="yacht-reviews",
     ),
     # Sprint 12A — yacht photo upload / delete
     path(

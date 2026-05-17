@@ -172,3 +172,29 @@ class OrderItem(TimeStampedModel):
 
     def __str__(self):
         return f"{self.order_id} — {self.product.name} x {self.quantity}"
+
+
+class ProductImage(TimeStampedModel):
+    """Secondary product images uploaded by the vendor.
+
+    A product may have many images; one is designated primary via is_primary.
+    The primary_image_url field on Product is kept as a denormalised fast-read
+    copy; both are updated together on upload.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image_url = models.CharField(max_length=500)
+    is_primary = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "marketplace_product_image"
+        ordering = ["-is_primary", "-created_at"]
+
+    def __str__(self):
+        primary_flag = " [primary]" if self.is_primary else ""
+        return f"Image for {self.product.name}{primary_flag}"

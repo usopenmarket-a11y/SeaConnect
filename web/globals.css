@@ -2235,3 +2235,919 @@ img { display: block; max-width: 100%; }
 .payout-row .status.paid { background: oklch(0.92 0.04 145 / 0.4); color: oklch(0.35 0.12 145); }
 .payout-row .status.pending { background: oklch(0.94 0.04 70 / 0.4); color: oklch(0.50 0.10 70); }
 
+/* ── Weather Advisory Page ─────────────────────────────────────────────────── */
+
+[data-screen-label="weather-header"],
+[data-screen-label="fishing-guide-header"] {
+  background: oklch(0.97 0.008 210 / 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.weather-layout {
+  padding: 0;
+}
+
+.weather-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 40px 48px 24px;
+  border-bottom: 2px solid var(--ink);
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.weather-page-header h1 {
+  font-family: var(--ff-display);
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.weather-page-header .eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.weather-page-header .subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-block-start: 4px;
+}
+
+/* Location tabs */
+.location-tabs {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--rule);
+  background: oklch(0.955 0.015 85 / 0.60);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 0 48px;
+}
+
+.loc-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 20px;
+  border-bottom: 3px solid transparent;
+  border-inline-end: 1px solid var(--rule);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.loc-tab:first-child { border-inline-start: 1px solid var(--rule); }
+
+.loc-tab:hover { background: var(--pearl); }
+
+.loc-tab.active {
+  background: var(--ink);
+  color: var(--sand);
+  border-bottom-color: var(--clay);
+}
+
+.loc-tab-ar {
+  font-family: var(--ff-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.loc-tab-en {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  direction: ltr;
+}
+
+/* Main weather card */
+.weather-main-card {
+  margin: 24px 48px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 32px;
+  background: oklch(1 0 0 / 0.72);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 32px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.weather-main-card.unsafe {
+  border-color: oklch(0.45 0.18 25 / 0.5);
+  background: oklch(1.0 0.005 25 / 0.72);
+}
+
+.weather-main-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-width: 140px;
+  border-inline-end: 1px solid var(--rule);
+  padding-inline-end: 32px;
+}
+
+.weather-icon-large {
+  font-size: 56px;
+  line-height: 1;
+}
+
+.weather-temp-big {
+  font-family: var(--ff-display);
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.weather-status-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 2px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.weather-status-badge.safe {
+  background: oklch(0.42 0.14 150 / 0.12);
+  color: oklch(0.35 0.14 150);
+  border: 1px solid oklch(0.42 0.14 150 / 0.3);
+}
+
+.weather-status-badge.caution {
+  background: oklch(0.72 0.09 75 / 0.15);
+  color: oklch(0.50 0.10 70);
+  border: 1px solid oklch(0.72 0.09 75 / 0.4);
+}
+
+.weather-status-badge.danger {
+  background: oklch(0.45 0.18 25 / 0.12);
+  color: oklch(0.40 0.18 25);
+  border: 1px solid oklch(0.45 0.18 25 / 0.3);
+}
+
+.weather-location-label {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Stats grid inside main card */
+.weather-main-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  align-content: start;
+}
+
+.wstat {
+  background: oklch(0.99 0.004 200 / 0.8);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.wstat-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.wstat-val {
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.wstat-unit {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  margin-inline-start: 2px;
+}
+
+.wstat-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  direction: rtl;
+}
+
+/* Forecast tabs */
+.forecast-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 48px;
+  border-bottom: 1px solid var(--rule);
+  background: oklch(0.97 0.008 210 / 0.55);
+}
+
+.forecast-tab {
+  padding: 12px 24px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s;
+  cursor: pointer;
+  background: transparent;
+}
+
+.forecast-tab:hover { color: var(--ink); }
+
+.forecast-tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--clay);
+}
+
+/* Hourly strip */
+.hourly-strip {
+  display: flex;
+  gap: 1px;
+  padding: 24px 48px;
+  background: oklch(0.955 0.015 85 / 0.45);
+  overflow-x: auto;
+}
+
+.hourly-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: oklch(1 0 0 / 0.72);
+  border: 1px solid var(--rule);
+  min-width: 80px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.hourly-item:first-child { border-inline-start: 2px solid var(--clay); }
+
+.hourly-time {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--muted);
+  direction: ltr;
+}
+
+.hourly-icon { font-size: 22px; line-height: 1; }
+
+.hourly-temp {
+  font-weight: 700;
+  font-size: 16px;
+  font-family: var(--ff-display);
+}
+
+.hourly-wind {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--muted);
+  direction: ltr;
+}
+
+/* 7-day forecast list */
+.forecast-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 24px 48px;
+  background: oklch(0.955 0.015 85 / 0.45);
+}
+
+.forecast-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto auto auto;
+  gap: 16px;
+  align-items: center;
+  background: oklch(1 0 0 / 0.72);
+  border: 1px solid var(--rule);
+  padding: 14px 20px;
+  border-radius: 2px;
+}
+
+.forecast-list-row.unsafe-row {
+  border-color: oklch(0.45 0.18 25 / 0.4);
+  background: oklch(1.0 0.005 25 / 0.55);
+}
+
+.forecast-day-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.forecast-day-ar {
+  font-family: var(--ff-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.forecast-day-en {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  direction: ltr;
+}
+
+.forecast-list-icon { font-size: 24px; line-height: 1; }
+
+.forecast-temps-col {
+  display: flex;
+  gap: 8px;
+  font-family: var(--ff-mono);
+  font-size: 13px;
+}
+
+.forecast-high { font-weight: 700; }
+.forecast-low { color: var(--muted); }
+
+.forecast-wind-col,
+.forecast-wave-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.forecast-wind-val,
+.forecast-wave-val {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  direction: ltr;
+}
+
+.forecast-wind-label,
+.forecast-wave-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.forecast-safe-pill {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 1px;
+  white-space: nowrap;
+}
+
+.forecast-safe-pill.safe {
+  background: oklch(0.42 0.14 150 / 0.12);
+  color: oklch(0.35 0.14 150);
+  border: 1px solid oklch(0.42 0.14 150 / 0.3);
+}
+
+.forecast-safe-pill.unsafe {
+  background: oklch(0.45 0.18 25 / 0.12);
+  color: oklch(0.40 0.18 25);
+  border: 1px solid oklch(0.45 0.18 25 / 0.3);
+}
+
+/* Marine advisory */
+.marine-advisory {
+  margin: 24px 48px;
+  background: oklch(0.38 0.08 220 / 0.06);
+  border: 1px solid oklch(0.38 0.08 220 / 0.3);
+  border-radius: 2px;
+  padding: 22px 24px;
+}
+
+.advisory-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid oklch(0.38 0.08 220 / 0.2);
+  margin-bottom: 14px;
+}
+
+.advisory-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.advisory-meta {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-block-start: 4px;
+  direction: ltr;
+}
+
+.advisory-body {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.advisory-body-en {
+  color: var(--muted);
+  font-size: 13px;
+  margin-block-start: 12px;
+  line-height: 1.6;
+}
+
+/* ── Fishing Guide Page ─────────────────────────────────────────────────────── */
+
+.fishing-guide-layout { padding: 0; }
+
+.fishing-guide-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 40px 48px 24px;
+  border-bottom: 2px solid var(--ink);
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.fishing-guide-header h1 {
+  font-family: var(--ff-display);
+  font-size: 48px;
+  line-height: 1;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.fishing-guide-header .eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.fishing-guide-header .subtitle {
+  color: var(--muted);
+  font-size: 14px;
+  margin-block-start: 4px;
+}
+
+/* Region selector */
+.region-selector {
+  display: flex;
+  gap: 0;
+  padding: 0 48px;
+  border-bottom: 1px solid var(--rule);
+  background: oklch(0.955 0.015 85 / 0.60);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.region-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 24px;
+  border-bottom: 3px solid transparent;
+  border-inline-end: 1px solid var(--rule);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.region-btn:first-child { border-inline-start: 1px solid var(--rule); }
+
+.region-btn:hover { background: var(--pearl); }
+
+.region-btn.active {
+  background: var(--ink);
+  color: var(--sand);
+  border-bottom-color: var(--clay);
+}
+
+.region-btn-ar {
+  font-family: var(--ff-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.region-btn-en {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  direction: ltr;
+}
+
+/* Month strip */
+.month-strip-wrap {
+  padding: 20px 48px 0;
+  background: oklch(0.97 0.008 210 / 0.45);
+}
+
+.month-strip-label {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  letter-spacing: 0.05em;
+  direction: ltr;
+}
+
+.month-strip {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--rule);
+}
+
+.month-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 14px;
+  border-bottom: 3px solid transparent;
+  border-inline-end: 1px solid var(--rule);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  min-width: 60px;
+}
+
+.month-btn:first-child { border-inline-start: 1px solid var(--rule); }
+
+.month-btn:hover { background: var(--pearl); }
+
+.month-btn.active {
+  background: var(--clay);
+  color: var(--foam);
+  border-bottom-color: var(--clay);
+}
+
+.month-ar {
+  font-family: var(--ff-display);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.month-en {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+  direction: ltr;
+}
+
+/* Season summary bar */
+.season-summary {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 48px;
+  background: oklch(0.14 0.04 240 / 0.04);
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+}
+
+.season-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.season-num {
+  font-family: var(--ff-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.season-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.season-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--rule-strong);
+}
+
+.season-month-label {
+  margin-inline-start: auto;
+  text-align: end;
+}
+
+.season-month-ar {
+  font-family: var(--ff-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.season-month-en {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--muted);
+  direction: ltr;
+  margin-block-start: 2px;
+}
+
+/* Species grid */
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1px;
+  padding: 24px 48px;
+  background: oklch(0.955 0.015 85 / 0.45);
+}
+
+.species-card {
+  background: oklch(1 0 0 / 0.75);
+  border: 1px solid var(--rule);
+  padding: 20px;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 0.15s;
+}
+
+.species-card:hover { box-shadow: 0 4px 16px oklch(0 0 0 / 0.08); }
+
+.species-card.peak {
+  border-color: oklch(0.58 0.12 40 / 0.4);
+  background: oklch(0.98 0.012 55 / 0.85);
+}
+
+.species-card.good {
+  border-color: oklch(0.42 0.14 150 / 0.3);
+  background: oklch(0.99 0.008 150 / 0.85);
+}
+
+.species-card.off {
+  opacity: 0.65;
+}
+
+.species-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.species-icon { font-size: 32px; line-height: 1; }
+
+.species-season-badge {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  border-radius: 1px;
+}
+
+.species-season-badge.peak {
+  background: oklch(0.58 0.12 40 / 0.14);
+  color: oklch(0.42 0.12 40);
+  border: 1px solid oklch(0.58 0.12 40 / 0.3);
+}
+
+.species-season-badge.good {
+  background: oklch(0.42 0.14 150 / 0.1);
+  color: oklch(0.35 0.14 150);
+  border: 1px solid oklch(0.42 0.14 150 / 0.25);
+}
+
+.species-season-badge.off {
+  background: var(--sand-2);
+  color: var(--muted);
+  border: 1px solid var(--rule);
+}
+
+.species-name {
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.species-name-en {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  direction: ltr;
+  margin-block-start: -6px;
+}
+
+.species-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid var(--rule);
+  padding-block-start: 10px;
+}
+
+.sinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sinfo-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.sinfo-val {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.difficulty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 1px;
+  align-self: flex-start;
+}
+
+.difficulty-tag.easy {
+  background: oklch(0.42 0.14 150 / 0.1);
+  color: oklch(0.35 0.14 150);
+  border: 1px solid oklch(0.42 0.14 150 / 0.2);
+}
+
+.difficulty-tag.med {
+  background: oklch(0.72 0.09 75 / 0.15);
+  color: oklch(0.50 0.10 70);
+  border: 1px solid oklch(0.72 0.09 75 / 0.3);
+}
+
+.difficulty-tag.hard {
+  background: oklch(0.45 0.18 25 / 0.1);
+  color: oklch(0.40 0.18 25);
+  border: 1px solid oklch(0.45 0.18 25 / 0.25);
+}
+
+/* Fishing tips */
+.fishing-tips {
+  padding: 32px 48px;
+  background: oklch(0.97 0.008 210 / 0.55);
+  border-top: 1px solid var(--rule);
+}
+
+.fishing-tips-eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 16px;
+  direction: ltr;
+}
+
+.tip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tip-row:last-child { border-bottom: none; }
+
+.tip-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-block-start: 1px;
+}
+
+.tip-ar {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.tip-en {
+  color: var(--muted);
+  font-size: 13px;
+  margin-block-start: 2px;
+  line-height: 1.5;
+}
+
+/* Fishing CTA */
+.fishing-cta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 48px;
+  background: var(--ink);
+  color: var(--sand);
+}
+
+.fishing-cta-title {
+  font-family: var(--ff-display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.fishing-cta-sub {
+  color: oklch(0.80 0.02 220);
+  margin-block-start: 6px;
+  font-size: 14px;
+}
+
+/* Fishing guide page wrapper text */
+.fishing-unavailable {
+  text-align: center;
+  padding: 64px 0;
+  color: var(--muted);
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .weather-main-card {
+    grid-template-columns: 1fr;
+    margin: 16px 20px;
+  }
+  .weather-main-left {
+    border-inline-end: none;
+    border-bottom: 1px solid var(--rule);
+    padding-inline-end: 0;
+    padding-bottom: 20px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .weather-main-grid { grid-template-columns: repeat(4, 1fr); }
+  .weather-page-header,
+  .fishing-guide-header { padding: 24px 20px 16px; }
+  .location-tabs,
+  .region-selector,
+  .forecast-tabs { padding-inline: 20px; }
+  .hourly-strip,
+  .forecast-list,
+  .species-grid,
+  .fishing-tips,
+  .fishing-cta { padding-inline: 20px; }
+  .month-strip-wrap { padding-inline: 20px; }
+  .season-summary { padding-inline: 20px; }
+  .marine-advisory { margin-inline: 20px; }
+  .forecast-list-row {
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+  }
+}
+

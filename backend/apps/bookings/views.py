@@ -37,8 +37,8 @@ from apps.core.pagination import SeaConnectCursorPagination
 from apps.core.throttles import SearchAnonThrottle, UploadThrottle
 
 from .filters import YachtFilter
-from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtMedia, YachtStatus
-from .permissions import IsOwnerRole, IsYachtOwner
+from .models import Availability, BlockedDate, Booking, BookingStatus, Yacht, YachtMedia, YachtReview, YachtStatus
+from .permissions import IsCustomerRole, IsOwnerRole, IsYachtOwner
 from .serializers import (
     AvailabilitySerializer,
     AvailabilityWriteSerializer,
@@ -50,6 +50,8 @@ from .serializers import (
     YachtListSerializer,
     YachtPhotoResponseSerializer,
     YachtPhotoUploadSerializer,
+    YachtReviewSerializer,
+    YachtReviewWriteSerializer,
     YachtUpdateSerializer,
 )
 from .services import BookingService, BookingTransitionError
@@ -850,3 +852,148 @@ class YachtSemanticSearchView(APIView):
                 .prefetch_related("media")
                 .order_by("-created_at")[:10]
             )
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — Yacht Reviews
+# ---------------------------------------------------------------------------
+
+
+class YachtReviewListCreateView(APIView):
+    """GET  /api/v1/yachts/{yacht_id}/reviews/ — public paginated review list.
+    POST /api/v1/yachts/{yacht_id}/reviews/ — authenticated customer creates a review.
+
+    POST rules:
+      1. Caller must have role=customer (IsCustomerRole).
+      2. Caller must have a ``completed`` Booking for this yacht → 403 if not.
+      3. Caller must not have already reviewed this yacht → 409 ALREADY_REVIEWED.
+      4. After create: recalculate Yacht.average_rating and Yacht.review_count.
+
+    N+1 prevention: queryset uses select_related('customer').
+    Throttling: standard UserRateThrottle (200/min authenticated, 20/min anon).
+    """
+
+    pagination_class = SeaConnectCursorPagination
+
+    def get_permissions(self):  # type: ignore[override]
+        if self.request.method == "POST":
+            return [IsAuthenticated(), IsCustomerRole()]
+        return [AllowAny()]
+
+    def get(self, request: Request, yacht_id) -> Response:
+        """Public paginated list of reviews for a given yacht."""
+        get_object_or_404(Yacht, id=yacht_id, is_deleted=False)
+
+        qs = (
+            YachtReview.objects
+            .filter(yacht_id=yacht_id)
+            .select_related("customer")
+            .order_by("-created_at")
+        )
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(qs, request)
+        if page is not None:
+            serializer = YachtReviewSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = YachtReviewSerializer(qs, many=True)
+        return Response({"results": serializer.data, "next_cursor": None, "has_more": False})
+
+    def post(self, request: Request, yacht_id) -> Response:
+        """Authenticated customer creates a review for a yacht."""
+        yacht = get_object_or_404(
+            Yacht.objects.only("id", "is_deleted"),
+            id=yacht_id,
+            is_deleted=False,
+        )
+
+        # Rule 2: customer must have a completed booking for this yacht.
+        has_completed = Booking.objects.filter(
+            yacht=yacht,
+            customer=request.user,
+            status=BookingStatus.COMPLETED,
+        ).exists()
+        if not has_completed:
+            return Response(
+                {
+                    "error": "You must have a completed booking for this yacht to leave a review.",
+                    "code": "NO_COMPLETED_BOOKING",
+                    "detail": {},
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Rule 3: prevent duplicate reviews.
+        if YachtReview.objects.filter(yacht=yacht, customer=request.user).exists():
+            return Response(
+                {
+                    "error": "You have already reviewed this yacht.",
+                    "code": "ALREADY_REVIEWED",
+                    "detail": {},
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = YachtReviewWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Attach the most recent completed booking for audit trail.
+        completed_booking = (
+            Booking.objects.filter(
+                yacht=yacht,
+                customer=request.user,
+                status=BookingStatus.COMPLETED,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        with transaction.atomic():
+            review = YachtReview.objects.create(
+                yacht=yacht,
+                customer=request.user,
+                booking=completed_booking,
+                rating=data["rating"],
+                title=data.get("title", ""),
+                body=data["body"],
+            )
+            # Rule 4: recalculate aggregate rating and count.
+            from django.db.models import Avg, Count
+            agg = YachtReview.objects.filter(yacht=yacht).aggregate(
+                avg=Avg("rating"),
+                cnt=Count("id"),
+            )
+            Yacht.objects.filter(id=yacht.id).update(
+                average_rating=round(agg["avg"] or 0, 2),
+                review_count=agg["cnt"] or 0,
+            )
+
+        return Response(
+            YachtReviewSerializer(review).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class OwnerReviewsListView(generics.ListAPIView):  # type: ignore[type-arg]
+    """GET /api/v1/yachts/reviews/ — owner sees all reviews for their yachts.
+
+    Returns reviews ordered by -created_at across every yacht owned by the
+    authenticated user.  Requires IsOwnerRole.
+
+    N+1 prevention: select_related('yacht', 'customer').
+    Pagination: SeaConnectCursorPagination (ADR-013).
+    """
+
+    permission_classes = [IsAuthenticated, IsOwnerRole]
+    pagination_class = SeaConnectCursorPagination
+    serializer_class = YachtReviewSerializer
+
+    def get_queryset(self):  # type: ignore[override]
+        return (
+            YachtReview.objects
+            .filter(yacht__owner=self.request.user)
+            .select_related("yacht", "customer")
+            .order_by("-created_at")
+        )

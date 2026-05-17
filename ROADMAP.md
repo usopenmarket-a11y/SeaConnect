@@ -18,7 +18,7 @@
 | **5** | Marketplace + Vendor Foundation | ✅ DONE | Product model, vendor pages, marketplace listing |
 | **9** | FCM Push, Payouts, Availability | ✅ DONE | Firebase push, Payout model, BlockedDate, availability API |
 | **10** | CRUD Wiring, KYC, New Pages | ✅ DONE | KYC onboarding, marketplace filters, notifications/settings/search pages |
-| **11** | KYC Upload, Notifications API, Vendor CRUD | 🔲 PLANNED | File upload to MinIO, notifications live wire, vendor product pages |
+| **11** | KYC Upload, Notifications API, Vendor CRUD | ✅ DONE | KYC upload endpoint, notifications live+badge, settings wired, vendor product/orders/calendar/payouts pages |
 | **12** | Reviews, Weather, Payment Flows, Map | 🔲 PLANNED | Review system, weather page, payment success/fail, map view |
 | **13** | Admin Portal Complete, Competitions, Analytics | 🔲 PLANNED | Disputes, payout approvals, user management, competitions flow |
 | **14** | Search & SEO, pgvector, Performance | 🔲 PLANNED | Semantic search, sitemap, Lighthouse fixes, image optimisation |

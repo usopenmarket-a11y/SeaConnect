@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.validators import validate_image_upload
 
-from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory, ProductStatus, VendorProfile
+from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory, ProductImage, ProductStatus, VendorProfile
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -212,3 +212,15 @@ class ProductImageResponseSerializer(serializers.Serializer):  # type: ignore[ty
     """Response serializer for the product image upload endpoint."""
 
     image_url = serializers.URLField(read_only=True)
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    """Read serializer for ``ProductImage`` records.
+
+    Used when embedding image gallery in product detail responses.
+    """
+
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image_url", "is_primary", "created_at"]
+        read_only_fields = fields

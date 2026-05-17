@@ -1,4 +1,4 @@
-"""Marketplace URL routes — Sprint 5 + Sprint 11D + Sprint 12A.
+"""Marketplace URL routes — Sprint 5 + Sprint 11D + Sprint 12A + Sprint 12F.
 
 Sprint 11D additions:
   - ProductListView replaced by VendorProductListCreateView (adds POST for vendors)
@@ -8,6 +8,11 @@ Sprint 11D additions:
 
 Sprint 12A additions:
   - /marketplace/products/{id}/images/ — product image upload (vendor owner only)
+
+Sprint 12F additions:
+  - /marketplace/orders/{id}/confirm/ — vendor confirms order (pending → confirmed)
+  - /marketplace/orders/{id}/ship/    — vendor ships order (confirmed → shipped)
+  - /marketplace/orders/{id}/cancel/  — vendor cancels order (any → cancelled)
 
 Public GET routes remain unchanged so existing clients are not broken.
 """
@@ -71,4 +76,26 @@ urlpatterns = [
     # -----------------------------------------------------------------------
     path("marketplace/orders/", views.OrderListCreateView.as_view(), name="order-list-create"),
     path("marketplace/orders/<uuid:id>/", views.OrderDetailView.as_view(), name="order-detail"),
+
+    # -----------------------------------------------------------------------
+    # Sprint 12F — Vendor order actions (confirm / ship / cancel)
+    # -----------------------------------------------------------------------
+    path(
+        "marketplace/orders/<uuid:id>/confirm/",
+        views.VendorOrderActionView.as_view(),
+        {"action": "confirm"},
+        name="vendor-order-confirm",
+    ),
+    path(
+        "marketplace/orders/<uuid:id>/ship/",
+        views.VendorOrderActionView.as_view(),
+        {"action": "ship"},
+        name="vendor-order-ship",
+    ),
+    path(
+        "marketplace/orders/<uuid:id>/cancel/",
+        views.VendorOrderActionView.as_view(),
+        {"action": "cancel"},
+        name="vendor-order-cancel",
+    ),
 ]

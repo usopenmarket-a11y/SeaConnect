@@ -59,3 +59,30 @@ class IsVendorProfileOwner(BasePermission):
             and request.user.is_authenticated
             and obj.user_id == request.user.id
         )
+
+
+class IsOrderVendor(BasePermission):
+    """Object-level: at least one OrderItem in this Order must belong to
+    the authenticated vendor's VendorProfile.
+
+    This allows a vendor to confirm/ship/cancel only orders that contain
+    their products.  It intentionally does NOT require ALL items to be
+    theirs — multi-vendor carts are a future concern.
+
+    has_permission always returns True (view-level gatekeeping is done by
+    IsVendorRole); the real check is object-level.
+    """
+
+    message = "This order does not contain any of your products."
+
+    def has_permission(self, request: Request, view) -> bool:  # type: ignore[override]
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request: Request, view, obj) -> bool:  # type: ignore[override]
+        if not (request.user and request.user.is_authenticated):
+            return False
+        # Avoid extra DB query — items should already be prefetched in the view.
+        return any(
+            item.product.vendor.user_id == request.user.id
+            for item in obj.items.all()
+        )

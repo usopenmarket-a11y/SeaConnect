@@ -8,6 +8,7 @@ from .models import (
     BookingEvent,
     Yacht,
     YachtMedia,
+    YachtReview,
 )
 
 
@@ -355,3 +356,44 @@ class YachtPhotoResponseSerializer(serializers.ModelSerializer):  # type: ignore
     def get_caption(self, obj: YachtMedia) -> str:
         # Caption is not a model field yet; return empty string for API stability.
         return ""
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — YachtReview serializers
+# ---------------------------------------------------------------------------
+
+
+class YachtReviewSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """Read serializer for GET /api/v1/yachts/{id}/reviews/.
+
+    ``customer_name`` is a derived field — never exposes PII beyond the
+    display name agreed in the API spec.
+    """
+
+    customer_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = YachtReview
+        fields = ["id", "rating", "title", "body", "customer_name", "created_at"]
+        read_only_fields = fields
+
+    def get_customer_name(self, obj: YachtReview) -> str:
+        full = f"{obj.customer.first_name} {obj.customer.last_name}".strip()
+        return full or obj.customer.email
+
+
+class YachtReviewWriteSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """Write serializer for POST /api/v1/yachts/{id}/reviews/.
+
+    Validates rating (1–5), title (optional), and body (required, min 10 chars).
+    All business-rule checks (completed booking, no duplicate) are in the view.
+    """
+
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    title = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=200,
+        default="",
+    )
+    body = serializers.CharField(min_length=10, max_length=5000)

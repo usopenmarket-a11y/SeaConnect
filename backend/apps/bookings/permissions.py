@@ -57,3 +57,18 @@ class IsYachtOwner(BasePermission):
 
     def has_object_permission(self, request: Request, view, obj) -> bool:  # type: ignore[override]
         return bool(request.user and obj.owner_id == request.user.id)
+
+
+class IsCustomerRole(BasePermission):
+    """Allow access only to authenticated users with role='customer'.
+
+    Used on POST /api/v1/yachts/{id}/reviews/ — only customers may post reviews.
+    Role check is in a permission class — never inline in the view (project rule).
+    """
+
+    def has_permission(self, request: Request, view) -> bool:  # type: ignore[override]
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "role", None) == UserRole.CUSTOMER
+        )

@@ -249,7 +249,51 @@
       "guarantee3": "Accepts Fawry · Vodafone Cash · InstaPay · Visa."
     },
     "empty": "No yachts available at the moment",
-    "loading": "Loading yachts..."
+    "loading": "Loading yachts...",
+    "reviews": {
+      "title": "Boat Reviews",
+      "avgRating": "Overall Rating",
+      "totalReviews": "{count} reviews",
+      "writeReview": "Write a Review",
+      "backToReviews": "Back to Reviews",
+      "noReviews": "No reviews yet. Be the first to review!",
+      "sortBy": "Sort by",
+      "sortRecent": "Most recent",
+      "sortHighest": "Highest rated",
+      "sortLowest": "Lowest rated",
+      "filterByStar": "{count} stars",
+      "clearFilter": "Clear filter",
+      "starLabel1": "Poor",
+      "starLabel2": "Fair",
+      "starLabel3": "Good",
+      "starLabel4": "Great",
+      "starLabel5": "Excellent!",
+      "ratingLabel": "Overall Rating *",
+      "titleLabel": "Review Title",
+      "titlePlaceholder": "A short headline for your review (optional)",
+      "bodyLabel": "Your Review *",
+      "bodyPlaceholder": "Share your experience — what did you enjoy? What could be improved?",
+      "bodyMinChars": "{count} / 10 characters minimum",
+      "submitBtn": "Post Review",
+      "cancelBtn": "Cancel",
+      "successTitle": "Thank you for your review!",
+      "successBody": "Your review helps other sailors choose the best maritime experiences.",
+      "successExplore": "Explore boats",
+      "successHome": "Home",
+      "errorNoBooking": "You must have a completed booking for this yacht to leave a review.",
+      "errorAlreadyReviewed": "You have already reviewed this yacht.",
+      "errorUnauthorized": "You must be logged in to write a review.",
+      "distribution": "Rating Distribution",
+      "ratingBreakdown": "{count} reviews with {star} stars",
+      "categories": {
+        "captain": "Captain",
+        "cleanliness": "Cleanliness",
+        "equipment": "Equipment",
+        "punctuality": "Punctuality",
+        "value": "Value",
+        "safety": "Safety"
+      }
+    }
   },
   "booking": {
     "title": "Book your sea trip",
@@ -485,17 +529,94 @@
       "caution": "Caution advised",
       "danger": "Danger · Do not sail"
     },
+    "advisoryIcon": {
+      "safe": "✓",
+      "caution": "⚠",
+      "danger": "✕"
+    },
     "unavailable": "Weather data temporarily unavailable.",
     "meters": "m",
     "kmh": "km/h",
     "celsius": "°C",
     "seconds": "s",
-    "degrees": "°"
+    "degrees": "°",
+    "page": {
+      "eyebrow": "MARITIME WEATHER · الطقس البحري",
+      "heading": "Marine Weather Advisory",
+      "dataSource": "Data source: Open-Meteo Marine API · updated hourly",
+      "fishingGuideLink": "Fishing Guide",
+      "locationTabsLabel": "Select port",
+      "forecastTabsLabel": "View forecast",
+      "loading": "Loading…",
+      "wmoCode": "WMO code",
+      "seaState": "Sea state",
+      "calmSea": "Calm",
+      "moderateSea": "Moderate",
+      "roughSea": "Rough",
+      "lastUpdated": "Last updated",
+      "tab": {
+        "hourly": "Hourly Today · اليوم",
+        "sevenDay": "7-Day Forecast · ٧ أيام"
+      },
+      "forecast": {
+        "safe": "✓ Safe",
+        "avoid": "⚠ Avoid"
+      },
+      "advisory": {
+        "title": "Daily Marine Advisory · التنبيه البحري",
+        "meta": "Issued by SeaConnect · Open-Meteo · updated daily",
+        "body": "Marine conditions on the Red Sea coast are suitable for sailing in the early hours. Northeasterly winds are expected to pick up in the afternoon. Small vessel captains are advised to stay close to shore and avoid extended trips after 15:00.",
+        "bodyEn": "الطقس البحري على ساحل البحر الأحمر مناسب للإبحار خلال الساعات المبكرة من اليوم. يُنصح ربابنة القوارب الصغيرة بالالتزام بالساحل وتجنب الرحلات الطويلة بعد الساعة الثالثة مساءً."
+      }
+    }
   },
   "fishing": {
     "whatsBiting": "What's Biting Now?",
     "peakSeason": "Peak Season",
     "noData": "No fishing data available for this port this month."
+  },
+  "fishingGuide": {
+    "eyebrow": "FISHING GUIDE · دليل الصيد",
+    "heading": "Egypt Fishing Guide",
+    "subtitle": "Fish seasons · Fishing methods · Marine guidance",
+    "weatherLink": "Weather",
+    "regionTabsLabel": "Select region",
+    "monthSelectLabel": "Select month · SELECT MONTH",
+    "monthTabsLabel": "Select month",
+    "summary": {
+      "peak": "Peak season",
+      "good": "Good season",
+      "off": "Off season"
+    },
+    "badge": {
+      "peak": "🔥 Peak season",
+      "good": "✓ Good season",
+      "off": "— Off season"
+    },
+    "species": {
+      "bestSeason": "Best season",
+      "method": "Method",
+      "size": "Size",
+      "depth": "Depth"
+    },
+    "tips": {
+      "eyebrow": "FISHING TIPS · نصائح الصيد",
+      "tip1": "Best fishing is in the first hours after sunrise and just before sunset.",
+      "tip1En": "أفضل وقت للصيد في الساعات الأولى بعد الشروق وقبيل الغروب.",
+      "tip2": "Avoid fishing when wave height exceeds 1.5m for small boats.",
+      "tip2En": "تجنب الصيد عند ارتفاع موج يتجاوز 1.5 متر للقوارب الصغيرة.",
+      "tip3": "Night fishing on the Red Sea is excellent during summer months.",
+      "tip3En": "الصيد الليلي في البحر الأحمر ممتاز خلال أشهر الصيف.",
+      "tip4": "Coral reefs attract diverse fish — maintain a safe distance.",
+      "tip4En": "الشعاب المرجانية تجذب أسماكاً متنوعة — ابقَ على مسافة آمنة.",
+      "tip5": "Ensure you have a fishing permit from the General Authority for Fisheries.",
+      "tip5En": "احرص على الحصول على تصريح الصيد من هيئة الثروة السمكية."
+    },
+    "cta": {
+      "heading": "Ready to fish?",
+      "sub": "Book your boat now and enjoy an unforgettable fishing experience",
+      "btn": "Explore fishing boats"
+    }
   },
   "competitions": {
     "title": "Tournaments",
@@ -1013,12 +1134,6 @@
         "captainLicense": "Certified marine driving license",
         "insuranceCert": "Valid insurance certificate",
         "technicalInspection": "Technical boat inspection (30 min)"
-      },
-      "submitting": "Submitting...",
-      "statusBanner": {
-        "submitted": "Your application has been submitted for review · UNDER REVIEW",
-        "approved": "Your application has been approved · APPROVED",
-        "rejected": "Your application was rejected · REJECTED"
       }
     },
     "listing": {
@@ -1157,12 +1272,30 @@
     "heading": "Settings",
     "logoutBtn": "Log out · LOGOUT",
     "sidebar": {
-      "profile": { "label": "Profile",              "sub": "PROFILE" },
-      "notifs":  { "label": "Notifications",        "sub": "NOTIFICATIONS" },
-      "payments":{ "label": "Payment methods",      "sub": "PAYMENTS" },
-      "lang":    { "label": "Language & Region",    "sub": "LANGUAGE" },
-      "security":{ "label": "Privacy & Security",   "sub": "SECURITY" },
-      "about":   { "label": "About",                "sub": "ABOUT" }
+      "profile": {
+        "label": "Profile",
+        "sub": "PROFILE"
+      },
+      "notifs": {
+        "label": "Notifications",
+        "sub": "NOTIFICATIONS"
+      },
+      "payments": {
+        "label": "Payment methods",
+        "sub": "PAYMENTS"
+      },
+      "lang": {
+        "label": "Language & Region",
+        "sub": "LANGUAGE"
+      },
+      "security": {
+        "label": "Privacy & Security",
+        "sub": "SECURITY"
+      },
+      "about": {
+        "label": "About",
+        "sub": "ABOUT"
+      }
     },
     "profile": {
       "title": "Profile · PROFILE",
@@ -1194,17 +1327,44 @@
       "title": "Notifications · NOTIFICATIONS",
       "channelsTitle": "Channels · CHANNELS",
       "prefs": {
-        "booking":    { "label": "Booking updates",    "sub": "Booking updates — confirmations, reminders, cancellations" },
-        "payment":    { "label": "Payment alerts",     "sub": "Payment confirmations, receipts, and refund status" },
-        "weather":    { "label": "Weather alerts",     "sub": "Marine weather alerts affecting your upcoming trips" },
-        "promo":      { "label": "Offers & discounts", "sub": "Promotional offers, loyalty points, and seasonal deals" },
-        "newsletter": { "label": "Newsletter",         "sub": "Monthly SeaConnect newsletter and market updates" }
+        "booking": {
+          "label": "Booking updates",
+          "sub": "Booking updates — confirmations, reminders, cancellations"
+        },
+        "payment": {
+          "label": "Payment alerts",
+          "sub": "Payment confirmations, receipts, and refund status"
+        },
+        "weather": {
+          "label": "Weather alerts",
+          "sub": "Marine weather alerts affecting your upcoming trips"
+        },
+        "promo": {
+          "label": "Offers & discounts",
+          "sub": "Promotional offers, loyalty points, and seasonal deals"
+        },
+        "newsletter": {
+          "label": "Newsletter",
+          "sub": "Monthly SeaConnect newsletter and market updates"
+        }
       },
       "channels": {
-        "inApp":    { "label": "In-app notifications", "sub": "In-app push notifications" },
-        "sms":      { "label": "SMS messages",         "sub": "Text messages to your registered phone" },
-        "whatsapp": { "label": "WhatsApp",             "sub": "WhatsApp messages (Egypt only)" },
-        "email":    { "label": "Email",                "sub": "Email digest (weekly summary)" }
+        "inApp": {
+          "label": "In-app notifications",
+          "sub": "In-app push notifications"
+        },
+        "sms": {
+          "label": "SMS messages",
+          "sub": "Text messages to your registered phone"
+        },
+        "whatsapp": {
+          "label": "WhatsApp",
+          "sub": "WhatsApp messages (Egypt only)"
+        },
+        "email": {
+          "label": "Email",
+          "sub": "Email digest (weekly summary)"
+        }
       }
     },
     "payments": {
@@ -1214,14 +1374,14 @@
       "addMethod": "Add payment method · ADD PAYMENT METHOD",
       "historyTitle": "Transaction history",
       "methods": {
-        "fawry":   "Fawry code — sent to you at checkout",
-        "vfCash":  "Vodafone Cash wallet · 010xxxxxxxx",
-        "instapay":"InstaPay · Cairo Bank",
-        "visa":    "Expires 09/28"
+        "fawry": "Fawry code — sent to you at checkout",
+        "vfCash": "Vodafone Cash wallet · 010xxxxxxxx",
+        "instapay": "InstaPay · Cairo Bank",
+        "visa": "Expires 09/28"
       },
       "txTypes": {
         "booking": "Booking",
-        "refund":  "Refund"
+        "refund": "Refund"
       },
       "txStatus": {
         "completed": "COMPLETED"
@@ -1233,7 +1393,7 @@
         "label": "App language",
         "sub": "Choose your preferred language"
       },
-      "arabic":  "عربي",
+      "arabic": "عربي",
       "english": "English",
       "timezone": {
         "label": "Time zone",
@@ -1293,6 +1453,27 @@
       }
     }
   },
+  "map": {
+    "title": "Yachts available now",
+    "liveLabel": "live yacht(s)",
+    "filterAll": "All",
+    "filterMotor": "Motorboats",
+    "filterSail": "Sailing",
+    "filterFishing": "Fishing",
+    "filterNile": "Nile",
+    "viewList": "View list",
+    "viewDetails": "View details",
+    "noYachts": "No yachts available in this area",
+    "popupYachtsCount": "yacht(s)",
+    "legendLabel": "MAP LEGEND · دليل الخريطة",
+    "regionRedSea": "البحر الأحمر · Red Sea",
+    "regionMediterranean": "المتوسط · Mediterranean",
+    "regionNile": "النيل · Nile River",
+    "legendHint": "Click any marker on the map to browse available yachts in that area.",
+    "browseAll": "Browse all yachts",
+    "close": "Close",
+    "showAll": "View all yachts in"
+  },
   "search": {
     "filtersLabel": "Search & Filters",
     "activeLabel": "Active filters",
@@ -1307,6 +1488,75 @@
       "priceAsc": "Price: low to high",
       "priceDesc": "Price: high to low",
       "rating": "Rating"
+    }
+  },
+  "payment": {
+    "fawry": {
+      "eyebrow": "FAWRY PAYMENT · دفع فوري",
+      "heading": "Pay via Fawry",
+      "referenceLabel": "FAWRY CODE · كود الدفع",
+      "copy": "Copy code",
+      "copied": "Copied ✓",
+      "amountLabel": "AMOUNT · المبلغ",
+      "expiryLabel": "EXPIRES IN · ينتهي خلال",
+      "expired": "Expired",
+      "instructionsLabel": "FAWRY PAYMENT INSTRUCTIONS · تعليمات الدفع",
+      "step1": "Go to any Fawry outlet or open the Fawry app",
+      "step2Before": "Select",
+      "step2BillPay": "\"Bill Pay\"",
+      "step2Then": "then",
+      "step2SeaConnect": "\"SeaConnect · سي كونكت\"",
+      "step3Before": "Enter payment code:",
+      "step4Before": "Confirm amount:",
+      "step5": "Keep your receipt — you'll receive a confirmation SMS within 2 minutes",
+      "note": "⏳ Code valid for 24 hours. The boat is held temporarily until payment is complete.",
+      "iPaidButton": "I've paid — verify my booking",
+      "cancelPayment": "Cancel payment and go back"
+    },
+    "processing": {
+      "heading": "Verifying your payment",
+      "body": "We are contacting the payment processor to verify your transaction. Please do not close this page.",
+      "processingLabel": "Processing payment… please wait",
+      "timeoutTitle": "Verification taking longer than expected",
+      "timeoutBody": "We couldn't confirm your payment in time. If you completed the payment, contact our support team with your booking ID and we'll confirm it manually.",
+      "contactSupport": "Contact support",
+      "timeoutEmailSubject": "Pending payment confirmation",
+      "timeoutEmailBody": "Booking ID:",
+      "noBookingId": "Booking ID not found. Please contact support."
+    }
+  },
+  "booking": {
+    "confirmed": {
+      "stamp": "✓ BOOKING CONFIRMED · تأكيد الحجز",
+      "heading": "Booking confirmed!",
+      "subheading": "Your trip details have been sent to your email. Keep this ticket for reference.",
+      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
+      "fields": {
+        "yacht": "Yacht",
+        "date": "Date",
+        "passengers": "Passengers",
+        "departurePort": "Departure port",
+        "total": "Total",
+        "status": "Status"
+      },
+      "confirmedStatus": "✓ Confirmed",
+      "viewBookingsButton": "View my bookings →",
+      "homeLinkSuffix": "to home"
+    },
+    "failed": {
+      "stamp": "✗ PAYMENT FAILED · فشل الدفع",
+      "heading": "Payment failed",
+      "body": "No charge was made. The boat is still temporarily held.",
+      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
+      "possibleReasonsTitle": "⚠ Possible reasons",
+      "reason1": "Insufficient balance — make sure your account covers the full amount.",
+      "reason2": "Code expired — please refresh and try again.",
+      "reason3": "Connection error — check your internet and retry.",
+      "retryButton": "↩ Try again",
+      "contactSupport": "Contact support",
+      "supportEmailSubject": "Failed payment",
+      "supportEmailBody": "Booking reference:",
+      "noCharge": "No amount was charged to your account during this attempt."
     }
   }
 }

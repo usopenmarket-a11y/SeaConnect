@@ -249,151 +249,84 @@
       "guarantee3": "قبول Fawry · Vodafone Cash · InstaPay · Visa."
     },
     "empty": "لا توجد قوارب متاحة حالياً",
-    "loading": "جارٍ تحميل القوارب..."
+    "loading": "جارٍ تحميل القوارب...",
+    "reviews": {
+      "title": "تقييمات القارب",
+      "avgRating": "التقييم الإجمالي",
+      "totalReviews": "{count} تقييم",
+      "writeReview": "اكتب تقييماً",
+      "backToReviews": "العودة للتقييمات",
+      "noReviews": "لا توجد تقييمات بعد. كن أول من يقيّم!",
+      "sortBy": "ترتيب حسب",
+      "sortRecent": "الأحدث",
+      "sortHighest": "الأعلى تقييماً",
+      "sortLowest": "الأدنى تقييماً",
+      "filterByStar": "{count} نجوم",
+      "clearFilter": "مسح الفلتر",
+      "starLabel1": "سيئ",
+      "starLabel2": "مقبول",
+      "starLabel3": "جيد",
+      "starLabel4": "رائع",
+      "starLabel5": "ممتاز!",
+      "ratingLabel": "التقييم الإجمالي *",
+      "titleLabel": "عنوان التقييم",
+      "titlePlaceholder": "عنوان مختصر لتقييمك (اختياري)",
+      "bodyLabel": "تقييمك *",
+      "bodyPlaceholder": "شارك تجربتك مع الآخرين — ماذا أعجبك؟ ما الذي يمكن تحسينه؟",
+      "bodyMinChars": "{count} / 10 أحرف كحد أدنى",
+      "submitBtn": "نشر التقييم",
+      "cancelBtn": "إلغاء",
+      "successTitle": "شكراً على تقييمك!",
+      "successBody": "تقييمك يساعد البحارة الآخرين على اختيار أفضل التجارب البحرية.",
+      "successExplore": "استكشاف قوارب",
+      "successHome": "الرئيسية",
+      "errorNoBooking": "يجب أن يكون لديك حجز مكتمل لهذا القارب لتتمكن من كتابة تقييم.",
+      "errorAlreadyReviewed": "لقد قدّمت تقييماً لهذا القارب مسبقاً.",
+      "errorUnauthorized": "يجب تسجيل الدخول لكتابة تقييم.",
+      "distribution": "توزيع التقييمات",
+      "ratingBreakdown": "{count} تقييم بـ {star} نجوم",
+      "categories": {
+        "captain": "الكابتن",
+        "cleanliness": "النظافة",
+        "equipment": "المعدات",
+        "punctuality": "الدقة",
+        "value": "القيمة",
+        "safety": "السلامة"
+      }
+    }
   },
   "booking": {
-    "title": "احجز رحلتك البحرية",
-    "yachtNotFound": "لم نعثر على هذا القارب",
-    "startDate": "تاريخ البداية",
-    "endDate": "تاريخ النهاية",
-    "passengers": "عدد الركاب",
-    "totalAmount": "المبلغ الإجمالي",
-    "perDay": "يوم/",
-    "nights": "ليلة",
-    "submit": "تأكيد الحجز",
-    "submitting": "جارٍ إرسال الطلب...",
-    "success": "تم إرسال طلب الحجز",
-    "error": {
-      "generic": "تعذّر إنشاء الحجز. حاول مجدداً.",
-      "dateRange": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية",
-      "capacity": "عدد الركاب يتجاوز سعة القارب"
-    },
-    "checkout": {
-      "title": "إكمال الحجز",
-      "back": "← العودة",
-      "backHome": "← الرئيسية",
-      "cancel": "إلغاء",
-      "previous": "← السابق",
-      "loading": "جارٍ التحميل",
-      "yachtNotFound": "لم يتم العثور على اليخت المطلوب.",
-      "steps": {
-        "tripDetails": "تفاصيل الرحلة",
-        "yourInfo": "بياناتك",
-        "payment": "الدفع",
-        "review": "تأكيد"
-      },
-      "tripDate": "تاريخ الرحلة",
-      "guestsCount": "عدد المسافرين",
-      "departureTime": "وقت الانطلاق",
-      "returnTime": "وقت العودة",
-      "tripType": "نوع الرحلة",
-      "tripTypes": {
-        "deepFishing": "صيد عميق",
-        "coastalFishing": "صيد ساحلي",
-        "snorkeling": "سباحة وسنوركل"
-      },
-      "time": {
-        "0600am": "06:00 صباحاً",
-        "0700am": "07:00 صباحاً",
-        "0800am": "08:00 صباحاً",
-        "0200pm": "02:00 مساءً",
-        "0400pm": "04:00 مساءً",
-        "0600pm": "06:00 مساءً"
-      },
-      "specialRequests": "طلبات خاصة (اختياري)",
-      "specialRequestsPlaceholder": "وجبة نباتية، طفل رضيع، احتياجات معدات...",
-      "fullName": "الاسم الكامل",
-      "fullNamePlaceholder": "الاسم كما في بطاقة الهوية",
-      "phone": "رقم الهاتف",
-      "email": "البريد الإلكتروني",
-      "idType": "نوع الهوية",
-      "idTypes": {
-        "national": "بطاقة قومية",
-        "passport": "جواز سفر"
-      },
-      "idNumber": "رقم الهوية",
-      "idNumberPlaceholder": "رقم البطاقة أو جواز السفر",
-      "emergencyContact": "جهة الاتصال في حالات الطوارئ",
-      "emergencyName": "اسم جهة الاتصال",
-      "emergencyNamePlaceholder": "اسم الشخص المسؤول",
-      "emergencyPhone": "هاتف الطوارئ",
-      "payment": {
-        "fawryTitle": "Fawry",
-        "fawrySubtitle": "الدفع عند أي منفذ فوري",
-        "fawryHowLabel": "HOW FAWRY WORKS · آلية فوري",
-        "fawryStep1": "نرسل لك كود دفع فوري عبر رسالة نصية",
-        "fawryStep2": "توجّه إلى أي منفذ فوري (٢٠٠,٠٠٠+ منفذ)",
-        "fawryStep3": "ادفع المبلغ — الحجز يتأكد خلال دقيقتين",
-        "fawryConfirmLabel": "Fawry · يرسل الكود عند التأكيد",
-        "cardTitle": "بطاقة ائتمان",
-        "cardSubtitle": "Visa · Mastercard",
-        "cardHowLabel": "SECURE CARD PAYMENT · دفع آمن بالبطاقة",
-        "cardBody": "ستُوجَّه إلى بوابة دفع آمنة لإدخال بيانات بطاقتك. يتم تشفير كل المعاملات بـ TLS.",
-        "cardConfirmLabel": "بطاقة ائتمان · Visa / Mastercard",
-        "instapayTitle": "InstaPay",
-        "instapaySubtitle": "تحويل بنكي فوري",
-        "instapayHowLabel": "HOW INSTAPAY WORKS · آلية InstaPay",
-        "instapayStep1": "سنرسل لك رقم الحساب عبر رسالة نصية",
-        "instapayStep2": "حوّل المبلغ عبر تطبيق البنك أو InstaPay",
-        "instapayStep3": "يتأكد الحجز فور وصول التحويل",
-        "instapayConfirmLabel": "InstaPay · تحويل بنكي فوري"
-      },
-      "confirmBook": "إتمام الحجز",
-      "processing": "جارٍ المعالجة...",
-      "successTitle": "تم الحجز بنجاح!",
-      "bookingRef": "رقم الحجز",
-      "trackBooking": "تتبع حجزك ←",
-      "confirm": {
-        "mainPassenger": "المسافر الرئيسي",
-        "email": "البريد الإلكتروني",
-        "phone": "الهاتف",
+    "confirmed": {
+      "stamp": "✓ BOOKING CONFIRMED · تأكيد الحجز",
+      "heading": "تم الحجز بنجاح!",
+      "subheading": "تفاصيل رحلتك أُرسلت إلى بريدك الإلكتروني. احتفظ بهذه التذكرة.",
+      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
+      "fields": {
+        "yacht": "القارب",
         "date": "التاريخ",
         "passengers": "المسافرون",
-        "paymentMethod": "طريقة الدفع",
-        "fawryBody1": "أرسلنا كود دفع فوري إلى",
-        "fawryBody2": "ادفع خلال ٤٨ ساعة لتأمين حجزك. ستصلك التفاصيل الكاملة على بريدك.",
-        "instapayBody1": "أرسلنا بيانات التحويل إلى",
-        "instapayBody2": "أتمّ التحويل خلال ٤٨ ساعة لتأمين حجزك.",
-        "cardBody1": "تم استلام بطاقتك بنجاح. الحجز مؤكد وستصلك التفاصيل على"
+        "departurePort": "ميناء الإبحار",
+        "total": "الإجمالي",
+        "status": "الحالة"
       },
-      "ticket": {
-        "title": "التذكرة",
-        "date": "DATE · التاريخ",
-        "boarding": "BOARDING · الصعود",
-        "am": "صباحاً",
-        "marina": "MARINA · المرسى",
-        "pax": "PAX · المسافرون",
-        "bookingRefLabel": "BOOKING REF",
-        "costSummary": "ملخص التكلفة",
-        "base": "أساسي",
-        "fees": "رسوم",
-        "insurance": "تأمين",
-        "whatsNext": "ماذا بعد؟",
-        "nextFawry": "ادفع عبر فوري خلال ٤٨ ساعة",
-        "nextInstapay": "أتمّ التحويل خلال ٤٨ ساعة",
-        "nextConfirm": "ستصلك تأكيد نهائي + بيانات الربان",
-        "nextArrive": "الوصول للمرسى قبل ١٥ دقيقة من الإبحار",
-        "nextReview": "بعد الرحلة — شاركنا تقييمك"
-      },
-      "validation": {
-        "dateRequired": "يرجى اختيار تاريخ الرحلة.",
-        "passengersRequired": "يرجى اختيار عدد المسافرين.",
-        "fullNameRequired": "يرجى إدخال الاسم الكامل.",
-        "phoneRequired": "يرجى إدخال رقم الهاتف.",
-        "idNumberRequired": "يرجى إدخال رقم الهوية.",
-        "noDeparturePort": "لا تتوفر بيانات ميناء الانطلاق لهذا اليخت. يرجى التواصل مع الدعم.",
-        "unexpectedError": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
-      },
-      "summary": {
-        "title": "ملخص الحجز",
-        "with": "مع",
-        "passenger": "مسافر",
-        "passengers": "مسافرون",
-        "basePrice": "السعر الأساسي",
-        "serviceFee": "رسوم الخدمة",
-        "insurance": "تأمين",
-        "total": "الإجمالي"
-      }
+      "confirmedStatus": "✓ مؤكد",
+      "viewBookingsButton": "عرض حجوزاتي ←",
+      "homeLinkSuffix": "إلى الرئيسية"
+    },
+    "failed": {
+      "stamp": "✗ PAYMENT FAILED · فشل الدفع",
+      "heading": "فشلت عملية الدفع",
+      "body": "لم يتم خصم أي مبلغ. القارب لا يزال محجوزاً مؤقتاً.",
+      "referenceLabel": "BOOKING REFERENCE · رقم الحجز",
+      "possibleReasonsTitle": "⚠ الأسباب المحتملة",
+      "reason1": "رصيد غير كافٍ — تأكد من أن رصيدك يغطي المبلغ المطلوب.",
+      "reason2": "انتهت مدة صلاحية الكود — جدد وحاول مجدداً.",
+      "reason3": "خطأ في الاتصال — تحقق من الإنترنت وأعد المحاولة.",
+      "retryButton": "↩ حاول مرة أخرى",
+      "contactSupport": "تواصل مع الدعم",
+      "supportEmailSubject": "فشل عملية دفع",
+      "supportEmailBody": "رقم الحجز:",
+      "noCharge": "لم يتم خصم أي مبلغ من حسابك في هذه المحاولة."
     }
   },
   "bookingList": {
@@ -485,17 +418,94 @@
       "caution": "توخَّ الحذر",
       "danger": "خطر · لا تُبحر"
     },
+    "advisoryIcon": {
+      "safe": "✓",
+      "caution": "⚠",
+      "danger": "✕"
+    },
     "unavailable": "بيانات الطقس غير متاحة حالياً.",
     "meters": "م",
     "kmh": "كم/س",
     "celsius": "°م",
     "seconds": "ث",
-    "degrees": "°"
+    "degrees": "°",
+    "page": {
+      "eyebrow": "MARITIME WEATHER · الطقس البحري",
+      "heading": "حالة الطقس البحري",
+      "dataSource": "مصدر البيانات: Open-Meteo Marine API · يُحدَّث كل ساعة",
+      "fishingGuideLink": "دليل الصيد",
+      "locationTabsLabel": "اختر الميناء",
+      "forecastTabsLabel": "عرض التوقعات",
+      "loading": "جارٍ التحميل…",
+      "wmoCode": "كود الطقس",
+      "seaState": "حالة البحر",
+      "calmSea": "هادئ",
+      "moderateSea": "متوسط",
+      "roughSea": "متلاطم",
+      "lastUpdated": "آخر تحديث",
+      "tab": {
+        "hourly": "اليوم بالساعة · Hourly Today",
+        "sevenDay": "توقعات ٧ أيام · 7-Day Forecast"
+      },
+      "forecast": {
+        "safe": "✓ صالح",
+        "avoid": "⚠ تجنب"
+      },
+      "advisory": {
+        "title": "التنبيه البحري اليومي · Daily Marine Advisory",
+        "meta": "صادر عن SeaConnect · Open-Meteo · يُحدَّث يومياً",
+        "body": "الطقس البحري على ساحل البحر الأحمر مناسب للإبحار خلال الساعات المبكرة من اليوم. يُتوقع تصاعد الرياح الشمالية الشرقية في فترة ما بعد الظهر. يُنصح ربابنة القوارب الصغيرة بالالتزام بالساحل وتجنب الرحلات الطويلة بعد الساعة الثالثة مساءً.",
+        "bodyEn": "Marine conditions on the Red Sea coast are suitable for sailing in the early hours. Northeasterly winds are expected to pick up in the afternoon. Small vessel captains are advised to stay close to shore and avoid extended trips after 15:00."
+      }
+    }
   },
   "fishing": {
     "whatsBiting": "ماذا يُصطاد الآن؟",
     "peakSeason": "موسم الذروة",
     "noData": "لا تتوفر بيانات صيد لهذا الميناء هذا الشهر."
+  },
+  "fishingGuide": {
+    "eyebrow": "FISHING GUIDE · دليل الصيد",
+    "heading": "دليل الصيد في مصر",
+    "subtitle": "مواسم الأسماك · أساليب الصيد · الإرشادات البحرية",
+    "weatherLink": "حالة الطقس",
+    "regionTabsLabel": "اختر المنطقة",
+    "monthSelectLabel": "اختر الشهر · SELECT MONTH",
+    "monthTabsLabel": "اختر الشهر",
+    "summary": {
+      "peak": "في الموسم الرئيسي",
+      "good": "موسم جيد",
+      "off": "خارج الموسم"
+    },
+    "badge": {
+      "peak": "🔥 موسم مثالي",
+      "good": "✓ موسم جيد",
+      "off": "— خارج الموسم"
+    },
+    "species": {
+      "bestSeason": "أفضل موسم",
+      "method": "الأسلوب",
+      "size": "الحجم",
+      "depth": "العمق"
+    },
+    "tips": {
+      "eyebrow": "FISHING TIPS · نصائح الصيد",
+      "tip1": "أفضل وقت للصيد في الساعات الأولى بعد الشروق وقبيل الغروب.",
+      "tip1En": "Best fishing is in the first hours after sunrise and just before sunset.",
+      "tip2": "تجنب الصيد عند ارتفاع موج يتجاوز 1.5 متر للقوارب الصغيرة.",
+      "tip2En": "Avoid fishing when wave height exceeds 1.5m for small boats.",
+      "tip3": "الصيد الليلي في البحر الأحمر ممتاز خلال أشهر الصيف.",
+      "tip3En": "Night fishing on the Red Sea is excellent during summer months.",
+      "tip4": "الشعاب المرجانية تجذب أسماكاً متنوعة — ابقَ على مسافة آمنة.",
+      "tip4En": "Coral reefs attract diverse fish — maintain a safe distance.",
+      "tip5": "احرص على الحصول على تصريح الصيد من هيئة الثروة السمكية.",
+      "tip5En": "Ensure you have a fishing permit from the General Authority for Fisheries."
+    },
+    "cta": {
+      "heading": "جاهز للصيد؟",
+      "sub": "احجز قاربك الآن واستمتع بتجربة صيد لا تُنسى",
+      "btn": "استكشف قوارب الصيد"
+    }
   },
   "competitions": {
     "title": "البطولات",
@@ -1151,12 +1161,30 @@
     "heading": "الإعدادات",
     "logoutBtn": "تسجيل الخروج · LOGOUT",
     "sidebar": {
-      "profile": { "label": "الملف الشخصي", "sub": "PROFILE" },
-      "notifs":  { "label": "الإشعارات",     "sub": "NOTIFICATIONS" },
-      "payments":{ "label": "طرق الدفع",     "sub": "PAYMENTS" },
-      "lang":    { "label": "اللغة والمنطقة","sub": "LANGUAGE" },
-      "security":{ "label": "الخصوصية والأمان","sub": "SECURITY" },
-      "about":   { "label": "عن التطبيق",    "sub": "ABOUT" }
+      "profile": {
+        "label": "الملف الشخصي",
+        "sub": "PROFILE"
+      },
+      "notifs": {
+        "label": "الإشعارات",
+        "sub": "NOTIFICATIONS"
+      },
+      "payments": {
+        "label": "طرق الدفع",
+        "sub": "PAYMENTS"
+      },
+      "lang": {
+        "label": "اللغة والمنطقة",
+        "sub": "LANGUAGE"
+      },
+      "security": {
+        "label": "الخصوصية والأمان",
+        "sub": "SECURITY"
+      },
+      "about": {
+        "label": "عن التطبيق",
+        "sub": "ABOUT"
+      }
     },
     "profile": {
       "title": "الملف الشخصي · PROFILE",
@@ -1188,17 +1216,44 @@
       "title": "الإشعارات · NOTIFICATIONS",
       "channelsTitle": "القنوات · CHANNELS",
       "prefs": {
-        "booking":    { "label": "تحديثات الحجوزات",  "sub": "Booking updates — confirmations, reminders, cancellations" },
-        "payment":    { "label": "تنبيهات المدفوعات", "sub": "Payment confirmations, receipts, and refund status" },
-        "weather":    { "label": "تحذيرات الطقس",     "sub": "Marine weather alerts affecting your upcoming trips" },
-        "promo":      { "label": "العروض والخصومات",  "sub": "Promotional offers, loyalty points, and seasonal deals" },
-        "newsletter": { "label": "النشرة الإخبارية",  "sub": "Monthly SeaConnect newsletter and market updates" }
+        "booking": {
+          "label": "تحديثات الحجوزات",
+          "sub": "Booking updates — confirmations, reminders, cancellations"
+        },
+        "payment": {
+          "label": "تنبيهات المدفوعات",
+          "sub": "Payment confirmations, receipts, and refund status"
+        },
+        "weather": {
+          "label": "تحذيرات الطقس",
+          "sub": "Marine weather alerts affecting your upcoming trips"
+        },
+        "promo": {
+          "label": "العروض والخصومات",
+          "sub": "Promotional offers, loyalty points, and seasonal deals"
+        },
+        "newsletter": {
+          "label": "النشرة الإخبارية",
+          "sub": "Monthly SeaConnect newsletter and market updates"
+        }
       },
       "channels": {
-        "inApp":    { "label": "إشعارات التطبيق",     "sub": "In-app push notifications" },
-        "sms":      { "label": "رسائل SMS",            "sub": "Text messages to your registered phone" },
-        "whatsapp": { "label": "واتساب",               "sub": "WhatsApp messages (Egypt only)" },
-        "email":    { "label": "البريد الإلكتروني",   "sub": "Email digest (weekly summary)" }
+        "inApp": {
+          "label": "إشعارات التطبيق",
+          "sub": "In-app push notifications"
+        },
+        "sms": {
+          "label": "رسائل SMS",
+          "sub": "Text messages to your registered phone"
+        },
+        "whatsapp": {
+          "label": "واتساب",
+          "sub": "WhatsApp messages (Egypt only)"
+        },
+        "email": {
+          "label": "البريد الإلكتروني",
+          "sub": "Email digest (weekly summary)"
+        }
       }
     },
     "payments": {
@@ -1208,14 +1263,14 @@
       "addMethod": "إضافة طريقة دفع · ADD PAYMENT METHOD",
       "historyTitle": "سجل المعاملات",
       "methods": {
-        "fawry":   "كود فوري · كود يُرسل إليك",
-        "vfCash":  "محفظة فودافون · 010xxxxxxxx",
-        "instapay":"نظام التحويل الفوري · بنك القاهرة",
-        "visa":    "تنتهي صلاحيتها في 09/28"
+        "fawry": "كود فوري · كود يُرسل إليك",
+        "vfCash": "محفظة فودافون · 010xxxxxxxx",
+        "instapay": "نظام التحويل الفوري · بنك القاهرة",
+        "visa": "تنتهي صلاحيتها في 09/28"
       },
       "txTypes": {
         "booking": "حجز",
-        "refund":  "استرجاع"
+        "refund": "استرجاع"
       },
       "txStatus": {
         "completed": "مكتمل"
@@ -1227,7 +1282,7 @@
         "label": "لغة التطبيق",
         "sub": "اختر اللغة المفضلة لديك"
       },
-      "arabic":  "عربي",
+      "arabic": "عربي",
       "english": "English",
       "timezone": {
         "label": "المنطقة الزمنية",
@@ -1287,6 +1342,27 @@
       }
     }
   },
+  "map": {
+    "title": "قوارب متاحة الآن",
+    "liveLabel": "قارب مباشر",
+    "filterAll": "الكل",
+    "filterMotor": "لنشات",
+    "filterSail": "شراعي",
+    "filterFishing": "صيد",
+    "filterNile": "نيل",
+    "viewList": "عرض القائمة",
+    "viewDetails": "عرض التفاصيل",
+    "noYachts": "لا توجد قوارب متاحة في هذه المنطقة",
+    "popupYachtsCount": "قارب",
+    "legendLabel": "MAP LEGEND · دليل الخريطة",
+    "regionRedSea": "البحر الأحمر · Red Sea",
+    "regionMediterranean": "المتوسط · Mediterranean",
+    "regionNile": "النيل · Nile River",
+    "legendHint": "انقر على أي علامة على الخريطة لاستعراض القوارب المتاحة في تلك المنطقة.",
+    "browseAll": "استعراض كل القوارب",
+    "close": "إغلاق",
+    "showAll": "عرض كل قوارب"
+  },
   "search": {
     "filtersLabel": "بحث وفلترة",
     "activeLabel": "الفلاتر المفعّلة",
@@ -1301,6 +1377,41 @@
       "priceAsc": "السعر: من الأقل",
       "priceDesc": "السعر: من الأعلى",
       "rating": "التقييم"
+    }
+  },
+  "payment": {
+    "fawry": {
+      "eyebrow": "FAWRY PAYMENT · دفع فوري",
+      "heading": "ادفع عبر فوري",
+      "referenceLabel": "FAWRY CODE · كود الدفع",
+      "copy": "نسخ الكود",
+      "copied": "تم النسخ ✓",
+      "amountLabel": "AMOUNT · المبلغ",
+      "expiryLabel": "EXPIRES IN · ينتهي خلال",
+      "expired": "انتهت المدة",
+      "instructionsLabel": "FAWRY PAYMENT INSTRUCTIONS · تعليمات الدفع",
+      "step1": "اذهب إلى أقرب فرع فوري أو افتح تطبيق فوري",
+      "step2Before": "اختر",
+      "step2BillPay": "دفع فواتير",
+      "step2Then": "ثم",
+      "step2SeaConnect": "سي كونكت · SeaConnect",
+      "step3Before": "أدخل كود الدفع:",
+      "step4Before": "تأكيد المبلغ:",
+      "step5": "احتفظ بإيصال الدفع — ستصلك رسالة تأكيد خلال دقيقتين",
+      "note": "⏳ الكود صالح لمدة ٢٤ ساعة. يُحجز القارب مؤقتاً ريثما تكتمل عملية الدفع.",
+      "iPaidButton": "لقد دفعت — تحقق من حجزي",
+      "cancelPayment": "إلغاء الدفع والعودة"
+    },
+    "processing": {
+      "heading": "جارٍ تأكيد الدفع",
+      "body": "نتصل بمعالج الدفع للتحقق من المعاملة. يرجى عدم إغلاق الصفحة.",
+      "processingLabel": "Processing payment… please wait",
+      "timeoutTitle": "تأخر التأكيد",
+      "timeoutBody": "لم يتم تأكيد الدفع في الوقت المحدد. إذا أتممت الدفع، تواصل مع الدعم مع رقم حجزك وسنؤكد يدوياً.",
+      "contactSupport": "تواصل مع الدعم",
+      "timeoutEmailSubject": "تأكيد دفع معلّق",
+      "timeoutEmailBody": "رقم الحجز:",
+      "noBookingId": "لم يتم العثور على رقم الحجز. يرجى التواصل مع الدعم."
     }
   }
 }

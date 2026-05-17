@@ -1,4 +1,4 @@
-"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload + Sprint 10E filters."""
+"""Marketplace views — Sprint 5 + Sprint 11D vendor product management + Sprint 12A image upload + Sprint 10E filters + Sprint 12F vendor API gaps."""
 import os
 import uuid as uuid_module
 from decimal import Decimal, InvalidOperation
@@ -16,8 +16,8 @@ from rest_framework.views import APIView
 
 from apps.core.throttles import UploadThrottle
 
-from .models import Cart, CartItem, Order, OrderItem, Product, ProductCategory, ProductStatus, VendorProfile
-from .permissions import IsProductOwner, IsVendorProfileOwner, IsVendorRole
+from .models import Cart, CartItem, Order, OrderItem, OrderStatus, Product, ProductCategory, ProductImage, ProductStatus, VendorProfile
+from .permissions import IsOrderVendor, IsProductOwner, IsVendorProfileOwner, IsVendorRole
 from .serializers import (
     CartItemSerializer,
     CartSerializer,
@@ -403,7 +403,101 @@ class ProductImageUploadView(APIView):
         saved_name = default_storage.save(upload_path, file)
         file_url = default_storage.url(saved_name)
 
-        product.primary_image_url = file_url
-        product.save(update_fields=["primary_image_url", "updated_at"])
+        with transaction.atomic():
+            product.primary_image_url = file_url
+            product.save(update_fields=["primary_image_url", "updated_at"])
 
-        return Response({"image_url": file_url}, status=status.HTTP_200_OK)
+            # Determine primary flag — first image for this product becomes primary.
+            is_first = not ProductImage.objects.filter(product=product).exists()
+            ProductImage.objects.create(
+                product=product,
+                image_url=file_url,
+                is_primary=is_first,
+            )
+
+        return Response({"image_url": file_url}, status=status.HTTP_201_CREATED)
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12F — Vendor order action endpoints
+# ---------------------------------------------------------------------------
+
+# Valid status transitions a vendor may trigger.
+_VENDOR_ORDER_TRANSITIONS: dict[str, str] = {
+    "confirm": OrderStatus.CONFIRMED,
+    "ship": OrderStatus.SHIPPED,
+    "cancel": OrderStatus.CANCELLED,
+}
+
+_VENDOR_TRANSITION_PRECONDITIONS: dict[str, list[str]] = {
+    "confirm": [OrderStatus.PENDING],
+    "ship": [OrderStatus.CONFIRMED],
+    "cancel": [
+        OrderStatus.PENDING,
+        OrderStatus.CONFIRMED,
+        OrderStatus.SHIPPED,
+    ],
+}
+
+
+class VendorOrderActionView(APIView):
+    """POST /api/v1/marketplace/orders/{id}/{action}/
+
+    Vendor-only state-machine actions for an order.
+
+    Allowed transitions:
+      confirm  — pending → confirmed
+      ship     — confirmed → shipped
+      cancel   — pending | confirmed | shipped → cancelled
+
+    The calling vendor must be the vendor of at least one item in the order
+    (enforced by ``IsOrderVendor``).
+
+    Returns 200 with the updated ``OrderSerializer`` representation on success.
+    Returns 409 CONFLICT when the current status does not satisfy the precondition.
+    """
+
+    permission_classes = [IsAuthenticated, IsVendorRole, IsOrderVendor]
+
+    def post(self, request: Request, id, action: str) -> Response:
+        if action not in _VENDOR_ORDER_TRANSITIONS:
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_INVALID_ACTION",
+                        "message": f"Unknown order action: {action!r}. "
+                                   "Allowed: confirm, ship, cancel.",
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        order = get_object_or_404(
+            Order.objects.prefetch_related("items__product__vendor__user"),
+            id=id,
+        )
+        # Ownership check delegated to permission class; call explicitly for
+        # object-level check (permission class has_object_permission).
+        self.check_object_permissions(request, order)
+
+        allowed_from = _VENDOR_TRANSITION_PRECONDITIONS[action]
+        if order.status not in allowed_from:
+            return Response(
+                {
+                    "error": {
+                        "code": "ERR_INVALID_TRANSITION",
+                        "message": (
+                            f"Cannot perform '{action}' on an order with "
+                            f"status '{order.status}'. "
+                            f"Allowed current statuses: {allowed_from}."
+                        ),
+                    }
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        new_status = _VENDOR_ORDER_TRANSITIONS[action]
+        order.status = new_status
+        order.save(update_fields=["status", "updated_at"])
+
+        return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)

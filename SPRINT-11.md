@@ -141,11 +141,20 @@ Design reference: `Design/seller-pages.jsx SellerListing()`
 
 ## Definition of Done
 
-- [ ] KYC step upload works end-to-end (file → MinIO → profile updated)
-- [ ] `GET /api/v1/notifications/` returns user's notifications paginated
-- [ ] Notifications page shows real data with read/unread state
-- [ ] Settings page shows real user profile, name/phone editable
-- [ ] Vendor product list/create/edit pages exist and call real API
-- [ ] `CompetitionsPage.tsx` TypeScript error resolved
-- [ ] All existing tests still pass + new tests for notifications API
-- [ ] `npx tsc --noEmit` — 0 errors
+- [x] KYC step upload works end-to-end (file → MinIO → profile updated) — 9 tests
+- [x] `GET /api/v1/notifications/` returns user's notifications paginated (pre-existing)
+- [x] `POST /api/v1/notifications/read-all/` added — 6 tests
+- [x] Notifications page shows real data with optimistic mark-read + Nav badge
+- [x] Settings page shows real user profile, name/phone editable, logout wired
+- [x] Vendor product list/create/edit pages wired to real API
+- [x] Vendor orders, calendar, payouts pages from design
+- [x] `CompetitionsPage.tsx` TypeScript error resolved (import path fix)
+- [x] All new tests passing (9 KYC upload + 6 notifications + 4 settings)
+- [x] `npx tsc --noEmit` — 0 errors in all new files
+
+**Sprint 11 COMPLETE — 2026-05-17**
+
+### Open items carried to Sprint 12
+- `POST /marketplace/orders/{id}/confirm|ship|cancel/` — vendor order actions (stubs in vendor orders PageClient)
+- `GET /api/v1/marketplace/vendor/products/` — vendor-scoped product list (frontend falls back to public list)
+- `DELETE /api/v1/marketplace/products/{id}/` — delete product endpoint

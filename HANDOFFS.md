@@ -2149,3 +2149,220 @@ open http://localhost:3000/ar/vendor/products/<uuid>
 
 ### Response/Output Shape
 Product list response: `{"results": [{id, name, name_ar, price, currency, category, stock_quantity, is_available, ...}], "next_cursor": null, "has_more": false}`
+
+---
+
+## HANDOFF-2026-05-17-003
+
+**Status:** DONE
+**From:** api-endpoint-agent
+**To:** nextjs-page-agent (vendor orders, calendar pages)
+**Sprint:** 12F
+**Feature:** Vendor API gaps — order actions, ProductImage model, image upload persists to DB
+
+### What Was Completed
+- `ProductImage` model added to `backend/apps/marketplace/models.py` (UUID PK, FK→Product, image_url CharField 500, is_primary BooleanField). First image uploaded per product auto-sets `is_primary=True`.
+- Migration `backend/apps/marketplace/migrations/0003_add_product_image.py` — creates `marketplace_product_image` table.
+- `ProductImageUploadView` updated: now wraps product + ProductImage creation in `transaction.atomic()`; returns 201 (was 200); creates a `ProductImage` row on every upload.
+- `VendorOrderActionView` added to `backend/apps/marketplace/views.py` — handles POST to confirm/ship/cancel URLs. State-machine guards: confirm (pending→confirmed), ship (confirmed→shipped), cancel (pending|confirmed|shipped→cancelled). Returns 409 on invalid transition.
+- `IsOrderVendor` permission class added to `backend/apps/marketplace/permissions.py` — object-level check that at least one OrderItem in the order belongs to the calling vendor.
+- 3 new URL patterns in `backend/apps/marketplace/urls.py`: `/orders/{id}/confirm/`, `/orders/{id}/ship/`, `/orders/{id}/cancel/`.
+- `ProductImageSerializer` added to `backend/apps/marketplace/serializers.py`.
+- 20 tests in `backend/apps/marketplace/tests/test_vendor_api.py` covering all new endpoints.
+- `python manage.py check` — 0 issues.
+
+### Contract
+- `POST /api/v1/marketplace/orders/{id}/confirm/` — 200 + OrderSerializer on success, 409 on invalid transition, 403 if vendor has no items in order
+- `POST /api/v1/marketplace/orders/{id}/ship/` — same contract
+- `POST /api/v1/marketplace/orders/{id}/cancel/` — same contract; additionally cancels pending|confirmed|shipped
+- `POST /api/v1/marketplace/products/{id}/images/` — 201 + `{"image_url": str}`; `ProductImage` row created in DB
+
+### How to Test
+```bash
+# Django check (no DB needed)
+cd backend && python3 manage.py check
+
+# Run new tests (requires docker compose up)
+docker compose exec api bash -c "cd /app && pytest apps/marketplace/tests/test_vendor_api.py -v"
+
+# Curl smoke test (with valid vendor JWT $TOKEN and valid $ORDER_ID)
+curl -X POST http://localhost:8000/api/v1/marketplace/orders/$ORDER_ID/confirm/ \
+  -H "Authorization: Bearer $TOKEN"
+# → 200 with order JSON (status: "confirmed")
+```
+
+### Response/Output Shape
+```json
+{
+  "id": "<uuid>",
+  "status": "confirmed",
+  "total_amount": "250.00",
+  "currency": "EGP",
+  "delivery_address": "...",
+  "items": [...],
+  "created_at": "..."
+}
+```
+Image upload: `{"image_url": "http://storage/products/<id>/images/<uuid>.jpg"}`
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** nextjs-page-agent, api-endpoint-agent
+**Sprint:** 12E
+**Feature:** Map view page — interactive Leaflet yacht map
+
+### What Was Completed
+- `web/app/[locale]/(public)/map/page.tsx` — Server Component; generates metadata, loads translations, passes all strings as props to MapClient
+- `web/app/[locale]/(public)/map/MapClient.tsx` — thin client shell; lazy-loads LeafletMap with `dynamic(..., { ssr: false })`
+- `web/app/[locale]/(public)/map/LeafletMap.tsx` — full Leaflet implementation: port markers, filter strip, sidebar (legend or port popup with yacht cards), port coordinate map for 7 Egyptian ports
+- `web/app/[locale]/(public)/map/map.module.css` — CSS Module with all map layout classes, values preserved exactly from Design/styles.css lines 5303–5333
+- Added `leaflet ^1.9.4`, `react-leaflet ^4.2.1` (dependencies) and `@types/leaflet ^1.9.14` (devDependency) to `web/package.json`; packages installed
+- Added `map.*` namespace to `web/messages/ar.json` and `web/messages/en.json` (Arabic first)
+
+### Contract
+- API endpoint: `GET /api/v1/yachts/?limit=200` — fetched client-side from `NEXT_PUBLIC_API_URL`
+- Expects `results[]` array with fields: `id`, `name_ar`, `name_en`, `type`, `price_per_day`, `currency`, `capacity`, `average_rating`, `departure_port.name_en`, `primary_image`
+- Port matching: `departure_port.name_en` must match one of: Hurghada, Alexandria, Sharm El Sheikh, Luxor, Dahab, Port Said, Aswan
+
+### How to Test
+```bash
+# TypeScript (no new errors from map files)
+cd web && npx tsc --noEmit
+
+# Navigate to http://localhost:3000/ar/map — map renders with OSM tiles
+# Filter chips filter markers by yacht type
+# Clicking a marker opens the side panel with yacht cards
+# "View Details" links to /yachts/{id}
+```
+
+### Response/Output Shape
+Map renders yacht markers grouped by port. Side panel shows up to 3 yacht cards per port when a marker is clicked. Legend panel shown when no port is selected.
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** frontend-agent / QA
+**Sprint:** 12B+C
+**Feature:** Weather Advisory Page + Fishing Guide Page (Next.js conversion)
+
+### What Was Completed
+- `web/app/[locale]/(public)/weather/page.tsx` — Server Component shell with SSR metadata
+- `web/app/[locale]/(public)/weather/PageClient.tsx` — Client Component; SWR fetch to `GET /api/v1/weather/?port_id={slug}`; 6-port location tabs; main stats card with 8 metrics; advisory colour-coded badge (safe/caution/danger); hourly and 7-day forecast tabs; daily marine advisory block
+- `web/app/[locale]/(public)/fishing-guide/page.tsx` — Server Component; server-side fetches `GET /api/v1/fishing/whats-biting/` and `GET /api/v1/fishing/seasons/` with graceful fallback
+- `web/app/[locale]/(public)/fishing-guide/FishingGuideClient.tsx` — Client Component; 3-region selector; 12-month strip; season summary counters; 17-species grid with peak/good/off colouring; fishing tips; CTA → /yachts
+- `web/globals.css` — 600+ lines of design-matching CSS for both pages (logical props only, all classes namespaced: weather-*, loc-tab*, wstat*, forecast-*, species-*, fishing-*)
+- `web/messages/ar.json` / `web/messages/en.json` — added `weather.advisoryIcon`, `weather.page.*` (25 keys) and new `fishingGuide.*` namespace (35 keys); Arabic first
+
+### Contract
+- `GET /api/v1/weather/?port_id={uuid}` → `WeatherSerializer` fields: `wind_speed_kmh`, `wind_direction_deg`, `wave_height_m`, `wave_period_s`, `temperature_c`, `weather_code`, `advisory_level` (safe/caution/danger), `fetched_at`
+- `GET /api/v1/fishing/whats-biting/?port_id={uuid}` → `[{species: {id,name,name_ar,scientific_name,image_url}, month, is_peak}]`
+- `GET /api/v1/fishing/seasons/?port_id={uuid}` → same shape, all 12 months
+- Port IDs are currently slugs (hurghada, sharm, dahab, alexandria, portsaid, luxor); replace with real UUIDs once DeparturePort seed is stable
+
+### How to Test
+```bash
+# TypeScript — zero errors in new files
+cd web && npx tsc --noEmit
+
+# Navigate to http://localhost:3000/ar/weather
+# Click each port tab — SWR re-fetches, stats card updates
+# Toggle Hourly / 7-Day tabs
+# Navigate to http://localhost:3000/ar/fishing-guide
+# Click region tabs (Red Sea / Mediterranean / Nile) — species grid re-filters
+# Click month buttons — season counters update, card colours change
+# CTA button links to /ar/yachts
+```
+
+### Response/Output Shape
+Weather page: 6-port location tabs, main stats card (8 metrics), hourly strip, 7-day list with safe/unsafe badges, marine advisory block.  
+Fishing guide: region selector, month strip, season summary bar (peak/good/off counts), species grid, tips list, dark CTA bar.
+
+---
+
+## HANDOFF-2026-05-17-003
+
+**Status:** DONE
+**From:** design-to-code-agent
+**To:** api-endpoint-agent, backend-agent
+**Sprint:** 12D
+**Feature:** Payment Flow Pages — Fawry display, processing poller, confirmed, failed
+
+### What Was Completed
+- `web/app/[locale]/(public)/yachts/[id]/book/payment/` — Fawry reference display with 24h countdown timer, copy-to-clipboard, step instructions. Reads `booking_id`, `fawry_ref`, `amount`, `currency` from URL params with sessionStorage fallback.
+- `web/app/[locale]/(public)/yachts/[id]/book/processing/` — Polls `GET /api/v1/bookings/{id}/` every 3s (max 100 polls / 5 min). Redirects to `confirmed` on `status=confirmed`, `failed` on `status=payment_failed|declined|cancelled`. Timeout state shows support contact.
+- `web/app/[locale]/(public)/bookings/[id]/confirmed/` — Server Component. SSR-fetches booking from `GET /api/v1/bookings/{id}/`. Renders green stamp, booking reference, ticket details grid, "View My Bookings" CTA.
+- `web/app/[locale]/(public)/bookings/[id]/failed/` — Server Component. Renders error icon, possible failure reasons, retry and support links.
+- i18n: `payment.fawry.*` and `payment.processing.*` added to `messages/ar.json` and `messages/en.json`. `booking.confirmed.*` and `booking.failed.*` added.
+
+### Contract
+- `GET /api/v1/bookings/{id}/` — must return `id`, `status`, `yacht_name`, `yacht_name_ar`, `start_date`, `num_passengers`, `total_amount`, `currency`, `departure_port`.
+- Payment page relies on `fawry_ref` being passed in URL query params from the booking wizard (not yet returned by the booking create endpoint — see note below).
+
+### Missing Backend Piece
+The `POST /api/v1/bookings/` response (`BookingDetailSerializer`) does not currently return a `fawry_reference` field. When the Fawry payment initiation endpoint is built (`POST /api/v1/payments/initiate/` or similar), it should return `{ fawry_ref: "SC-XXXXXX", amount, currency, booking_id }`. The booking wizard should navigate to `/yachts/{id}/book/payment?booking_id=...&fawry_ref=...&amount=...&currency=...` after payment initiation.
+
+### How to Test
+```bash
+# Payment display page (manual URL construction)
+open http://localhost:3000/ar/yachts/{id}/book/payment?booking_id={uuid}&fawry_ref=SC-12345678&amount=5400&currency=EGP
+
+# Processing page (polls until status changes)
+open http://localhost:3000/ar/yachts/{id}/book/processing?booking_id={uuid}
+
+# Confirmed / Failed (server-fetched)
+open http://localhost:3000/ar/bookings/{uuid}/confirmed
+open http://localhost:3000/ar/bookings/{uuid}/failed
+```
+
+### Response/Output Shape
+Payment display reads: `?booking_id=&fawry_ref=SC-XXXXXX&amount=5400&currency=EGP`
+Processing polls: `GET /api/v1/bookings/{id}/` → `{ id, status }`
+Confirmed/Failed fetch: `GET /api/v1/bookings/{id}/` → `BookingDetailSerializer`
+
+---
+
+## HANDOFF-2026-05-17-001
+
+**Status:** READY
+**From:** django-api-agent
+**To:** nextjs-page-agent, frontend-agent
+**Sprint:** 12A
+**Feature:** Yacht Reviews — end-to-end
+
+### What Was Completed
+- `YachtReview` model in `backend/apps/bookings/models.py` — UUID PK, `unique_together=[['yacht','customer']]`, rating 1–5, title, body, FK to Yacht/User/Booking.
+- `average_rating` (DecimalField 3,2) and `review_count` added to `Yacht`; recalculated atomically after each review write.
+- Migration `0006_add_yacht_review_and_rating.py` generated and passes `manage.py check`.
+- `GET /api/v1/yachts/{id}/reviews/` — public, CursorPagination, ordered `-created_at`.
+- `POST /api/v1/yachts/{id}/reviews/` — `IsAuthenticated + IsCustomerRole`; 403 `NO_COMPLETED_BOOKING`; 409 `ALREADY_REVIEWED`.
+- `GET /api/v1/yachts/reviews/` — owner-only across all their yachts.
+- `IsCustomerRole` added to `backend/apps/bookings/permissions.py`.
+- 13 tests in `backend/apps/bookings/tests/test_reviews.py` — all collect cleanly; run with Docker DB.
+- `web/app/[locale]/(public)/yachts/[id]/page.tsx` — wired to live reviews SSR (3 items), mock fallback when empty.
+- `web/app/[locale]/(public)/yachts/[id]/reviews/page.tsx` — full reviews Server Component.
+- `web/app/[locale]/(public)/yachts/[id]/reviews/write/page.tsx` + `PageClient.tsx` — star picker + POST + success state.
+- `yachts.reviews.*` keys added to both message files.
+
+### Contract
+- `GET /api/v1/yachts/{id}/reviews/` → `{ results: [{id, rating, title, body, customer_name, created_at}], next_cursor, has_more }`
+- `POST /api/v1/yachts/{id}/reviews/` ← `{ rating: 1-5, title?: string, body: string }` → 201 / 403 / 409
+- `GET /api/v1/yachts/reviews/` → same shape, owner-only (IsOwnerRole)
+
+### How to Test
+```bash
+cd backend && python3 manage.py check
+cd backend && python3 -m pytest apps/bookings/tests/test_reviews.py --collect-only
+cd web && npx tsc --noEmit 2>&1 | grep reviews  # should be empty
+```
+
+### Response/Output Shape
+```json
+{ "results": [{ "id": "uuid", "rating": 5, "title": "...", "body": "...", "customer_name": "Ahmed M.", "created_at": "2026-05-17T..." }], "next_cursor": null, "has_more": false }
+```

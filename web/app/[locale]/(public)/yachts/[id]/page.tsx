@@ -81,7 +81,16 @@ const AMENITY_KEYS = [
   'bathroom',
 ] as const
 
-const REVIEWS = [
+interface YachtReview {
+  id: string
+  rating: number
+  title: string
+  body: string
+  customer_name: string
+  created_at: string
+}
+
+const MOCK_REVIEWS = [
   {
     nameAr: 'عمرو عبد الحليم',
     nameEn: 'Amr Abd Al-Halim',
@@ -114,6 +123,21 @@ async function fetchYacht(id: string): Promise<YachtDetail | null> {
     return (await res.json()) as YachtDetail
   } catch {
     return null
+  }
+}
+
+async function fetchReviews(yachtId: string, pageSize = 3): Promise<YachtReview[]> {
+  const apiUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
+  try {
+    const res = await fetch(
+      `${apiUrl}/api/v1/yachts/${yachtId}/reviews/?page_size=${pageSize}`,
+      { cache: 'no-store', headers: { Accept: 'application/json' } },
+    )
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.results ?? []) as YachtReview[]
+  } catch {
+    return []
   }
 }
 
@@ -173,7 +197,7 @@ function galleryImages(yacht: YachtDetail): string[] {
 export default async function YachtDetailPage({
   params: { locale, id },
 }: PageProps): Promise<React.ReactElement> {
-  const yacht = await fetchYacht(id)
+  const [yacht, liveReviews] = await Promise.all([fetchYacht(id), fetchReviews(id, 3)])
   if (!yacht) notFound()
 
   setRequestLocale(locale)
@@ -363,24 +387,48 @@ export default async function YachtDetailPage({
           <div className="subhead" id="reviews">
             {tDetail('reviewsHeading', { rating: displayRating.toFixed(2), count: displayReviewCount })}
           </div>
-          {REVIEWS.map((r, i) => (
-            <div key={i} className="review">
-              <div className="author">
-                <div className="name">{locale === 'ar' ? r.nameAr : r.nameEn}</div>
-                <div className="date">{r.date}</div>
-                <div className="stars">
-                  {'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}
+          {liveReviews.length > 0 ? (
+            <>
+              {liveReviews.map((r) => (
+                <div key={r.id} className="review">
+                  <div className="author">
+                    <div className="name">{r.customer_name}</div>
+                    <div className="date">{r.created_at.slice(0, 10)}</div>
+                    <div className="stars">
+                      {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}
+                    </div>
+                  </div>
+                  <div className="body">
+                    {r.title && <div className="excerpt">«{r.title}»</div>}
+                    <p>{r.body}</p>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            MOCK_REVIEWS.map((r, i) => (
+              <div key={i} className="review">
+                <div className="author">
+                  <div className="name">{locale === 'ar' ? r.nameAr : r.nameEn}</div>
+                  <div className="date">{r.date}</div>
+                  <div className="stars">
+                    {'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)}
+                  </div>
+                </div>
+                <div className="body">
+                  <div className="excerpt">«{tDetail(r.excerptKey)}»</div>
+                  <p>{tDetail(r.bodyKey)}</p>
                 </div>
               </div>
-              <div className="body">
-                <div className="excerpt">«{tDetail(r.excerptKey)}»</div>
-                <p>{tDetail(r.bodyKey)}</p>
-              </div>
-            </div>
-          ))}
-          <button className="btn btn-ghost" style={{ marginTop: 20 }}>
+            ))
+          )}
+          <Link
+            href={`/${locale}/yachts/${yacht.id}/reviews`}
+            className="btn btn-ghost"
+            style={{ marginTop: 20, display: 'inline-block' }}
+          >
             {tDetail('viewAllReviews', { count: displayReviewCount })}
-          </button>
+          </Link>
 
           {/* Location map placeholder */}
           <div className="subhead">{t('detail.location')}</div>

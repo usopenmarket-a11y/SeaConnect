@@ -14,6 +14,7 @@ Sprint 3 will add:
 """
 import uuid
 
+from django.conf import settings
 from django.db import models
 from pgvector.django import VectorField
 
@@ -114,6 +115,17 @@ class Yacht(TimeStampedModel):
         null=True,
         blank=True,
         help_text="768-dim sentence embedding for semantic search (ADR-019).",
+    )
+    # Aggregate rating — updated by YachtReviewService after each review write.
+    average_rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0,
+        help_text="Aggregate average review rating (0.00–5.00). Updated by review write-back.",
+    )
+    review_count = models.PositiveIntegerField(
+        default=0,
+        help_text="Total number of approved reviews. Updated by review write-back.",
     )
 
     class Meta:
@@ -464,3 +476,72 @@ class BlockedDate(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.yacht.name} — {self.date} (blocked)"
+
+
+# ---------------------------------------------------------------------------
+# Sprint 12A — YachtReview (customer review after completed booking)
+# ---------------------------------------------------------------------------
+
+
+class YachtReview(TimeStampedModel):
+    """A customer's star-rating review for a yacht.
+
+    Rules enforced here and in the service layer:
+      - Only one review per (yacht, customer) pair (unique_together).
+      - Customer must have a ``completed`` Booking for the yacht before
+        submitting — enforced in the view/service, not at the model level.
+      - rating is 1–5 (PositiveSmallIntegerField; validated in the serializer).
+      - After each review is created the service recalculates
+        ``Yacht.average_rating`` and ``Yacht.review_count`` in the same
+        atomic transaction.
+
+    ADR-001: UUID PK.
+    ADR-013: list endpoints use CursorPagination ordered by -created_at.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    yacht = models.ForeignKey(
+        Yacht,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+        help_text="Yacht being reviewed.",
+    )
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reviews_given",
+        help_text="Customer who wrote the review.",
+    )
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="review",
+        help_text="Completed booking that unlocks the review privilege.",
+    )
+    rating = models.PositiveSmallIntegerField(
+        help_text="Star rating 1–5.",
+    )
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Short review headline (optional).",
+    )
+    body = models.TextField(
+        help_text="Full review text.",
+    )
+
+    class Meta:
+        db_table = "bookings_yacht_review"
+        unique_together = [["yacht", "customer"]]
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["yacht", "created_at"], name="idx_review_yacht_date"),
+            models.Index(fields=["customer"], name="idx_review_customer"),
+        ]
+        verbose_name = "Yacht Review"
+        verbose_name_plural = "Yacht Reviews"
+
+    def __str__(self) -> str:
+        return f"{self.customer_id} → {self.yacht.name} ({self.rating}★)"
