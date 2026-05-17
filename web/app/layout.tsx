@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { GoogleAnalytics } from '@next/third-parties/google'
 import { SeaScene } from '@/components/layout/SeaScene'
 import '@/globals.css'
 
@@ -41,7 +40,10 @@ export default function RootLayout({
         <SeaScene />
         {children}
         {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+          <script
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+          />
         )}
       </body>
     </html>
