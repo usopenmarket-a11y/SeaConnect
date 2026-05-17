@@ -1389,6 +1389,7 @@
   "map": {
     "title": "Yachts available now",
     "liveLabel": "live yacht(s)",
+    "liveMap": "LIVE MAP",
     "filterAll": "All",
     "filterMotor": "Motorboats",
     "filterSail": "Sailing",

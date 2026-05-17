@@ -59,6 +59,7 @@ export default async function MapPage({ params: { locale } }: Props) {
       filterFishing={t('filterFishing')}
       filterNile={t('filterNile')}
       liveLabel={t('liveLabel')}
+      liveMap={t('liveMap')}
       viewList={t('viewList')}
       viewDetails={t('viewDetails')}
       noYachts={t('noYachts')}

@@ -30,6 +30,7 @@ export interface LeafletMapProps {
   filterFishing: string
   filterNile: string
   liveLabel: string
+  liveMap: string
   viewList: string
   viewDetails: string
   noYachts: string
@@ -186,6 +187,7 @@ export function LeafletMap(props: LeafletMapProps) {
     filterFishing,
     filterNile,
     liveLabel,
+    liveMap,
     viewList,
     viewDetails,
     noYachts,
@@ -262,7 +264,7 @@ export function LeafletMap(props: LeafletMapProps) {
       <div className={styles.mapHeader}>
         <div>
           <div className={`${styles.mapHeaderEyebrow} mono`}>
-            LIVE MAP · الخريطة الحية
+            {liveMap}
           </div>
           <h2 className={styles.mapHeaderTitle}>{title}</h2>
         </div>

@@ -59,38 +59,43 @@ interface SpeciesEntry {
   peak: number[]   // 0-indexed month indices
   good: number[]   // 0-indexed month indices
   best: string
+  bestEn: string
   method: string
+  methodEn: string
   size: string
   depth: string
   difficulty: 'سهل' | 'متوسط' | 'صعب'
+  difficultyEn: 'Easy' | 'Medium' | 'Hard'
   region: 'red-sea' | 'med' | 'nile'
 }
 
 const FALLBACK_SPECIES: SpeciesEntry[] = [
   // Red Sea
-  { nameAr: 'حمور',            nameEn: 'Grouper',            icon: '🐟', peak: [0,1,2,9,10,11], good: [3,4,8],  best: 'نوفمبر – مارس',     method: 'قاعي · طُعم حي',          size: '2–8 كجم',      depth: '15–60م',  difficulty: 'متوسط', region: 'red-sea' },
-  { nameAr: 'كنعد',            nameEn: 'King Mackerel',      icon: '🐠', peak: [2,3,4,5,9,10],  good: [1,6,8],  best: 'مارس – يونيو',      method: 'سطحي · قصبة',             size: '1–4 كجم',      depth: '5–30م',   difficulty: 'سهل',   region: 'red-sea' },
-  { nameAr: 'قاروص',           nameEn: 'Sea Bass',           icon: '🐡', peak: [0,1,10,11],     good: [2,9],    best: 'ديسمبر – فبراير',   method: 'قاعي · إطار',             size: '0.5–2 كجم',    depth: '10–40م',  difficulty: 'متوسط', region: 'red-sea' },
-  { nameAr: 'سلطان إبراهيم',   nameEn: 'Red Mullet',         icon: '🐟', peak: [3,4,5,6],       good: [2,7],    best: 'أبريل – يوليو',     method: 'قاعي · شبكة',             size: '0.3–0.8 كجم',  depth: '10–30م',  difficulty: 'سهل',   region: 'red-sea' },
-  { nameAr: 'ثعلب البحر',      nameEn: 'Thresher Shark',     icon: '🦈', peak: [5,6,7,8],       good: [4,9],    best: 'يونيو – سبتمبر',    method: 'عميق · طُعم',             size: '50–200 كجم',   depth: '100+م',   difficulty: 'صعب',   region: 'red-sea' },
-  { nameAr: 'تونة',            nameEn: 'Tuna',               icon: '🐟', peak: [4,5,6,7],       good: [3,8],    best: 'مايو – أغسطس',      method: 'trolling · عميق',         size: '5–50 كجم',     depth: '50–200م', difficulty: 'صعب',   region: 'red-sea' },
-  { nameAr: 'دنيس',            nameEn: 'Dorade / Sea Bream', icon: '🐠', peak: [1,2,3,9,10],    good: [0,4,8],  best: 'فبراير – أبريل',    method: 'قاعي · طُعم',             size: '0.5–2 كجم',    depth: '10–50م',  difficulty: 'سهل',   region: 'red-sea' },
-  { nameAr: 'ببغاء البحر',     nameEn: 'Parrotfish',         icon: '🐡', peak: [5,6,7,8,9],     good: [4,10],   best: 'مايو – أكتوبر',     method: 'الغطس · يدوي',            size: '0.5–3 كجم',    depth: '2–20م',   difficulty: 'متوسط', region: 'red-sea' },
+  { nameAr: 'حمور',            nameEn: 'Grouper',            icon: '🐟', peak: [0,1,2,9,10,11], good: [3,4,8],  best: 'نوفمبر – مارس',     bestEn: 'Nov – Mar',        method: 'قاعي · طُعم حي',          methodEn: 'Bottom · live bait',       size: '2–8 kg',      depth: '15–60 m',  difficulty: 'متوسط', difficultyEn: 'Medium', region: 'red-sea' },
+  { nameAr: 'كنعد',            nameEn: 'King Mackerel',      icon: '🐠', peak: [2,3,4,5,9,10],  good: [1,6,8],  best: 'مارس – يونيو',      bestEn: 'Mar – Jun',        method: 'سطحي · قصبة',             methodEn: 'Surface · rod cast',       size: '1–4 kg',      depth: '5–30 m',   difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'red-sea' },
+  { nameAr: 'قاروص',           nameEn: 'Sea Bass',           icon: '🐡', peak: [0,1,10,11],     good: [2,9],    best: 'ديسمبر – فبراير',   bestEn: 'Dec – Feb',        method: 'قاعي · إطار',             methodEn: 'Bottom · frame rig',       size: '0.5–2 kg',    depth: '10–40 m',  difficulty: 'متوسط', difficultyEn: 'Medium', region: 'red-sea' },
+  { nameAr: 'سلطان إبراهيم',   nameEn: 'Red Mullet',         icon: '🐟', peak: [3,4,5,6],       good: [2,7],    best: 'أبريل – يوليو',     bestEn: 'Apr – Jul',        method: 'قاعي · شبكة',             methodEn: 'Bottom · net',             size: '0.3–0.8 kg',  depth: '10–30 m',  difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'red-sea' },
+  { nameAr: 'ثعلب البحر',      nameEn: 'Thresher Shark',     icon: '🦈', peak: [5,6,7,8],       good: [4,9],    best: 'يونيو – سبتمبر',    bestEn: 'Jun – Sep',        method: 'عميق · طُعم',             methodEn: 'Deep · bait',              size: '50–200 kg',   depth: '100+ m',   difficulty: 'صعب',   difficultyEn: 'Hard',   region: 'red-sea' },
+  { nameAr: 'تونة',            nameEn: 'Tuna',               icon: '🐟', peak: [4,5,6,7],       good: [3,8],    best: 'مايو – أغسطس',      bestEn: 'May – Aug',        method: 'trolling · عميق',         methodEn: 'Trolling · deep',          size: '5–50 kg',     depth: '50–200 m', difficulty: 'صعب',   difficultyEn: 'Hard',   region: 'red-sea' },
+  { nameAr: 'دنيس',            nameEn: 'Dorade / Sea Bream', icon: '🐠', peak: [1,2,3,9,10],    good: [0,4,8],  best: 'فبراير – أبريل',    bestEn: 'Feb – Apr',        method: 'قاعي · طُعم',             methodEn: 'Bottom · bait',            size: '0.5–2 kg',    depth: '10–50 m',  difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'red-sea' },
+  { nameAr: 'ببغاء البحر',     nameEn: 'Parrotfish',         icon: '🐡', peak: [5,6,7,8,9],     good: [4,10],   best: 'مايو – أكتوبر',     bestEn: 'May – Oct',        method: 'الغطس · يدوي',            methodEn: 'Diving · hand line',       size: '0.5–3 kg',    depth: '2–20 m',   difficulty: 'متوسط', difficultyEn: 'Medium', region: 'red-sea' },
   // Mediterranean
-  { nameAr: 'سمك السيف',       nameEn: 'Swordfish',          icon: '🐟', peak: [4,5,6,7],       good: [3,8],    best: 'مايو – أغسطس',      method: 'trolling · عميق',         size: '50–300 كجم',   depth: '200+م',   difficulty: 'صعب',   region: 'med' },
-  { nameAr: 'قاروص أوروبي',    nameEn: 'European Sea Bass',  icon: '🐠', peak: [8,9,10,11],     good: [0,1,7],  best: 'سبتمبر – ديسمبر',   method: 'سطحي · spinning',         size: '1–5 كجم',      depth: '5–30م',   difficulty: 'متوسط', region: 'med' },
-  { nameAr: 'عقربة',           nameEn: 'Red Scorpionfish',   icon: '🐡', peak: [2,3,4,9,10,11], good: [1,5,8],  best: 'مارس – مايو',        method: 'قاعي · إطار',             size: '0.5–1.5 كجم',  depth: '20–80م',  difficulty: 'متوسط', region: 'med' },
-  { nameAr: 'بلطي بحري',       nameEn: 'Gilthead Bream',     icon: '🐟', peak: [0,1,2,3,10,11], good: [4,9],    best: 'أكتوبر – مارس',     method: 'قاعي · طُعم',             size: '0.5–2 كجم',    depth: '5–30م',   difficulty: 'سهل',   region: 'med' },
-  { nameAr: 'ماكريل أطلسي',    nameEn: 'Atlantic Mackerel',  icon: '🐠', peak: [2,3,4,5],       good: [1,6],    best: 'مارس – يونيو',      method: 'سطحي · feather',          size: '0.3–1 كجم',    depth: '0–20م',   difficulty: 'سهل',   region: 'med' },
+  { nameAr: 'سمك السيف',       nameEn: 'Swordfish',          icon: '🐟', peak: [4,5,6,7],       good: [3,8],    best: 'مايو – أغسطس',      bestEn: 'May – Aug',        method: 'trolling · عميق',         methodEn: 'Trolling · deep',          size: '50–300 kg',   depth: '200+ m',   difficulty: 'صعب',   difficultyEn: 'Hard',   region: 'med' },
+  { nameAr: 'قاروص أوروبي',    nameEn: 'European Sea Bass',  icon: '🐠', peak: [8,9,10,11],     good: [0,1,7],  best: 'سبتمبر – ديسمبر',   bestEn: 'Sep – Dec',        method: 'سطحي · spinning',         methodEn: 'Surface · spinning',       size: '1–5 kg',      depth: '5–30 m',   difficulty: 'متوسط', difficultyEn: 'Medium', region: 'med' },
+  { nameAr: 'عقربة',           nameEn: 'Red Scorpionfish',   icon: '🐡', peak: [2,3,4,9,10,11], good: [1,5,8],  best: 'مارس – مايو',        bestEn: 'Mar – May',        method: 'قاعي · إطار',             methodEn: 'Bottom · frame rig',       size: '0.5–1.5 kg',  depth: '20–80 m',  difficulty: 'متوسط', difficultyEn: 'Medium', region: 'med' },
+  { nameAr: 'بلطي بحري',       nameEn: 'Gilthead Bream',     icon: '🐟', peak: [0,1,2,3,10,11], good: [4,9],    best: 'أكتوبر – مارس',     bestEn: 'Oct – Mar',        method: 'قاعي · طُعم',             methodEn: 'Bottom · bait',            size: '0.5–2 kg',    depth: '5–30 m',   difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'med' },
+  { nameAr: 'ماكريل أطلسي',    nameEn: 'Atlantic Mackerel',  icon: '🐠', peak: [2,3,4,5],       good: [1,6],    best: 'مارس – يونيو',      bestEn: 'Mar – Jun',        method: 'سطحي · feather',          methodEn: 'Surface · feather lure',   size: '0.3–1 kg',    depth: '0–20 m',   difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'med' },
   // Nile
-  { nameAr: 'بياض',            nameEn: 'Nile Catfish',       icon: '🐟', peak: [3,4,5,6,7],     good: [2,8],    best: 'أبريل – أغسطس',     method: 'قاعي · طُعم طازج',        size: '1–10 كجم',     depth: '2–8م',    difficulty: 'سهل',   region: 'nile' },
-  { nameAr: 'بلطي نيلي',       nameEn: 'Nile Tilapia',       icon: '🐡', peak: [0,1,2,3,4,5,6,7,8,9,10,11], good: [], best: 'طوال العام', method: 'عموم · كل الطرق', size: '0.3–2 كجم', depth: '1–5م',   difficulty: 'سهل',   region: 'nile' },
-  { nameAr: 'قرموط',           nameEn: 'Vundu Catfish',      icon: '🐠', peak: [5,6,7,8,9],     good: [4,10],   best: 'يونيو – أكتوبر',    method: 'ليلي · طُعم',             size: '5–30 كجم',     depth: '3–10م',   difficulty: 'متوسط', region: 'nile' },
-  { nameAr: 'مبروك',           nameEn: 'Common Carp',        icon: '🐟', peak: [2,3,4,9,10],    good: [1,5,8],  best: 'مارس – مايو',        method: 'قاعي · عجين',             size: '1–8 كجم',      depth: '2–6م',    difficulty: 'سهل',   region: 'nile' },
+  { nameAr: 'بياض',            nameEn: 'Nile Catfish',       icon: '🐟', peak: [3,4,5,6,7],     good: [2,8],    best: 'أبريل – أغسطس',     bestEn: 'Apr – Aug',        method: 'قاعي · طُعم طازج',        methodEn: 'Bottom · fresh bait',      size: '1–10 kg',     depth: '2–8 m',    difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'nile' },
+  { nameAr: 'بلطي نيلي',       nameEn: 'Nile Tilapia',       icon: '🐡', peak: [0,1,2,3,4,5,6,7,8,9,10,11], good: [], best: 'طوال العام', bestEn: 'Year-round',  method: 'عموم · كل الطرق', methodEn: 'All methods',              size: '0.3–2 kg',    depth: '1–5 m',    difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'nile' },
+  { nameAr: 'قرموط',           nameEn: 'Vundu Catfish',      icon: '🐠', peak: [5,6,7,8,9],     good: [4,10],   best: 'يونيو – أكتوبر',    bestEn: 'Jun – Oct',        method: 'ليلي · طُعم',             methodEn: 'Night · bait',             size: '5–30 kg',     depth: '3–10 m',   difficulty: 'متوسط', difficultyEn: 'Medium', region: 'nile' },
+  { nameAr: 'مبروك',           nameEn: 'Common Carp',        icon: '🐟', peak: [2,3,4,9,10],    good: [1,5,8],  best: 'مارس – مايو',        bestEn: 'Mar – May',        method: 'قاعي · عجين',             methodEn: 'Bottom · dough bait',      size: '1–8 kg',      depth: '2–6 m',    difficulty: 'سهل',   difficultyEn: 'Easy',   region: 'nile' },
 ]
 
-const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-const MONTHS_EN = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+const monthLabel = (i: number, locale: string): string =>
+  new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', { month: 'short' })
+    .format(new Date(2026, i, 1))
+    .toUpperCase()
 
 interface Region {
   id: 'red-sea' | 'med' | 'nile'
@@ -143,8 +148,8 @@ export function FishingGuideClient({
   const isGood  = (sp: SpeciesEntry): boolean => sp.good.includes(activeMonthIdx)
   const isInSeason = (sp: SpeciesEntry): boolean => isPeak(sp) || isGood(sp)
 
-  const difficultyClass = (d: SpeciesEntry['difficulty']): 'easy' | 'med' | 'hard' =>
-    d === 'سهل' ? 'easy' : d === 'صعب' ? 'hard' : 'med'
+  const difficultyClass = (d: SpeciesEntry['difficultyEn']): 'easy' | 'med' | 'hard' =>
+    d === 'Easy' ? 'easy' : d === 'Hard' ? 'hard' : 'med'
 
   return (
     <div className="fishing-guide-layout page-glass">
@@ -181,7 +186,7 @@ export function FishingGuideClient({
       <div className="month-strip-wrap">
         <div className="month-strip-label">{t('monthSelectLabel')}</div>
         <div className="month-strip" role="tablist" aria-label={t('monthTabsLabel')}>
-          {MONTHS_AR.map((m, i) => (
+          {Array.from({ length: 12 }, (_, i) => (
             <button
               key={i}
               role="tab"
@@ -189,8 +194,8 @@ export function FishingGuideClient({
               className={`month-btn${activeMonthIdx === i ? ' active' : ''}`}
               onClick={() => setActiveMonthIdx(i)}
             >
-              <span className="month-ar">{m}</span>
-              <span className="month-en">{MONTHS_EN[i]}</span>
+              <span className="month-ar">{monthLabel(i, 'ar')}</span>
+              <span className="month-en">{monthLabel(i, 'en')}</span>
             </button>
           ))}
         </div>
@@ -219,8 +224,8 @@ export function FishingGuideClient({
           <div className="season-label" style={{ color: 'var(--muted)' }}>{t('summary.off')}</div>
         </div>
         <div className="season-month-label">
-          <div className="season-month-ar">{MONTHS_AR[activeMonthIdx]}</div>
-          <div className="season-month-en">{MONTHS_EN[activeMonthIdx]} 2026</div>
+          <div className="season-month-ar">{monthLabel(activeMonthIdx, 'ar')}</div>
+          <div className="season-month-en">{monthLabel(activeMonthIdx, 'en')} 2026</div>
         </div>
       </div>
 
@@ -246,11 +251,11 @@ export function FishingGuideClient({
               <div className="species-info-grid">
                 <div className="sinfo">
                   <span className="sinfo-label">{t('species.bestSeason')}</span>
-                  <span className="sinfo-val">{sp.best}</span>
+                  <span className="sinfo-val">{locale === 'ar' ? sp.best : sp.bestEn}</span>
                 </div>
                 <div className="sinfo">
                   <span className="sinfo-label">{t('species.method')}</span>
-                  <span className="sinfo-val">{sp.method}</span>
+                  <span className="sinfo-val">{locale === 'ar' ? sp.method : sp.methodEn}</span>
                 </div>
                 <div className="sinfo">
                   <span className="sinfo-label">{t('species.size')}</span>
@@ -261,9 +266,9 @@ export function FishingGuideClient({
                   <span className="sinfo-val mono">{sp.depth}</span>
                 </div>
               </div>
-              <div className={`difficulty-tag ${difficultyClass(sp.difficulty)}`}>
-                {sp.difficulty === 'سهل' ? '🟢' : sp.difficulty === 'صعب' ? '🔴' : '🟡'}
-                {' '}{sp.difficulty}
+              <div className={`difficulty-tag ${difficultyClass(sp.difficultyEn)}`}>
+                {sp.difficultyEn === 'Easy' ? '🟢' : sp.difficultyEn === 'Hard' ? '🔴' : '🟡'}
+                {' '}{locale === 'ar' ? sp.difficulty : sp.difficultyEn}
               </div>
             </div>
           )

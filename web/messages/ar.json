@@ -1389,6 +1389,7 @@
   "map": {
     "title": "قوارب متاحة الآن",
     "liveLabel": "قارب مباشر",
+    "liveMap": "الخريطة الحية",
     "filterAll": "الكل",
     "filterMotor": "لنشات",
     "filterSail": "شراعي",
