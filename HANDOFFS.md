@@ -2399,3 +2399,186 @@ cd admin && npx tsc --noEmit                   # 0 errors
 ```json
 { "gtv_total": "284750.00", "gtv_currency": "EGP", "revenue_total": "34170.00", "bookings_total": 342, "active_yachts": 18, "active_vendors": 7, "mom_gtv_delta": 0.22 }
 ```
+
+---
+
+## HANDOFF-2026-05-17-002
+
+**Status:** DONE
+**From:** admin-portal-agent
+**To:** qa-agent, sprint-planning-coordinator
+**Sprint:** 13C+D
+**Feature:** Admin payout approvals + user management pages
+
+### What Was Completed
+- Sprint 13C — `admin/app/[locale]/payouts/` — payout approvals page with status tabs (Scheduled / Processing / Paid / Failed), summary card showing total scheduled amount and pending count, per-row Approve button with confirmation dialog, SWR fetch from `GET /api/v1/admin/payouts/?status=...`, optimistic status update on approve.
+- Sprint 13D — `admin/app/[locale]/users/` — user management page with debounced email search (300ms), user table with role badge (colour-coded by role), active/suspended pill, KYC status pill for owners, suspend/unsuspend toggle with confirmation dialog, role reassignment via dropdown with confirmation dialog, optimistic UI updates.
+- Backend `POST /api/v1/admin/payouts/{id}/approve/` — already implemented in `backend/apps/payments/views.py` (AdminPayoutApproveView), sets status `scheduled → processing`, logs action.
+- Backend `GET /api/v1/admin/users/`, `POST /api/v1/admin/users/{id}/suspend/`, `POST /api/v1/admin/users/{id}/unsuspend/`, `PATCH /api/v1/admin/users/{id}/role/` — all already implemented in `backend/apps/accounts/views.py`.
+- `admin/components/AdminSidebar.tsx` — added `الموافقة على المدفوعات` (href: `payouts`) and `إدارة المستخدمين` (href: `users`) links to moderationGroup; removed duplicate `العملاء` entry from marketplaceGroup.
+- i18n keys `admin.payouts.*` and `admin.users.*` already present in both `admin/messages/ar.json` and `admin/messages/en.json`.
+- `npx tsc --noEmit` passes with zero errors.
+
+### Contract
+- `GET /api/v1/admin/payouts/?status=scheduled` → `{ results: [{id, owner_name, owner_email, amount, currency, status, reference, payment_method, scheduled_date, paid_at, created_at}], next_cursor, has_more }`
+- `POST /api/v1/admin/payouts/{id}/approve/` → updated payout object with `status: "processing"`
+- `GET /api/v1/admin/users/?search=...` → `{ results: [{id, email, first_name, last_name, role, is_active, is_verified, created_at, region_name, kyc_status}], next_cursor, has_more }`
+- `POST /api/v1/admin/users/{id}/suspend/` → updated user object with `is_active: false`
+- `POST /api/v1/admin/users/{id}/unsuspend/` → updated user object with `is_active: true`
+- `PATCH /api/v1/admin/users/{id}/role/` ← `{ role: "customer"|"owner"|"vendor" }` → updated user object
+
+### How to Test
+```bash
+cd admin && npx tsc --noEmit   # must pass with 0 errors
+# Load admin portal at http://localhost:3001/ar/payouts
+# Load admin portal at http://localhost:3001/ar/users
+```
+
+### Response/Output Shape
+```json
+{ "results": [{ "id": "uuid", "owner_name": "Ahmed M.", "amount": "12500.00", "currency": "EGP", "status": "scheduled", "reference": "PAYOUT-2026-05-001", "payment_method": "Instapay", "scheduled_date": "2026-05-20" }], "next_cursor": null, "has_more": false }
+```
+
+---
+
+## HANDOFF-2026-05-17-013B
+
+**Status:** DONE
+**From:** django-model-agent
+**To:** api-endpoint-agent, nextjs-page-agent
+**Sprint:** 13B
+**Feature:** Dispute model + admin disputes UI
+
+### What Was Completed
+- `Dispute` model confirmed in `backend/apps/bookings/models.py` — UUID PK, `TimeStampedModel`, `DisputeStatus` TextChoices (open/investigating/resolved/closed), FK to `Booking` (PROTECT), FK to `raised_by` user (PROTECT), FK to `resolved_by` user (SET_NULL, nullable), `reason` CharField(500), `resolution` TextField(blank), `resolved_at` DateTimeField(nullable). Three DB indexes: `idx_dispute_status`, `idx_dispute_booking`, `idx_dispute_raised_by`.
+- Migration `backend/apps/bookings/migrations/0007_add_dispute_model.py` exists and is current (makemigrations --check reports no changes needed).
+- Serializers in `backend/apps/bookings/serializers.py`: `DisputeSerializer` (read — `booking_id`, `booking_ref`, `raised_by_name`, `reason`, `status`, `resolution`, `created_at`), `DisputeCreateSerializer` (write — `reason` only, 10–500 chars), `DisputeResolveSerializer` (write — `resolution` only, 5–5000 chars).
+- Views in `backend/apps/bookings/views.py`: `DisputeCreateView` (`POST /api/v1/bookings/{booking_id}/dispute/` — IsAuthenticated, party-check: booking.customer or yacht.owner only), `AdminDisputeListView` (`GET /api/v1/admin/disputes/?status=...` — IsAdminUser, CursorPagination), `AdminDisputeResolveView` (`POST /api/v1/admin/disputes/{id}/resolve/` — IsAdminUser, sets status/resolved_by/resolved_at atomically).
+- All three URLs registered in `backend/apps/bookings/urls.py`.
+- `DisputeAdmin` registered in `backend/apps/bookings/admin.py` with `list_display`, `search_fields`, `list_filter`, `raw_id_fields`, `readonly_fields`, and a fieldset separating dispute creation from resolution fields.
+- 5 tests in `backend/apps/bookings/tests/test_disputes.py` — all discovered by pytest; require Docker PostgreSQL to execute. Cover: customer raises dispute on own booking → 201; stranger → 403; admin lists → 200 with CursorPagination shape; non-admin lists → 403; admin resolves → status=resolved, resolution stored, resolved_by set.
+- Admin portal `admin/app/[locale]/disputes/page.tsx` (Server Component shell) and `PageClient.tsx` (SWR fetch, status filter tabs with `all/open/investigating/resolved/closed`, per-row inline resolve form with textarea + confirm, status badges colour-coded: open=red, investigating=amber, resolved=green, closed=grey) — full implementation matching KYC queue visual pattern.
+- `admin/components/AdminSidebar.tsx` already has `disputes` link (href: `disputes`) in the `moderationGroup` — no changes needed.
+- i18n keys `admin.disputes.*` (18 keys) already in both `admin/messages/ar.json` and `admin/messages/en.json` — Arabic first.
+
+### Contract for api-endpoint-agent
+No further backend work required for Sprint 13B — all dispute endpoints are live. Future sprints may add dispute status transitions (open → investigating) as a separate admin PATCH endpoint.
+
+- `POST /api/v1/bookings/{booking_id}/dispute/` body: `{reason: string}` → 201 `DisputeSerializer` or 403 if caller is not a booking party.
+- `GET /api/v1/admin/disputes/?status=open` → 200 `{results, next_cursor, has_more}`.
+- `POST /api/v1/admin/disputes/{id}/resolve/` body: `{resolution: string}` → 200 `DisputeSerializer` with `status="resolved"`.
+
+### How to Test
+```bash
+# System check (no DB needed):
+cd /mnt/e/Work/Projects/SeaConnect/backend && python3 manage.py check
+# → System check identified no issues (0 silenced)
+
+# Migration check (no DB needed):
+cd /mnt/e/Work/Projects/SeaConnect/backend && python3 manage.py makemigrations --check
+# → No changes detected
+
+# TypeScript check on admin portal:
+cd /mnt/e/Work/Projects/SeaConnect/admin && npx tsc --noEmit
+# → (no output = 0 errors)
+
+# Pytest collection (confirms tests are loadable):
+cd /mnt/e/Work/Projects/SeaConnect/backend && python3 -m pytest apps/bookings/tests/test_disputes.py --collect-only
+# → 5 tests collected
+
+# Full integration tests (inside Docker):
+docker compose run --rm api pytest apps/bookings/tests/test_disputes.py -v
+# Expected: 5 passed
+```
+
+### Build Verification (this session)
+- `python3 manage.py check` — PASS, 0 issues (outside Docker, 2026-05-17).
+- `python3 manage.py makemigrations --check` — PASS, no changes detected.
+- `npx tsc --noEmit` (admin/) — PASS, 0 errors.
+- 5 dispute tests collected by pytest with correct names.
+
+### Response/Output Shape
+```json
+// POST /api/v1/bookings/{id}/dispute/ → 201
+{
+  "id": "uuid",
+  "booking_id": "uuid",
+  "booking_ref": "A1B2C3D4",
+  "raised_by_name": "Ahmed Mohamed",
+  "reason": "The yacht was not as described.",
+  "status": "open",
+  "resolution": "",
+  "created_at": "2026-05-17T12:00:00Z"
+}
+
+// GET /api/v1/admin/disputes/ → 200
+{ "results": [...], "next_cursor": null, "has_more": false }
+
+// POST /api/v1/admin/disputes/{id}/resolve/ → 200
+{ ..., "status": "resolved", "resolution": "Partial refund issued." }
+```
+
+---
+
+## HANDOFF-2026-05-17-002
+
+**Status:** DONE
+**From:** api-endpoint-agent
+**To:** nextjs-page-agent
+**Sprint:** 13E
+**Feature:** Competitions registration and results flow
+
+### What Was Completed
+- Backend: `RegisterView` (POST `/api/v1/competitions/{id}/register/`), `ResultsView` (GET `/api/v1/competitions/{id}/results/`), `MyEntryView` (GET `/api/v1/competitions/{id}/my-entry/`) — all already implemented in `backend/apps/competitions/views.py` and routed in `urls.py`.
+- Frontend: `CompetitionDetailPage` and `CompetitionResultsPage` client components already implemented; SSR pages at `web/app/[locale]/(public)/competitions/[id]/page.tsx` and `web/app/[locale]/(public)/competitions/[id]/results/page.tsx` already exist.
+- i18n: Added 18 missing keys to both `web/messages/en.json` and `web/messages/ar.json` under the `competitions` namespace (Arabic-first): `registrationClosed`, `competitionFull`, `results`, `leaderboard`, `rank`, `catchWeight`, `upcoming`, `noResults`, `participant`, `status`, `prizePool`, `entryFee`, `description`, `rules`, `registrationDeadline`, `backToList`, `backToDetail`, `viewResults`, `viewDetails`.
+- Tests: 20 tests in `backend/apps/competitions/tests/test_entries.py` covering all three views (happy path, 401, 409, 400, 404 variants).
+
+### Contract
+- `POST /api/v1/competitions/{id}/register/` → 201 (MyEntrySerializer), 400 REGISTRATION_CLOSED / COMPETITION_FULL, 409 ALREADY_REGISTERED, 401 unauthenticated.
+- `GET /api/v1/competitions/{id}/results/` → 200 `{"status":"upcoming","results":[]}` if not ended, else `{"status":"completed","results":[...],"competition_id":"..."}`.
+- `GET /api/v1/competitions/{id}/my-entry/` → 200 MyEntrySerializer or 404.
+
+### How to Test
+```bash
+cd backend && python3 -m pytest apps/competitions/tests/test_entries.py -v
+# Expected: 20 passed
+
+cd web && npx tsc --noEmit
+# Only pre-existing error in register/PageClient.tsx — no competitions errors
+```
+
+### Build Verification (this session)
+- `python3 manage.py check` — PASS, 0 issues.
+- `python3 -m pytest apps/competitions/tests/test_entries.py --collect-only` — 20 tests collected.
+- `npx tsc --noEmit` (web/) — no new errors (pre-existing register PageClient.tsx error only).
+
+### Response/Output Shape
+```json
+// POST /api/v1/competitions/{id}/register/ → 201
+{
+  "id": "uuid",
+  "competition": "uuid",
+  "competition_title": "بطولة صيد البحر الأحمر",
+  "competition_title_en": "Red Sea Fishing Tournament",
+  "user": "uuid",
+  "user_name": "Ahmed Mohamed",
+  "status": "registered",
+  "catch_weight": null,
+  "rank": null,
+  "created_at": "2026-05-17T15:30:00Z"
+}
+
+// GET /api/v1/competitions/{id}/results/ (upcoming)
+{ "status": "upcoming", "results": [], "competition_id": "uuid" }
+
+// GET /api/v1/competitions/{id}/results/ (completed)
+{
+  "status": "completed",
+  "competition_id": "uuid",
+  "results": [
+    { "id": "uuid", "rank": 1, "participant_name": "Ahmed Mohamed", "catch_weight": "5.00", "status": "confirmed" },
+    { "id": "uuid", "rank": 2, "participant_name": "Sara Hassan", "catch_weight": "3.50", "status": "confirmed" }
+  ]
+}
+```

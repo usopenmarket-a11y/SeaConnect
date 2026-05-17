@@ -41,7 +41,6 @@ const NAV_GROUPS: NavGroup[] = [
       { ar: 'القوارب', key: 'boats', href: 'boats', count: 183 },
       { ar: 'البائعون', key: 'vendors', href: 'vendors', count: 83 },
       { ar: 'البطولات', key: 'competitions', href: 'competitions', count: 12 },
-      { ar: 'العملاء', key: 'users', href: 'users', count: 2543 },
     ],
   },
   {
@@ -51,6 +50,8 @@ const NAV_GROUPS: NavGroup[] = [
       { ar: 'قيد المراجعة', key: 'pending', href: 'pending', count: 7 },
       { ar: 'البلاغات', key: 'disputes', href: 'disputes', count: 2 },
       { ar: 'تحقق KYC', key: 'kycQueue', href: 'kyc', count: 14 },
+      { ar: 'الموافقة على المدفوعات', key: 'payouts', href: 'payouts', count: null },
+      { ar: 'إدارة المستخدمين', key: 'userManagement', href: 'users', count: null },
     ],
   },
 ]

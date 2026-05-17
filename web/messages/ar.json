@@ -521,7 +521,26 @@
     "registerError": "تعذّر التسجيل، حاول مرة أخرى",
     "registerLoginRequired": "سجّل دخولك للمشاركة",
     "full": "المسابقة ممتلئة",
-    "closed": "التسجيل مغلق"
+    "closed": "التسجيل مغلق",
+    "registrationClosed": "التسجيل مغلق",
+    "competitionFull": "البطولة اكتملت",
+    "results": "النتائج",
+    "leaderboard": "لوحة الشرف",
+    "rank": "الترتيب",
+    "catchWeight": "وزن الصيد",
+    "upcoming": "لم تنته بعد",
+    "noResults": "لا توجد نتائج متاحة بعد",
+    "participant": "المشارك",
+    "status": "الحالة",
+    "prizePool": "إجمالي الجوائز",
+    "entryFee": "رسوم الاشتراك",
+    "description": "عن البطولة",
+    "rules": "القواعد",
+    "registrationDeadline": "آخر موعد للتسجيل",
+    "backToList": "كل البطولات",
+    "backToDetail": "العودة للبطولة",
+    "viewResults": "عرض النتائج",
+    "viewDetails": "عرض البطولة"
   },
   "profile": {
     "tabs": {

@@ -632,7 +632,26 @@
     "registerError": "Registration failed, please try again",
     "registerLoginRequired": "Log in to register",
     "full": "Competition full",
-    "closed": "Registration closed"
+    "closed": "Registration closed",
+    "registrationClosed": "Registration closed",
+    "competitionFull": "Competition is full",
+    "results": "Results",
+    "leaderboard": "Leaderboard",
+    "rank": "Rank",
+    "catchWeight": "Catch Weight",
+    "upcoming": "Not yet ended",
+    "noResults": "No results available yet",
+    "participant": "Participant",
+    "status": "Status",
+    "prizePool": "PRIZE POOL",
+    "entryFee": "ENTRY FEE",
+    "description": "About this tournament",
+    "rules": "Rules",
+    "registrationDeadline": "REGISTRATION DEADLINE",
+    "backToList": "All Tournaments",
+    "backToDetail": "Back to Tournament",
+    "viewResults": "View Results",
+    "viewDetails": "View Tournament"
   },
   "profile": {
     "tabs": {
