@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SeaConnect · سي كونكت</title>
+  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles-v2.css?v=6" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" type="module"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="data.jsx?v=5"></script>
+  <script type="text/babel" src="i18n.jsx?v=5"></script>
+  <script type="text/babel" src="scroll.jsx?v=5"></script>
+  <script type="text/babel" src="sea-scene.jsx?v=5"></script>
+  <script type="text/babel" src="shared.jsx?v=5"></script>
+  <script type="text/babel" src="home.jsx?v=5"></script>
+  <script type="text/babel" src="detail.jsx?v=5"></script>
+  <script type="text/babel" src="booking.jsx?v=5"></script>
+  <script type="text/babel" src="altpages.jsx?v=6"></script>
+  <script type="text/babel" src="seller-pages.jsx?v=5"></script>
+  <script type="text/babel" src="dashboards.jsx?v=5"></script>
+  <script type="text/babel" src="availability.jsx?v=5"></script>
+  <script type="text/babel" src="boards.jsx?v=5"></script>
+  <script type="text/babel" src="marketplace-cart.jsx?v=5"></script>
+  <script type="text/babel" src="vendor-pages.jsx?v=5"></script>
+  <script type="text/babel" src="competition-flow.jsx?v=5"></script>
+  <script type="text/babel" src="notifications.jsx?v=5"></script>
+  <script type="text/babel" src="auth.jsx?v=5"></script>
+  <script type="text/babel" src="search.jsx?v=5"></script>
+  <script type="text/babel" src="owner-flows.jsx?v=5"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { LangProvider, useT } = window;
+
+    const TWEAKS = /*EDITMODE-BEGIN*/{
+      "density": "cozy",
+      "language": "ar"
+    }/*EDITMODE-END*/;
+
+    function AppInner() {
+      const { lang } = useT();
+      const [page, setPage] = useState(() => localStorage.getItem('sc-page') || 'home');
+      const [boat, setBoat] = useState(() => {
+        const id = localStorage.getItem('sc-boat');
+        return id ? BOATS.find(b => b.id === id) || BOATS[0] : BOATS[0];
+      });
+      const [comp, setComp] = useState(null);
+      const [division, setDivision] = useState('open');
+      const [density, setDensity] = useState(TWEAKS.density);
+      const [role, setRole] = useState(() => localStorage.getItem('sc-role') || 'customer');
+
+      useEffect(() => { localStorage.setItem('sc-role', role); }, [role]);
+      useEffect(() => {
+        localStorage.setItem('sc-page', page);
+        window.scrollTo({ top: 0 });
+        document.body.setAttribute('data-page', page);
+      }, [page]);
+      useEffect(() => { if (boat) localStorage.setItem('sc-boat', boat.id); }, [boat]);
+      useEffect(() => { document.documentElement.setAttribute('data-density', density); }, [density]);
+
+      const openBoat = (b) => { setBoat(b); setPage('detail'); };
+      const nav = (id) => setPage(id);
+
+      // ── Auth-only pages render full-screen, no nav/footer ───
+      if (page === 'splash') {
+        return <Splash onContinue={() => setPage('onboarding')} />;
+      }
+      if (page === 'onboarding') {
+        return <Onboarding onComplete={() => setPage('auth-login')} />;
+      }
+      if (page === 'auth-login') {
+        return (
+          <Login
+            onSubmit={() => setPage('home')}
+            onRegister={() => setPage('auth-register')}
+            onForgot={() => setPage('auth-login')}
+          />
+        );
+      }
+      if (page === 'auth-register') {
+        return (
+          <Register
+            onSubmit={() => setPage('home')}
+            onLogin={() => setPage('auth-login')}
+          />
+        );
+      }
+
+      // ── Role-based dashboards (admin/seller/vendor) ─────────
+      if (role === 'admin') {
+        // Allow admin to land on approvals queue
+        if (page === 'admin-approvals') {
+          return (
+            <div className="app-shell" data-screen-label="20 Admin approvals">
+              <AdminApprovals onBack={() => setPage('home')} />
+              <RoleSwitcher role={role} setRole={setRole} />
+              <TweaksPanel density={density} setDensity={setDensity} />
+            </div>
+          );
+        }
+        return (
+          <div className="app-shell" data-screen-label="09 Admin dashboard">
+            <AdminDash onApprovals={() => setPage('admin-approvals')} />
+            <RoleSwitcher role={role} setRole={setRole} />
+            <TweaksPanel density={density} setDensity={setDensity} />
+          </div>
+        );
+      }
+      if (role === 'seller') {
+        if (page === 'owner-listing') {
+          return (
+            <div className="app-shell" data-screen-label="19 Owner new listing">
+              <OwnerListingWizard onBack={() => setPage('home')} onSubmitted={() => setPage('home')} />
+              <RoleSwitcher role={role} setRole={setRole} />
+              <TweaksPanel density={density} setDensity={setDensity} />
+            </div>
+          );
+        }
+        if (page === 'owner-request') {
+          return (
+            <div className="app-shell" data-screen-label="21 Owner booking request">
+              <OwnerBookingRequest
+                onAccept={() => setPage('home')}
+                onDecline={() => setPage('home')}
+                onBack={() => setPage('home')}
+              />
+              <RoleSwitcher role={role} setRole={setRole} />
+              <TweaksPanel density={density} setDensity={setDensity} />
+            </div>
+          );
+        }
+        return (
+          <div className="app-shell" data-screen-label="10 Seller dashboard">
+            <SellerDash
+              onAddListing={() => setPage('owner-listing')}
+              onOpenRequest={() => setPage('owner-request')}
+            />
+            <RoleSwitcher role={role} setRole={setRole} />
+            <TweaksPanel density={density} setDensity={setDensity} />
+          </div>
+        );
+      }
+      if (role === 'vendor') {
+        return (
+          <div className="app-shell" data-screen-label="14 Vendor dashboard">
+            <VendorDash />
+            <RoleSwitcher role={role} setRole={setRole} />
+            <TweaksPanel density={density} setDensity={setDensity} />
+          </div>
+        );
+      }
+
+      // ── Customer surface ────────────────────────────────────
+      const screenLabel =
+        page === 'home' ? '01 Home' :
+        page === 'boats' ? '02 Boats' :
+        page === 'detail' ? '03 Boat detail' :
+        page === 'book' ? '04 Booking flow' :
+        page === 'confirm' ? '05 Confirmation' :
+        page === 'market' ? '06 Marketplace' :
+        page === 'comps' ? '07 Competitions' :
+        page === 'profile' ? '08 Profile' :
+        page === 'cart' ? '11 Cart' :
+        page === 'gear-checkout' ? '12 Gear checkout' :
+        page === 'gear-confirm' ? '13 Order confirmed' :
+        page === 'comp-detail' ? '15 Competition detail' :
+        page === 'comp-enter' ? '16 Competition entry' :
+        page === 'catch-log' ? '17 Catch log' :
+        page === 'inbox' ? '18 Inbox' :
+        page === 'search' ? '22 Search results' :
+        page === 'owner-listing' ? '19 Owner new listing (from customer)' :
+        page;
+
+      return (
+        <div className="app-shell" data-screen-label={screenLabel}>
+          <TopStrip />
+          <ScrollProgress />
+          <Nav currentPage={page} onNavigate={nav} />
+
+          {page === 'home' && <Home onNavigate={nav} onOpenBoat={openBoat} />}
+          {page === 'boats' && <BoatsPage onOpenBoat={openBoat} />}
+          {page === 'detail' && <BoatDetail boat={boat} onBook={(b) => { setBoat(b); setPage('book'); }} onNavigate={nav} />}
+          {page === 'book' && <BookingFlow boat={boat} onBack={() => setPage('detail')} onConfirm={() => setPage('confirm')} />}
+          {page === 'confirm' && <Confirmation boat={boat} onHome={() => setPage('home')} />}
+          {page === 'market' && <Marketplace onNavigate={nav} />}
+          {page === 'comps' && <CompsPage onOpenComp={(c) => { setComp(c); setPage('comp-detail'); }} />}
+          {page === 'profile' && <Profile onNavigate={nav} onOpenBoat={openBoat} />}
+          {page === 'cart' && <MarketplaceCart onCheckout={() => setPage('gear-checkout')} onBack={() => setPage('market')} onContinue={() => setPage('market')} />}
+          {page === 'gear-checkout' && <MarketplaceCheckout onConfirm={() => setPage('gear-confirm')} onBack={() => setPage('cart')} />}
+          {page === 'gear-confirm' && <MarketplaceOrderConfirmed onContinue={() => setPage('market')} onTrack={() => setPage('profile')} />}
+          {page === 'comp-detail' && <CompetitionDetail comp={comp} onBack={() => setPage('comps')} onEnter={(d) => { setDivision(d); setPage('comp-enter'); }} />}
+          {page === 'comp-enter' && <CompetitionEntryFlow comp={comp} division={division} onBack={() => setPage('comp-detail')} onConfirm={() => setPage('catch-log')} />}
+          {page === 'catch-log' && <CatchLog comp={comp} onBack={() => setPage('comps')} onSubmit={() => setPage('comps')} />}
+          {page === 'inbox' && <NotificationsInbox onBack={() => setPage('home')} />}
+          {page === 'search' && <SearchResults onOpenBoat={openBoat} onBack={() => setPage('home')} />}
+          {page === 'owner-listing' && <OwnerListingWizard onBack={() => setPage('home')} onSubmitted={() => setPage('home')} />}
+
+          <Footer />
+          <RoleSwitcher role={role} setRole={setRole} />
+          <TweaksPanel density={density} setDensity={setDensity} />
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <LangProvider initial={TWEAKS.language || 'ar'}>
+          {/* Universal animated sunset/sea — fixed at z:0 behind every page */}
+          <SeaScene />
+          <AppInner />
+        </LangProvider>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

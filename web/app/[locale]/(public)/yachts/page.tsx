@@ -14,6 +14,7 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
 import { YachtFilters } from '@/components/yachts/YachtFilters'
+import { PageHero } from '@/components/layout/PageHero'
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
 
@@ -196,29 +197,26 @@ export default async function YachtsPage({
     yacht_type: searchParams?.yacht_type,
   })
 
+  const totalCount = boats.length
+
   return (
     <div className="page-glass">
-      {/* Page header */}
-      <div
-        style={{
-          padding: '40px 48px 24px',
-          borderBottom: '2px solid var(--ink)',
-        }}
-        data-screen-label="yachts-header"
-      >
-        <div
-          className="mono"
-          style={{ fontSize: 11, letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: 8 }}
-        >
-          § ALL VESSELS · 183 VERIFIED
-        </div>
-        <h1
-          className="display"
-          style={{ fontSize: 72, lineHeight: 0.95, letterSpacing: '-0.02em', fontWeight: 700 }}
-        >
-          كل <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>القوارب</em>.
-        </h1>
-      </div>
+      <PageHero
+        kicker={locale === 'ar' ? `كل القوارب · ${totalCount} معتمد` : `ALL VESSELS · ${totalCount} VERIFIED`}
+        title={locale === 'ar'
+          ? <>كل <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>القوارب</em>.</>
+          : <>Every <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>vessel</em>.</>
+        }
+        subtitle={locale === 'ar'
+          ? 'من اليخوت الفاخرة إلى الفلوكات النيلية التقليدية، كل قارب موثّق وفنياً مفحوص.'
+          : 'From luxury yachts to traditional Nile feluccas — every boat documented and inspected.'
+        }
+        bar={[
+          { label: locale === 'ar' ? 'إجمالي القوارب' : 'Total vessels', value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, color: 'var(--clay)' }}>{totalCount}</span>, mod: 'count' },
+          { label: locale === 'ar' ? 'السواحل المشمولة' : 'Coasts covered', value: locale === 'ar' ? 'البحر الأحمر · المتوسط · النيل' : 'Red Sea · Mediterranean · Nile' },
+          { label: locale === 'ar' ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: locale === 'ar' ? 'منصة مصر البحرية' : "EGYPT'S MARITIME PLATFORM", mod: 'issue' },
+        ]}
+      />
 
       {/* Advanced filters — Client Component (pushes params to URL) */}
       <YachtFilters locale={locale} />

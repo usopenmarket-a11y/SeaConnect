@@ -91,15 +91,36 @@ export function LoginPage({ params: { locale } }: LoginPageProps): React.ReactEl
     borderColor: 'oklch(0.55 0.16 25)',
   }
 
+  const isAr = locale === 'ar'
+
   return (
-    <div className="auth-outer">
+    <div className="auth-shell">
+      {/* ── Art panel (left/right based on dir) ── */}
+      <div className="auth-art">
+        <div className="auth-art-content">
+          <div className="auth-art-brand">{isAr ? 'سي كونكت' : 'SeaConnect'}</div>
+          <div className="auth-art-quote">
+            {isAr
+              ? '«البحر لا يكذب — ولا يكذب من يبحر فيه».'
+              : '"The sea never lies — and neither do those who sail it."'}
+          </div>
+          <div className="auth-art-stamp">
+            {isAr ? 'البحر الأحمر · ٢٠٢٦' : 'RED SEA · 2026'}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Form panel ── */}
+      <div className="auth-card-wrap">
       <div className="auth-card">
 
-        {/* ── Logo ── */}
-        <div className="auth-logo">
-          <span className="mark" aria-hidden="true">س</span>
-          سي كونكت
-          <span className="en-tag">/ SeaConnect</span>
+        {/* ── Lang row ── */}
+        <div className="auth-lang-row">
+          <Link href={`/${locale === 'ar' ? 'en' : 'ar'}/login`} className="lang-switch" style={{ textDecoration: 'none' }}>
+            <span className={`lang-opt${locale === 'ar' ? ' on' : ''}`}>ع</span>
+            <span className="lang-sep">·</span>
+            <span className={`lang-opt${locale === 'en' ? ' on' : ''}`}>EN</span>
+          </Link>
         </div>
 
         {/* ── Eyebrow + Title ── */}
@@ -291,6 +312,7 @@ export function LoginPage({ params: { locale } }: LoginPageProps): React.ReactEl
           </Link>
         </div>
 
+      </div>
       </div>
 
       {/* spinner keyframe — injected inline to avoid global CSS dependency */}
