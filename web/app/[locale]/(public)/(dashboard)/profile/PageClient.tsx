@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import useSWR from 'swr'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 import { get, type PaginatedResponse } from '@/lib/api'
 
@@ -36,6 +36,7 @@ function getInitial(profile: UserProfile): string {
 
 export function ProfilePage(): React.ReactElement {
   const t = useTranslations('profile')
+  const locale = useLocale()
   const [activeTab, setActiveTab] = React.useState<TabKey>('all')
 
   const STATUS_MAP: Record<string, string> = {
@@ -70,14 +71,14 @@ export function ProfilePage(): React.ReactElement {
 
   if (profileLoading) {
     return (
-      <div dir="rtl" style={{ padding: '40px 48px' }}>
+      <div dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ padding: '40px 48px' }}>
         <div className="mono" style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: '0.1em' }}>LOADING…</div>
       </div>
     )
   }
 
   return (
-    <div dir="rtl">
+    <div dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Profile header */}
       <div className="profile-header">
         <div

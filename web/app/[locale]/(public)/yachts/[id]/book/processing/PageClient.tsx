@@ -142,7 +142,7 @@ export function PaymentProcessingPageClient({ locale }: Props): React.ReactEleme
   if (timedOut) {
     return (
       <main
-        dir="rtl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         style={{
           fontFamily: 'var(--ff-sans)',
           minHeight: '100vh',
@@ -207,7 +207,7 @@ export function PaymentProcessingPageClient({ locale }: Props): React.ReactEleme
   if (errorMsg) {
     return (
       <main
-        dir="rtl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         style={{
           fontFamily: 'var(--ff-sans)',
           minHeight: '100vh',
@@ -243,7 +243,7 @@ export function PaymentProcessingPageClient({ locale }: Props): React.ReactEleme
     <>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <main
-        dir="rtl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         style={{
           fontFamily: 'var(--ff-sans)',
           minHeight: '100vh',

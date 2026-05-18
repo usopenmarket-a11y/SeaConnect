@@ -115,7 +115,7 @@ async function fetchYacht(id: string): Promise<YachtDetail | null> {
   const apiUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
   try {
     const res = await fetch(`${apiUrl}/api/v1/yachts/${id}/`, {
-      cache: 'no-store',
+      next: { revalidate: 30 },
       headers: { Accept: 'application/json' },
     })
     if (res.status === 404) return null
@@ -131,7 +131,7 @@ async function fetchReviews(yachtId: string, pageSize = 3): Promise<YachtReview[
   try {
     const res = await fetch(
       `${apiUrl}/api/v1/yachts/${yachtId}/reviews/?page_size=${pageSize}`,
-      { cache: 'no-store', headers: { Accept: 'application/json' } },
+      { next: { revalidate: 30 }, headers: { Accept: 'application/json' } },
     )
     if (!res.ok) return []
     const data = await res.json()

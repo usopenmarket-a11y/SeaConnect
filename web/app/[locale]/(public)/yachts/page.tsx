@@ -2,7 +2,7 @@
  * Yacht list page — Server Component (ADR-003: SSR required for SEO).
  *
  * Matches BoatsPage() from Design/altpages.jsx exactly.
- * Fetches from GET /api/v1/yachts/ with cache: 'no-store'.
+ * Fetches from GET /api/v1/yachts/ with next: { revalidate: 30 }.
  * Falls back to mock data if API is unavailable.
  * Logical CSS via globals.css class names (ADR-014).
  * Strings via next-intl t() (ADR-015).
@@ -139,7 +139,7 @@ async function fetchYachts(locale: string, filters: YachtFilterParams): Promise<
   if (filters.yacht_type) apiParams.set('yacht_type', filters.yacht_type)
   try {
     const res = await fetch(`${apiUrl}/api/v1/yachts/?${apiParams.toString()}`, {
-      cache: 'no-store',
+      next: { revalidate: 30 },
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) return FALLBACK_BOATS

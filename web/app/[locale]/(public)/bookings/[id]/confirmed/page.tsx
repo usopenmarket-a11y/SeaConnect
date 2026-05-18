@@ -116,7 +116,7 @@ export default async function BookingConfirmedPage({
 
   return (
     <main
-      dir="rtl"
+      dir={locale === 'ar' ? 'rtl' : 'ltr'}
       style={{
         fontFamily: 'var(--ff-sans)',
         minHeight: '100vh',

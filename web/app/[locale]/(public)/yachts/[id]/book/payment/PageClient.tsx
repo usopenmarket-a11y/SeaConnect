@@ -9,7 +9,7 @@
  *
  * ADR-009 — no tokens in localStorage / sessionStorage. Only non-sensitive
  *            display data (fawry reference, amount) is stored here.
- * ADR-014 — Logical CSS only: ms-/me-/ps-/pe-. dir="rtl" on root.
+ * ADR-014 — Logical CSS only: ms-/me-/ps-/pe-. dir={locale === 'ar' ? 'rtl' : 'ltr'} on root.
  * ADR-015 — All strings via t() — never hardcoded.
  */
 
@@ -134,7 +134,7 @@ export function PaymentDisplayPageClient({ locale, yachtId }: Props): React.Reac
 
   return (
     <main
-      dir="rtl"
+      dir={locale === 'ar' ? 'rtl' : 'ltr'}
       style={{
         fontFamily: 'var(--ff-sans)',
         minHeight: '100vh',

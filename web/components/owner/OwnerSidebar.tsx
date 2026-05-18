@@ -34,7 +34,7 @@ export function OwnerSidebar({ locale }: Props): React.ReactElement {
         <span>سي كونكت</span>
         <span style={{ fontSize: 10, fontFamily: 'var(--ff-mono)', opacity: 0.6, letterSpacing: '0.1em', marginInlineStart: 'auto' }}>OWNER</span>
       </div>
-      <nav aria-label="Owner navigation">
+      <nav aria-label={t('ariaLabel')}>
         {items.map((item) => {
           const href = `/${locale}/${item.hrefSegment}`
           const active = pathname.startsWith(href)

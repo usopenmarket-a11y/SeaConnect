@@ -18,7 +18,9 @@ ENV/
 db.sqlite3
 media/
 staticfiles/
+.env.dev
 .env.dev.local
+.env.uat
 .env.uat.local
 .env.prod
 

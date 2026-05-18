@@ -26,7 +26,7 @@ async function fetchProduct(id: string): Promise<Product | null> {
     'http://localhost:8010'
   try {
     const res = await fetch(`${apiUrl}/api/v1/marketplace/products/${id}/`, {
-      cache: 'no-store',
+      next: { revalidate: 30 },
       headers: { Accept: 'application/json' },
     })
     if (res.status === 404) return null

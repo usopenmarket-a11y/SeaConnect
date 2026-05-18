@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -115,12 +115,12 @@ class AdminUserListView(generics.ListAPIView):  # type: ignore[type-arg]
         role   — filter by UserRole value (customer, owner, vendor, admin).
         search — case-insensitive email substring match.
 
-    Requires: Django admin role (is_staff=True).
+    Requires: IsAdminRole (role=admin).
     Pagination: CursorPagination (ADR-013), 20 per page, ordered by -created_at.
     """
 
     serializer_class = AdminUserSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
     pagination_class = SeaConnectCursorPagination
 
     def get_queryset(self):  # type: ignore[override]

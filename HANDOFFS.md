@@ -2914,3 +2914,44 @@ docker exec seaconnect-api-1 python3 -m pytest apps/marketplace/tests/test_cart.
 ### Notes for Next Agent
 - `payment_required: true` is always returned — actual Fawry payment initiation for marketplace orders is post-MVP. The frontend currently shows a confirmation screen; a future sprint should wire up `POST /api/v1/payments/initiate/` using the returned `order_id`.
 - The existing `POST /api/v1/marketplace/orders/` endpoint still works and is used by existing tests — the new `/cart/checkout/` endpoint is the canonical path going forward.
+
+---
+
+## HANDOFF-2026-05-18-SEC
+
+**Status:** READY
+**From:** security-audit-agent
+**To:** api-endpoint-agent
+**Sprint:** Pre-Launch
+**Feature:** Security fixes — must resolve before production merge
+
+### What Was Completed
+- Full OWASP Top 10 audit of the Django backend and Next.js web frontend.
+- Two critical findings and seven warnings identified.
+
+### Critical Fixes Required (BLOCKING)
+
+**Fix 1 — Permission class mismatch on four admin endpoints**
+Files:
+- `/mnt/e/Work/Projects/SeaConnect/backend/apps/bookings/views.py` lines 660, 1119, 1367
+- `/mnt/e/Work/Projects/SeaConnect/backend/apps/accounts/views.py` line 123
+
+`AdminYachtListView`, `AdminDisputeListView`, `AdminDisputeResolveView`, and `AdminUserListView` use DRF's built-in `IsAdminUser` (checks `is_staff=True`) instead of the project-custom `IsAdminRole` (checks `user.role == 'admin'`). A staff user who is not an admin-role user bypasses all four of these endpoints.
+
+Action: In `bookings/views.py`, remove `IsAdminUser` from the `rest_framework.permissions` import and add `from apps.accounts.permissions import IsAdminUser as IsAdminRole`. Update the three views to `permission_classes = [IsAdminRole]`. In `accounts/views.py`, change `AdminUserListView.permission_classes` from `[IsAdminUser]` (the DRF import on line 9) to `[IsAdminRole]` (the local import alias on line 21).
+
+**Fix 2 — `.env.dev` and `.env.uat` committed to git**
+Files: `/mnt/e/Work/Projects/SeaConnect/.env.dev`, `/mnt/e/Work/Projects/SeaConnect/.env.uat`
+
+Both files are tracked by git and contain sandbox credentials. Run `git rm --cached .env.dev .env.uat`, add both to `.gitignore`, and rename to `.env.dev.example` / `.env.uat.example`.
+
+### Warnings (next sprint, not blocking CI)
+1. `return_url` in `payments/serializers.py:13` needs a domain allowlist to prevent phishing redirects.
+2. `float()` used for Decimal pricing arithmetic in `bookings/views.py:1283,1288` — display-only but dangerous pattern.
+3. Phone OTP endpoint not yet implemented — when added, must include a per-phone-number throttle (5 attempts / 10 min).
+4. Failed login attempts not logged — wire `user_login_failed` signal or override `LoginView`.
+5. `Django==5.0.6` out of security support — upgrade to 5.2.x before prod launch.
+6. MIME type validation trusts `Content-Type` header, not file magic bytes — add Pillow-based image verification.
+
+### Contract
+ADR-009 (JWT), project `IsAdminRole` permission convention in `apps/accounts/permissions.py`.

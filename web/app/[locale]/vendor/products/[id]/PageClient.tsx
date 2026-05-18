@@ -311,7 +311,7 @@ export function EditProductClient({ locale, productId }: Props): React.ReactElem
             name="name_ar"
             label={t('nameAr')}
             required
-            dir="rtl"
+            dir={locale === 'ar' ? 'rtl' : 'ltr'}
             value={form.name_ar}
             onChange={handleChange}
             error={fieldErrors.name_ar}
@@ -395,7 +395,7 @@ export function EditProductClient({ locale, productId }: Props): React.ReactElem
             id="description_ar"
             name="description_ar"
             rows={4}
-            dir="rtl"
+            dir={locale === 'ar' ? 'rtl' : 'ltr'}
             value={form.description_ar}
             onChange={handleChange}
             className="rounded-lg border border-[--ink]/15 bg-white px-3 py-2 text-sm text-[--ink] focus:outline-none focus:ring-2 focus:ring-[--sea]"

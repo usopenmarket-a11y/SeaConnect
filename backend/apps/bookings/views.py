@@ -20,6 +20,7 @@ import logging
 import os
 import re
 import uuid as uuid_module
+from decimal import Decimal
 
 import httpx
 from django.conf import settings
@@ -30,12 +31,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status
 from rest_framework.filters import OrderingFilter
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import UserRole
+from apps.accounts.permissions import IsAdminUser as IsAdminRole
 from apps.core.models import DeparturePort
 from apps.core.pagination import SeaConnectCursorPagination
 from apps.core.throttles import SearchAnonThrottle, UploadThrottle
@@ -653,11 +655,11 @@ class AdminYachtListView(generics.ListAPIView):  # type: ignore[type-arg]
     Query parameters:
         status — filter by YachtStatus value (draft, active, inactive).
 
-    Requires: Django admin role (is_staff=True).
+    Requires: IsAdminRole (role=admin).
     Pagination: CursorPagination (ADR-013), 20 per page, ordered by -created_at.
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
     pagination_class = SeaConnectCursorPagination
 
     def get_queryset(self):  # type: ignore[override]
@@ -1112,11 +1114,11 @@ class AdminDisputeListView(generics.ListAPIView):  # type: ignore[type-arg]
     Admin-only paginated list of all disputes.
     Optional filter: ?status=open|investigating|resolved|closed
 
-    Requires: IsAdminUser (role=admin).
+    Requires: IsAdminRole (role=admin).
     Pagination: SeaConnectCursorPagination (ADR-013).
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
     pagination_class = SeaConnectCursorPagination
     serializer_class = DisputeSerializer
 
@@ -1280,16 +1282,16 @@ class YachtPricingInsightView(APIView):
         if match:
             raw = match.group(1).replace(",", "")
             try:
-                return f"{float(raw):.2f}"
-            except ValueError:
+                return f"{Decimal(raw):.2f}"
+            except Exception:
                 pass
 
         # Fallback: nudge ±5 % based on comparable availability.
-        base = float(current_price)
+        base = Decimal(str(current_price))
         if comparable_count > 0:
-            suggested = base * 1.05
+            suggested = base * Decimal("1.05")
         else:
-            suggested = base * 0.95
+            suggested = base * Decimal("0.95")
         return f"{suggested:.2f}"
 
     def _generate_insight(self, yacht: Yacht) -> dict:
@@ -1361,10 +1363,10 @@ class AdminDisputeResolveView(APIView):
       2. Set status=RESOLVED, resolution=..., resolved_by=request.user, resolved_at=now().
       3. Return updated dispute via DisputeSerializer.
 
-    Requires: IsAdminUser (role=admin).
+    Requires: IsAdminRole (role=admin).
     """
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def post(self, request: Request, id) -> Response:
         dispute = get_object_or_404(

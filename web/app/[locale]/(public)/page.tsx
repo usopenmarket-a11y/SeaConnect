@@ -13,6 +13,7 @@
  */
 
 import * as React from 'react'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
@@ -24,6 +25,28 @@ import { Reveal } from '@/components/ui/Reveal'
 
 interface HomePageProps {
   params: { locale: string }
+}
+
+export async function generateMetadata({
+  params: { locale },
+}: HomePageProps): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: 'home' })
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+    openGraph: {
+      title: t('metaTitle'),
+      description: t('metaDescription'),
+      url: `/${locale}`,
+      siteName: 'SeaConnect',
+      locale: locale === 'ar' ? 'ar_EG' : 'en_US',
+      type: 'website',
+    },
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { ar: '/ar', en: '/en' },
+    },
+  }
 }
 
 // ── Static mock data (matches Design/data.jsx) ────────────────────────────────
@@ -132,7 +155,7 @@ async function fetchFeaturedBoats(locale: string): Promise<BoatCardData[]> {
   const apiUrl = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8010'
   try {
     const res = await fetch(`${apiUrl}/api/v1/yachts/?ordering=-created_at`, {
-      cache: 'no-store',
+      next: { revalidate: 30 },
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) return FALLBACK_BOATS
@@ -161,6 +184,7 @@ export default async function HomePage({
 }: HomePageProps): Promise<React.ReactElement> {
   setRequestLocale(locale)
   const t = await getTranslations({ locale, namespace: 'home' })
+  const tGear = await getTranslations({ locale, namespace: 'home.gear' })
   const tComps = await getTranslations({ locale, namespace: 'competitions' })
   const boats = await fetchFeaturedBoats(locale)
 
@@ -252,7 +276,7 @@ export default async function HomePage({
                   <div className="title">{gearTitle}</div>
                   <div className="price">
                     <span className="num">{g.price.toLocaleString('en')}</span>
-                    <span className="unit"> EGP</span>
+                    <span className="unit"> {tGear('egp')}</span>
                   </div>
                 </div>
               </Reveal>
@@ -302,7 +326,7 @@ export default async function HomePage({
                     <span className="n num">{c.prize}</span>
                     <span className="l">{tComps('prizes')}</span>
                   </div>
-                  <button className="cta">{tComps('register')} · {c.fee} EGP</button>
+                  <button className="cta">{tComps('register')} · {c.fee} {tGear('egp')}</button>
                 </div>
               </Reveal>
             )

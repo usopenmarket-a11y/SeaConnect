@@ -71,7 +71,7 @@ async function fetchCategories(): Promise<Category[]> {
     'http://localhost:8010'
   try {
     const res = await fetch(`${apiUrl}/api/v1/marketplace/categories/`, {
-      cache: 'no-store',
+      next: { revalidate: 30 },
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) return []
@@ -103,7 +103,7 @@ async function fetchProducts(filters: ProductFilters = {}): Promise<Product[]> {
     const qs = q.toString()
     const url = `${apiUrl}/api/v1/marketplace/products/${qs ? `?${qs}` : ''}`
     const res = await fetch(url, {
-      cache: 'no-store',
+      next: { revalidate: 30 },
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) return []

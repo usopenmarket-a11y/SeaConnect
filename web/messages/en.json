@@ -9,7 +9,8 @@
     "confirm": "Confirm",
     "back": "Back",
     "next": "Next",
-    "search": "Search"
+    "search": "Search",
+    "skipToContent": "Skip to main content"
   },
   "nav": {
     "home": "Home",
@@ -86,11 +87,14 @@
         "body": "Every booking comes with travel insurance worth up to 100,000 EGP per passenger. Injuries, lost gear, or delayed return — all covered. Because trust alone isn't enough."
       }
     },
+    "metaTitle": "SeaConnect — Egypt's Maritime Leisure Platform",
+    "metaDescription": "Book fishing boats and luxury yachts along Egypt's coastline, source gear from certified vendors, and register for tournaments — all in one trusted place.",
     "gear": {
       "heading1": "Fishing gear —",
       "heading2em": "from experts",
       "heading3": "to experts",
-      "viewAll": "Full store"
+      "viewAll": "Full store",
+      "egp": "EGP"
     },
     "comps": {
       "heading1": "Upcoming",
@@ -826,7 +830,8 @@
       "bookings": "Bookings",
       "myYachts": "My yachts",
       "payouts": "Payouts",
-      "onboarding": "Verification"
+      "onboarding": "Verification",
+      "ariaLabel": "Owner navigation"
     },
     "guard": {
       "checking": "Checking permissions...",
@@ -834,6 +839,7 @@
     },
     "dashboard": {
       "title": "Owner dashboard",
+      "kpisAriaLabel": "Owner KPIs",
       "titleGreet": "Welcome,",
       "titleName": "Captain",
       "vesselStatus": "Your yacht · LIVE · Manage bookings",
@@ -1040,6 +1046,8 @@
       "nextStep": "Save & continue →",
       "submitReview": "Submit for review →",
       "submitting": "Submitting...",
+      "dismissBanner": "Dismiss",
+      "loadingAriaLabel": "Loading",
       "statusBanner": {
         "submitted": "Your application has been submitted for review · UNDER REVIEW",
         "approved": "Your application has been approved · APPROVED",
@@ -1108,6 +1116,8 @@
       "submitSuccess": "Your application has been submitted — we will review it within 24 hours.",
       "loadError": "Could not load profile data",
       "errorGeneric": "An error occurred — please try again",
+      "dismissBanner": "Dismiss",
+      "loadingAriaLabel": "Loading",
       "statusBanner": {
         "submitted": "Your application has been submitted for review · UNDER REVIEW — we will respond within 24 hours",
         "approved": "Your application has been approved · KYC APPROVED — you can now accept bookings",
@@ -1248,6 +1258,11 @@
         "phone": "Phone number",
         "email": "Email address",
         "city": "City"
+      },
+      "fieldAriaLabels": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "phone": "Phone number"
       },
       "fieldValues": {
         "fullName": "Nour Hassan",

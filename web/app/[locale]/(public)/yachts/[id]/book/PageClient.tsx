@@ -10,7 +10,7 @@
  *   4. Confirmation  — booking reference + ticket view
  *
  * ADR-009 — JWT attached via in-memory api client (never localStorage).
- * ADR-014 — Logical CSS only: ms-/me-/ps-/pe-, dir="rtl" on root.
+ * ADR-014 — Logical CSS only: ms-/me-/ps-/pe-, dir={locale === 'ar' ? 'rtl' : 'ltr'} on root.
  * ADR-015 — Arabic strings hardcoded (TODO: migrate to next-intl keys).
  * ADR-018 — Currency read from yacht.currency, never hardcoded.
  */
@@ -1097,7 +1097,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
   if (loadError) {
     return (
       <main
-        dir="rtl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         style={{ maxWidth: 640, margin: '60px auto', padding: '0 24px', textAlign: 'center' }}
       >
         <p
@@ -1116,7 +1116,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
   if (!yacht) {
     return (
       <main
-        dir="rtl"
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         style={{ maxWidth: 640, margin: '60px auto', padding: '0 24px', textAlign: 'center' }}
       >
         <div
@@ -1139,7 +1139,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
 
   if (step === 4) {
     return (
-      <main dir="rtl" style={{ fontFamily: 'var(--ff-sans)', paddingBottom: 80 }}>
+      <main dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ fontFamily: 'var(--ff-sans)', paddingBottom: 80 }}>
         {/* Header */}
         <div style={{ padding: '32px 48px 0' }}>
           <button
@@ -1182,7 +1182,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
   const nextLabel = step === 3 ? t('confirmBook') : '→'
 
   return (
-    <main dir="rtl" style={{ fontFamily: 'var(--ff-sans)', paddingBottom: 80 }}>
+    <main dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ fontFamily: 'var(--ff-sans)', paddingBottom: 80 }}>
       {/* Page header */}
       <div style={{ padding: '32px 48px 0' }}>
         <button

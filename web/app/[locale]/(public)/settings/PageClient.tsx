@@ -363,7 +363,7 @@ export function SettingsPageClient(): React.ReactElement {
                           borderRadius: 4,
                           width: 120,
                         }}
-                        aria-label="First name"
+                        aria-label={t('profile.fieldAriaLabels.firstName')}
                       />
                       <input
                         type="text"
@@ -380,7 +380,7 @@ export function SettingsPageClient(): React.ReactElement {
                           borderRadius: 4,
                           width: 120,
                         }}
-                        aria-label="Last name"
+                        aria-label={t('profile.fieldAriaLabels.lastName')}
                       />
                     </div>
                   ) : (
@@ -429,7 +429,7 @@ export function SettingsPageClient(): React.ReactElement {
                         direction: 'ltr',
                       }}
                       dir="ltr"
-                      aria-label="Phone number"
+                      aria-label={t('profile.fieldAriaLabels.phone')}
                     />
                   ) : (
                     <div className="sub" style={{ direction: 'ltr' }}>

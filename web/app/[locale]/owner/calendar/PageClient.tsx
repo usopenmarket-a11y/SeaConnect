@@ -246,7 +246,7 @@ export function OwnerCalendarPage({ locale = 'ar' }: Props): React.ReactElement 
   const revenueK = ((stats.booked * basePrice) / 1000).toFixed(1)
 
   return (
-    <div dir="rtl">
+    <div dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Toolbar */}
       <div className="cal-toolbar">
         <div className="month-nav">

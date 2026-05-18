@@ -216,6 +216,7 @@ interface ToastProps {
 }
 
 function Toast({ message, type, onDismiss }: ToastProps): React.ReactElement {
+  const t = useTranslations('owner.kyc')
   React.useEffect(() => {
     const id = setTimeout(onDismiss, 4000)
     return () => clearTimeout(id)
@@ -255,7 +256,7 @@ function Toast({ message, type, onDismiss }: ToastProps): React.ReactElement {
       <span style={{ flex: 1 }}>{message}</span>
       <button
         onClick={onDismiss}
-        aria-label="dismiss"
+        aria-label={t('dismissBanner')}
         style={{
           background: 'none',
           border: 'none',
@@ -388,9 +389,9 @@ function StepCard({
 
 // ── Loading skeleton ──────────────────────────────────────────────────────────
 
-function LoadingSkeleton(): React.ReactElement {
+function LoadingSkeleton({ ariaLabel }: { ariaLabel: string }): React.ReactElement {
   return (
-    <section aria-busy="true" aria-label="جارٍ التحميل" style={{ direction: 'rtl' }}>
+    <section aria-busy="true" aria-label={ariaLabel} style={{ direction: 'inherit' }}>
       <div
         style={{
           height: 28,
@@ -506,7 +507,7 @@ export function OnboardingPageClient({ locale: _locale }: Props): React.ReactEle
 
   // ── Loading state ──────────────────────────────────────────────────────────
   if (isLoading) {
-    return <LoadingSkeleton />
+    return <LoadingSkeleton ariaLabel={t('loadingAriaLabel')} />
   }
 
   // ── Error state ────────────────────────────────────────────────────────────

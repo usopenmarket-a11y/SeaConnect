@@ -575,7 +575,7 @@ interface Props {
   params: { locale: string }
 }
 
-export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.ReactElement {
+export function OwnerYachtsPage({ params: { locale } }: Props): React.ReactElement {
   const t = useTranslations('owner.listing')
   const [tab, setTab] = React.useState<TabId>('basics')
   const [name, setName] = React.useState('البحر الأحمر')
@@ -634,7 +634,7 @@ export function OwnerYachtsPage({ params: { locale: _locale } }: Props): React.R
   }, [])
 
   return (
-    <div dir="rtl">
+    <div dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Tab bar */}
       <div className="seller-tabs">
         {TABS.map(({ id }) => (

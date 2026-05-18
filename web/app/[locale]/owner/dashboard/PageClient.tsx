@@ -507,7 +507,7 @@ export function OwnerDashboardPage({ params: { locale } }: Props): React.ReactEl
       </header>
 
       {/* ── KPI grid (4 tiles matching design SellerDashContent) ──────── */}
-      <div className="kpi-grid" role="list" aria-label="Owner KPIs">
+      <div className="kpi-grid" role="list" aria-label={t('kpisAriaLabel')}>
         <div className="kpi" role="listitem">
           <div className="l">{t('kpiRevenue')}</div>
           <div className="v num">
