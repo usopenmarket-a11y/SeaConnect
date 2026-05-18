@@ -402,8 +402,11 @@ img { display: block; max-width: 100%; }
   position: relative;
   min-height: 85vh;
   overflow: hidden;
-  /* transparent — lets SeaScene canvas show as the hero backdrop */
+  /* Reset background and blur so the canvas colour shows at full vibrancy.
+     The hero overlay gradient handles text legibility instead. */
   background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .hero-lottie {
   position: absolute;
@@ -431,10 +434,10 @@ img { display: block; max-width: 100%; }
   position: absolute; inset: 0;
   background:
     linear-gradient(180deg,
-      oklch(0.14 0.04 240 / 0.00) 0%,
-      oklch(0.14 0.04 240 / 0.00) 45%,
-      oklch(0.14 0.04 240 / 0.55) 80%,
-      oklch(0.14 0.04 240 / 0.75) 100%),
+      oklch(0.14 0.04 240 / 0.08) 0%,
+      oklch(0.14 0.04 240 / 0.10) 35%,
+      oklch(0.14 0.04 240 / 0.62) 72%,
+      oklch(0.14 0.04 240 / 0.82) 100%),
     radial-gradient(ellipse at 20% 85%, oklch(0.58 0.12 40 / 0.12) 0%, transparent 50%);
 }
 .hero-content { z-index: 5; }
@@ -470,7 +473,7 @@ img { display: block; max-width: 100%; }
   max-width: 14ch;
   margin-bottom: 16px;
   letter-spacing: -0.02em;
-  text-shadow: 0 2px 20px oklch(0.14 0.04 240 / 0.50);
+  text-shadow: 0 2px 24px oklch(0.14 0.04 240 / 0.72), 0 1px 6px oklch(0.14 0.04 240 / 0.45);
 }
 .hero-title .accent { color: var(--clay-soft); font-style: italic; }
 .hero-sub {
@@ -479,7 +482,7 @@ img { display: block; max-width: 100%; }
   line-height: 1.55;
   opacity: 0.92;
   margin-bottom: 28px;
-  text-shadow: 0 1px 12px oklch(0.14 0.04 240 / 0.55);
+  text-shadow: 0 1px 14px oklch(0.14 0.04 240 / 0.75), 0 2px 4px oklch(0.14 0.04 240 / 0.40);
 }
 
 /* ── search bar ────────────────────────────────── */
@@ -3226,8 +3229,8 @@ img { display: block; max-width: 100%; }
   gap: 6px;
 }
 
-/* Distribution bars */
-.rating-bars { display: flex; flex-direction: column; gap: 8px; }
+/* Distribution bars — always LTR: star# | bar | count */
+.rating-bars { display: flex; flex-direction: column; gap: 8px; direction: ltr; }
 .rating-bar-row {
   display: flex;
   align-items: center;
@@ -3470,7 +3473,9 @@ img { display: block; max-width: 100%; }
   gap: 12px;
   justify-content: flex-end;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
+[dir="rtl"] .review-submit-row { justify-content: flex-start; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MOBILE RESPONSIVE — ≤ 768px
