@@ -68,13 +68,13 @@ docker compose up --build
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Django API | http://localhost:8000 | — |
-| Next.js Web | http://localhost:3000 | — |
-| Next.js Admin | http://localhost:3001 | — |
-| pgAdmin | http://localhost:5050 | admin@local.dev / admin |
-| MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
-| Mailpit (email catcher) | http://localhost:8025 | — |
-| Ollama (local AI) | http://localhost:11434 | — |
+| Django API | http://localhost:8090 | — |
+| Next.js Web | http://localhost:3010 | — |
+| Next.js Admin | http://localhost:3011 | — |
+| pgAdmin | http://localhost:5051 | admin@local.dev / admin |
+| MinIO Console | http://localhost:9011 | minioadmin / minioadmin |
+| Mailpit (email catcher) | http://localhost:8100 | — |
+| Ollama (local AI) | http://localhost:11435 | — |
 
 Pull Ollama models on first run:
 ```bash
@@ -298,8 +298,8 @@ When converting `Design/*.jsx` to Next.js, preserve the visual design exactly �
 
 | | Dev | UAT |
 |---|---|---|
-| API | localhost:8000 | seaconnect-uat-api.onrender.com |
-| Web | localhost:3000 | seaconnect-uat.vercel.app |
+| API | localhost:8090 | seaconnect-uat-api.onrender.com |
+| Web | localhost:3010 | seaconnect-uat.vercel.app |
 | DB | PostgreSQL Docker | Supabase Free |
 | Storage | MinIO Docker | Cloudflare R2 Free |
 | Email | Mailpit Docker | Brevo Free (300/day) |
