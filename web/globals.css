@@ -3169,3 +3169,293 @@ img { display: block; max-width: 100%; }
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE — ≤ 768px
+   All two/three-column layouts collapse to single column.
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Navigation ──────────────────────────────────────────────────────── */
+  .top-strip { display: none; }
+
+  .nav {
+    padding: 14px 20px;
+    gap: 12px;
+  }
+  .nav-links { display: none; }          /* hidden — hamburger opens drawer */
+  .nav-right .btn-ghost { display: none; }  /* "List your boat" hidden on mobile */
+  .nav-logo { font-size: 22px; }
+  .nav-logo .mark { width: 26px; height: 26px; font-size: 14px; }
+  .nav-right { gap: 10px; }
+  .nav-right .lang { padding: 4px 8px; font-size: 10px; }
+
+  /* Hamburger button — override the inline display:none */
+  .nav-hamburger {
+    display: flex !important;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .nav-hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--ink);
+    border-radius: 2px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+
+  /* Mobile nav drawer */
+  .nav-drawer {
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    width: min(320px, 85vw);
+    height: 100dvh;
+    background: var(--pearl);
+    border-inline-start: 1px solid var(--rule);
+    z-index: 200;
+    padding: 60px 28px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+  [dir="rtl"] .nav-drawer { transform: translateX(-100%); }
+  .nav-drawer.open { transform: translateX(0); }
+  [dir="rtl"] .nav-drawer.open { transform: translateX(0); }
+  .nav-drawer-link {
+    display: block;
+    padding: 14px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--ff-display);
+  }
+  .nav-drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: oklch(0.14 0.04 240 / 0.45);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+  }
+  .nav-drawer-overlay.open { display: block; }
+
+  /* ── Hero ────────────────────────────────────────────────────────────── */
+  .hero-lottie,
+  .hero-img-parallax,
+  .hero-lottie-tl { height: 260px; }
+
+  .hero-kicker { font-size: 9px; padding: 4px 8px; margin-bottom: 10px; }
+  .hero-title { font-size: clamp(32px, 9vw, 52px); }
+  .hero-sub { font-size: 14px; max-width: 100%; }
+
+  /* ── Hero search bar → stacked fields ───────────────────────────────── */
+  .search-bar {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    box-shadow: none;
+    border-inline: none;
+    border-top: none;
+    border-bottom: 1px solid var(--ink);
+  }
+  .search-bar .field {
+    border-inline-start: none;
+    border-bottom: 1px solid var(--rule);
+    padding: 12px 16px;
+  }
+  .search-bar .field:last-of-type { border-bottom: none; }
+  .search-bar .search-btn {
+    width: 100%;
+    padding: 14px 20px;
+    justify-content: center;
+  }
+
+  /* ── Sections ────────────────────────────────────────────────────────── */
+  .section { padding-inline: 20px; }
+  .section-head { padding-inline: 0; gap: 6px; }
+  .section-head h2 { font-size: clamp(28px, 7vw, 42px); }
+
+  /* ── Boat grid → 1 column ────────────────────────────────────────────── */
+  .boat-grid { grid-template-columns: 1fr; }
+  [data-density="compact"] .boat-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* ── Gear grid → 2 columns ───────────────────────────────────────────── */
+  .gear-grid { grid-template-columns: repeat(2, 1fr); }
+  [data-density="compact"] .gear-grid { grid-template-columns: repeat(3, 1fr); }
+
+  /* ── Footer → stacked ───────────────────────────────────────────────── */
+  .footer { padding: 40px 20px 24px; }
+  .footer .top {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-bottom: 28px;
+  }
+  .footer .bottom {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  /* ── Yacht detail page ───────────────────────────────────────────────── */
+  .detail-gallery {
+    grid-template-columns: 1fr;
+    grid-template-rows: 240px;
+    height: auto;
+    padding: 0;
+    gap: 2px;
+  }
+  /* Show only the first (hero) image on mobile */
+  .detail-gallery > div:not(.main) { display: none; }
+  .detail-gallery .main { grid-row: 1; }
+
+  .detail-body {
+    grid-template-columns: 1fr;
+    padding: 24px 20px;
+    gap: 32px;
+  }
+
+  /* Booking panel → full width below content, not sticky */
+  .booking-panel {
+    position: static;
+    padding: 20px;
+  }
+  .booking-panel .price { font-size: 32px; }
+
+  .spec-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid-2 { grid-template-columns: 1fr; }
+
+  /* ── Availability calendar ───────────────────────────────────────────── */
+  .avail-block { padding: 16px 16px 20px; }
+  .avail-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .avail-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  /* Calendar days — smaller cells */
+  .cd {
+    padding: 6px 2px;
+    font-size: 12px;
+  }
+  .cd .price-mini { display: none; }   /* hide price on tiny cells */
+
+  /* Weather panel: forecast row → 4 days visible, scroll for rest */
+  .forecast-row {
+    grid-template-columns: repeat(4, 1fr);
+    overflow-x: auto;
+  }
+  .temp-curve { height: 70px; }
+  .weather-metrics { grid-template-columns: repeat(2, 1fr); }
+
+  /* ── Ticket ──────────────────────────────────────────────────────────── */
+  .ticket { grid-template-columns: 1fr; }
+  .ticket .side {
+    border-inline-start: none;
+    border-top: 1px dashed var(--rule-strong);
+    padding-top: 20px;
+  }
+  .confirm-wrap { padding: 0 20px; margin: 32px auto; }
+
+  /* ── KPI grid → 2×2 ─────────────────────────────────────────────────── */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* ── Owner / Vendor dashboard ────────────────────────────────────────── */
+  .dash-layout {
+    grid-template-columns: 1fr;
+  }
+  /* Sidebar hidden by default on mobile — toggled by FAB */
+  .sidebar-dash {
+    display: none;
+    position: fixed;
+    inset-inline-start: 0;
+    inset-block-start: 0;
+    height: 100dvh;
+    width: 260px;
+    z-index: 200;
+    min-height: unset;
+  }
+  .sidebar-dash.mobile-open { display: block; }
+  /* FAB to open sidebar */
+  .dash-mobile-menu-btn { display: flex !important; }
+
+  /* ── Settings page ───────────────────────────────────────────────────── */
+  .settings-body { grid-template-columns: 1fr; }
+  .settings-sidebar {
+    border-inline-start: none;
+    border-bottom: 1px solid var(--rule);
+    display: flex;
+    flex-wrap: wrap;
+    padding: 8px 0;
+  }
+  .settings-sidebar-item {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  /* ── Marquee / trust strips ──────────────────────────────────────────── */
+  .marquee-wrap { font-size: 11px; gap: 20px; }
+  .marquee-item { gap: 10px; }
+
+  /* ── Auth pages ──────────────────────────────────────────────────────── */
+  .auth-card { padding: 28px 20px; margin: 24px 16px; }
+
+  /* ── Competitions ────────────────────────────────────────────────────── */
+  .comp-grid { grid-template-columns: 1fr !important; }
+
+  /* ── Map page ────────────────────────────────────────────────────────── */
+  .map-shell { height: 60dvh; min-height: 320px; }
+
+  /* ── Booking wizard ──────────────────────────────────────────────────── */
+  .wizard-layout { flex-direction: column !important; }
+  .wizard-sidebar { display: none; }  /* summary panel hidden on step 1-3 on mobile */
+
+  /* ── Vendor / Owner product forms ────────────────────────────────────── */
+  .tab-bar { overflow-x: auto; gap: 0; }
+  .tab-btn { flex-shrink: 0; padding: 10px 14px; font-size: 13px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SMALL MOBILE — ≤ 480px
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .nav { padding: 12px 16px; }
+  .nav-logo { font-size: 19px; }
+
+  .section { padding-inline: 14px; }
+  .detail-body { padding: 18px 14px; }
+  .avail-block { padding: 12px 12px 16px; }
+  .footer { padding: 32px 14px 20px; }
+  .confirm-wrap { padding: 0 14px; }
+
+  .hero-title { font-size: clamp(26px, 8vw, 40px); }
+
+  .spec-grid { grid-template-columns: 1fr; }
+  .gear-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .forecast-row { grid-template-columns: repeat(3, 1fr); }
+  .cal-days { gap: 3px; }
+  .cd { padding: 5px 1px; font-size: 11px; }
+
+  .kpi-grid { grid-template-columns: 1fr; }
+
+  .ticket { padding: 0; }
+
+  /* Reduce hero image height */
+  .hero-lottie,
+  .hero-img-parallax { height: 200px; }
+
+  .detail-gallery { grid-template-rows: 200px; }
+}
+

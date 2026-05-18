@@ -70,6 +70,10 @@ export function Nav({ locale }: NavProps): React.ReactElement {
   const pathname = usePathname()
   const scrolledPastHero = useScrolledPastHero()
   const { user } = useAuth()
+  const [drawerOpen, setDrawerOpen] = React.useState(false)
+
+  // Close drawer on route change
+  React.useEffect(() => { setDrawerOpen(false) }, [pathname])
 
   // Detect whether the user is authenticated (token present in memory)
   const isAuthenticated = getAccessToken() !== null
@@ -116,6 +120,37 @@ export function Nav({ locale }: NavProps): React.ReactElement {
   return (
     <>
       <ScrollProgress />
+      {/* Mobile nav overlay */}
+      <div
+        className={`nav-drawer-overlay${drawerOpen ? ' open' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+      {/* Mobile nav drawer */}
+      <div
+        className={`nav-drawer${drawerOpen ? ' open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('ariaLabel')}
+      >
+        {NAV_LINKS.map((link) => (
+          <Link
+            key={link.id}
+            href={`/${locale}${link.href}`}
+            className="nav-drawer-link"
+            onClick={() => setDrawerOpen(false)}
+          >
+            {t(link.tKey)}
+          </Link>
+        ))}
+        <Link
+          href={`/${locale}/owner/new-listing`}
+          className="nav-drawer-link"
+          onClick={() => setDrawerOpen(false)}
+        >
+          {t('listYourBoat')}
+        </Link>
+      </div>
       <nav
         className="nav"
         role="navigation"
@@ -141,6 +176,19 @@ export function Nav({ locale }: NavProps): React.ReactElement {
             </Link>
           ))}
         </div>
+
+        {/* Hamburger — visible only on mobile via CSS */}
+        <button
+          className="nav-hamburger"
+          onClick={() => setDrawerOpen((o) => !o)}
+          aria-expanded={drawerOpen}
+          aria-label={drawerOpen ? t('closeMenu') : t('openMenu')}
+          style={{ display: 'none' }}  /* CSS overrides to flex on mobile */
+        >
+          <span />
+          <span />
+          <span />
+        </button>
 
         {/* Right side: bell, cart badge, lang toggle, list-your-boat ghost btn, avatar */}
         <div className="nav-right">
