@@ -50,6 +50,8 @@ export function AvailabilityCalendarWithBooking({
 
   function handleDateSelect(isoDate: string): void {
     setSelectedDate(isoDate)
+    // Notify the booking panel on the same page (cross-island communication)
+    window.dispatchEvent(new CustomEvent('sc:date-selected', { detail: isoDate }))
   }
 
   function handleBookThisDate(): void {

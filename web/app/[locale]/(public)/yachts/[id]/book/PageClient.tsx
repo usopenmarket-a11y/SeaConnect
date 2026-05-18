@@ -1005,6 +1005,11 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
     specialRequests: '',
   })
 
+  // Sync trip date if ?date= param resolves after initial render
+  React.useEffect(() => {
+    setTrip((prev) => ({ ...prev, date: initialDate }))
+  }, [initialDate])
+
   // Step 2 — Personal Info (pre-fill from auth user)
   const [info, setInfo] = React.useState<PersonalInfo>({
     fullName: user ? `${user.first_name} ${user.last_name}`.trim() : '',

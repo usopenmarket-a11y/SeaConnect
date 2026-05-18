@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { AvailabilityCalendarWithBooking } from '@/components/weather/AvailabilityCalendarWithBooking'
+import { BookingPanelClient } from '@/components/booking/BookingPanelClient'
 
 // ── Types (matching API spec) ─────────────────────────────────────────────────
 
@@ -505,87 +506,20 @@ export default async function YachtDetailPage({
           </div>
         </div>
 
-        {/* ── Right column: Booking panel ─────────────────────────────────── */}
-        <div className="booking-panel" data-screen-label="booking-panel">
-          <div className="price-row">
-            <div className="price">
-              <span className="num">{priceNum.toLocaleString('en')}</span>
-              <span className="unit"> {currency} / {tDetail('perDay')}</span>
-            </div>
-            <div className="rating">
-              <div className="v">★ {displayRating.toFixed(2)}</div>
-              <div>{displayReviewCount} {tDetail('reviews')}</div>
-            </div>
-          </div>
-
-          <div className="form-field">
-            <label>{tDetail('tripDate')}</label>
-            <input defaultValue={tDetail('tripDatePlaceholder')} readOnly />
-          </div>
-
-          <div className="form-grid-2">
-            <div className="form-field">
-              <label>{tDetail('departure')}</label>
-              <select defaultValue="6:00">
-                <option>{tDetail('time0600am')}</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label>{tDetail('return')}</label>
-              <select defaultValue="16:00">
-                <option>{tDetail('time0400pm')}</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-grid-2">
-            <div className="form-field">
-              <label>{tDetail('duration')}</label>
-              <select>
-                <option>{tDetail('durationFullDay')}</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label>{tDetail('passengers')}</label>
-              <select>
-                <option>{tDetail('passengersDefault', { count: yacht.capacity })}</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="line-items">
-            <div className="row">
-              <span className="l">{priceNum.toLocaleString('en')} {currency} × {tDetail('oneDay')}</span>
-              <span className="v">{priceNum.toLocaleString('en')}</span>
-            </div>
-            <div className="row">
-              <span className="l">{tDetail('serviceFee')}</span>
-              <span className="v">{serviceFee.toLocaleString('en')}</span>
-            </div>
-            <div className="row">
-              <span className="l">{tDetail('tripInsurance')}</span>
-              <span className="v">{insuranceFee}</span>
-            </div>
-            <div className="row total">
-              <span className="l">{tDetail('total')}</span>
-              <span className="v">{total.toLocaleString('en')} {currency}</span>
-            </div>
-          </div>
-
-          <Link
-            href={`/${locale}/yachts/${yacht.id}/book`}
-            className="btn btn-clay btn-lg cta-shimmer"
-            style={{ width: '100%', marginTop: 18, display: 'flex', justifyContent: 'center' }}
-          >
-            {t('detail.bookNow')} ←
-          </Link>
-
-          <div className="guarantee">
-            ✓ {tDetail('guarantee1')}<br />
-            ✓ {tDetail('guarantee2')}<br />
-            ✓ {tDetail('guarantee3')}
-          </div>
-        </div>
+        {/* ── Right column: Booking panel (Client Component — date syncs with calendar) */}
+        <BookingPanelClient
+          yachtId={yacht.id}
+          locale={locale}
+          priceNum={priceNum}
+          currency={currency}
+          capacity={yacht.capacity}
+          serviceFee={serviceFee}
+          insuranceFee={insuranceFee}
+          total={total}
+          displayRating={displayRating}
+          displayReviewCount={displayReviewCount}
+          bookHref={`/${locale}/yachts/${yacht.id}/book`}
+        />
       </div>
     </div>
   )
