@@ -31,6 +31,15 @@ const STEP_TAGS = [
 export function StickyStory(): React.ReactElement {
   const t = useTranslations('home.trust')
   const { ref, progress } = useScrollProgress()
+  const [isMobile, setIsMobile] = React.useState(false)
+
+  React.useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   // Three windows of progress: 0-0.40, 0.40-0.65, 0.65-0.90
   const active = progress < 0.40 ? 0 : progress < 0.65 ? 1 : 2
@@ -58,6 +67,49 @@ export function StickyStory(): React.ReactElement {
       p: t('step3.body'),
     },
   ]
+
+  // Mobile: render all 3 steps as stacked cards — no sticky scroll needed
+  if (isMobile) {
+    return (
+      <section className="sticky-story" data-screen-label="sticky-story">
+        {steps.map((s, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gap: 0,
+            }}
+          >
+            <div
+              style={{
+                height: 220,
+                backgroundImage: `url(${STEP_IMAGES[i]})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                position: 'relative',
+              }}
+            >
+              <div
+                aria-hidden="true"
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(115deg, oklch(0.14 0.04 240 / 0.60), oklch(0.14 0.04 240 / 0.20))',
+                }}
+              />
+            </div>
+            <div style={{ padding: '28px 24px 32px', background: 'var(--abyss)', color: 'var(--sand)' }}>
+              <div className="num-tag" style={{ marginBottom: 12 }}>{s.tag}</div>
+              <h2 style={{ fontFamily: 'var(--ff-display)', fontSize: 'clamp(26px,7vw,38px)', lineHeight: 1.1, fontWeight: 700, marginBottom: 16 }}>
+                {s.h1} <em>{s.h2em}</em> {s.h3}
+              </h2>
+              <p style={{ fontSize: 14, lineHeight: 1.65, opacity: 0.82 }}>{s.p}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+    )
+  }
 
   return (
     <section
