@@ -60,3 +60,7 @@ minio_data/
 
 # Vercel
 .vercel/
+
+# Screenshot audit artifacts (local dev only)
+Screenshots/
+screenshots/
