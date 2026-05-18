@@ -283,51 +283,47 @@ img { display: block; max-width: 100%; }
 .top-strip .strip-group span { opacity: 0.72; }
 
 .nav {
-  padding: 22px 48px 18px;
+  padding: 16px 48px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 32px;
-  border-bottom: 1px solid var(--rule);
-  background: oklch(0.99 0.004 210 / 0.42);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid oklch(1 0 0 / 0.10);
+  background: var(--abyss);
   position: sticky;
   top: 0;
   z-index: 30;
-  transition: background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
 }
-/* After scrolling past hero, nav becomes more opaque for readability */
 .nav[data-scrolled="true"] {
-  background: oklch(0.99 0.004 210 / 0.88);
+  background: oklch(0.14 0.04 240 / 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
 .nav-logo {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   font-family: var(--ff-display);
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--ink);
+  color: var(--sand);
 }
 .nav-logo .mark {
-  width: 34px; height: 34px;
+  width: 32px; height: 32px;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--sand);
+  background: var(--clay);
+  color: var(--foam);
   display: inline-flex; align-items: center; justify-content: center;
   font-family: var(--ff-display);
-  font-size: 18px;
-  transform: translateY(4px);
+  font-size: 16px;
+  flex-shrink: 0;
 }
 .nav-logo .en-tag {
   font-family: var(--ff-serif-en);
   font-style: italic;
-  font-size: 14px;
-  color: var(--muted);
+  font-size: 13px;
+  color: oklch(1 0 0 / 0.45);
   font-weight: 400;
   margin-inline-end: 4px;
 }
@@ -341,28 +337,29 @@ img { display: block; max-width: 100%; }
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--ink-2);
-  border-inline-start: 1px solid var(--rule);
+  color: oklch(1 0 0 / 0.72);
+  border-inline-start: 1px solid oklch(1 0 0 / 0.10);
   transition: color 0.15s;
   position: relative;
 }
 .nav-link:first-child { border-inline-start: 0; }
-.nav-link:hover { color: var(--clay); }
-.nav-link.active { color: var(--ink); }
+.nav-link:hover { color: var(--sand); }
+.nav-link.active { color: var(--sand); }
 .nav-link.active::after {
   content: '';
   position: absolute;
-  bottom: -19px; inset-inline-start: 18px; inset-inline-end: 18px;
+  bottom: -17px; inset-inline-start: 18px; inset-inline-end: 18px;
   height: 2px; background: var(--clay);
 }
-.nav-right { display: flex; align-items: center; gap: 14px; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
 .nav-right .lang {
   font-family: var(--ff-mono);
   font-size: 11px;
   letter-spacing: 0.1em;
-  padding: 6px 10px;
-  border: 1px solid var(--rule-strong);
+  padding: 5px 10px;
+  border: 1px solid oklch(1 0 0 / 0.22);
   border-radius: 2px;
+  color: oklch(1 0 0 / 0.72);
 }
 .nav-right .avatar {
   width: 36px; height: 36px;
@@ -374,6 +371,19 @@ img { display: block; max-width: 100%; }
   font-size: 16px;
   font-weight: 700;
 }
+/* Nav-scoped overrides: ghost button and lang-switch on dark nav */
+.nav .btn-ghost {
+  color: oklch(1 0 0 / 0.80);
+  border-color: oklch(1 0 0 / 0.28);
+}
+.nav .btn-ghost:hover { background: oklch(1 0 0 / 0.10); color: var(--sand); border-color: oklch(1 0 0 / 0.5); }
+.nav .lang-switch {
+  border-color: oklch(1 0 0 / 0.22);
+  background: transparent;
+}
+.nav .lang-opt { color: oklch(1 0 0 / 0.50); }
+.nav .lang-opt.on { color: var(--sand); }
+.nav .lang-sep { color: oklch(1 0 0 / 0.25); }
 
 /* ── buttons ───────────────────────────────────── */
 .btn {
@@ -432,13 +442,13 @@ img { display: block; max-width: 100%; }
 }
 .hero-overlay {
   position: absolute; inset: 0;
+  /* Scrim only at the bottom where text lives — top stays fully transparent */
   background:
     linear-gradient(180deg,
-      oklch(0.14 0.04 240 / 0.08) 0%,
-      oklch(0.14 0.04 240 / 0.10) 35%,
-      oklch(0.14 0.04 240 / 0.62) 72%,
-      oklch(0.14 0.04 240 / 0.82) 100%),
-    radial-gradient(ellipse at 20% 85%, oklch(0.58 0.12 40 / 0.12) 0%, transparent 50%);
+      oklch(0.14 0.04 240 / 0.00) 0%,
+      oklch(0.14 0.04 240 / 0.00) 40%,
+      oklch(0.14 0.04 240 / 0.52) 76%,
+      oklch(0.14 0.04 240 / 0.78) 100%);
 }
 .hero-content { z-index: 5; }
 .hero-content {
@@ -538,21 +548,26 @@ img { display: block; max-width: 100%; }
 }
 .search-bar .search-btn:hover { background: var(--ink); }
 
-/* ── sea-theme glass utility — applied to full-page containers on non-home pages */
+/* ── page-glass: solid parchment container for content pages ── */
 .page-glass {
-  background: oklch(0.97 0.008 210 / 0.38);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: var(--pearl);
   min-height: 100vh;
   position: relative;
   z-index: 1;
 }
-/* Nested page-glass (e.g. section inside the main page-glass) — no double blur */
+/* Nested page-glass — no double background */
 .page-glass .page-glass {
   background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   min-height: unset;
+}
+/* PageHero inside page-glass must punch through to the canvas */
+.page-glass > .page-hero,
+.page-glass .page-hero:first-child {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* Negative margin to escape page-glass padding if any */
+  margin-top: 0;
 }
 
 /* ── page header glass backing (sea canvas compatibility) ── */
@@ -1657,9 +1672,7 @@ img { display: block; max-width: 100%; }
 .notif-shell {
   position: relative;
   z-index: 2;
-  background: oklch(0.97 0.008 210 / 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--pearl);
   min-height: 100vh;
 }
 .notif-header {
@@ -1774,9 +1787,7 @@ img { display: block; max-width: 100%; }
 .settings-shell {
   position: relative;
   z-index: 2;
-  background: oklch(0.97 0.008 210 / 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--pearl);
   min-height: 100vh;
 }
 .settings-header {

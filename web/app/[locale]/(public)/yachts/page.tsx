@@ -200,7 +200,8 @@ export default async function YachtsPage({
   const totalCount = boats.length
 
   return (
-    <div className="page-glass">
+    <>
+      {/* PageHero sits outside page-glass so it renders directly over the canvas */}
       <PageHero
         kicker={locale === 'ar' ? `كل القوارب · ${totalCount} معتمد` : `ALL VESSELS · ${totalCount} VERIFIED`}
         title={locale === 'ar'
@@ -217,7 +218,7 @@ export default async function YachtsPage({
           { label: locale === 'ar' ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: locale === 'ar' ? 'منصة مصر البحرية' : "EGYPT'S MARITIME PLATFORM", mod: 'issue' },
         ]}
       />
-
+      <div className="page-glass">
       {/* Advanced filters — Client Component (pushes params to URL) */}
       <YachtFilters locale={locale} />
 
@@ -244,6 +245,7 @@ export default async function YachtsPage({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }

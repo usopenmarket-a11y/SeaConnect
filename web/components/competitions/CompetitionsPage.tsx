@@ -107,7 +107,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
   const isAr = locale === 'ar'
 
   return (
-    <div className="page-glass" dir={isAr ? 'rtl' : 'ltr'}>
+    <div dir={isAr ? 'rtl' : 'ltr'}>
       <PageHero
         kicker={isAr ? 'البطولات · تقويم الصيد ٢٠٢٦' : 'TOURNAMENTS · FISHING CALENDAR 2026'}
         title={<>{t('title')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('titleEm')}</em>.</>}
@@ -118,7 +118,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
           { label: isAr ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: isAr ? 'تقويم الصيد' : 'FISHING CALENDAR', mod: 'issue' },
         ]}
       />
-
+      <div className="page-glass">
       {/* Competition list */}
       <div className="section" style={{ background: 'var(--foam)' }}>
         {competitions.length === 0 ? (
@@ -178,6 +178,7 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
             })}
           </div>
         )}
+      </div>
       </div>
     </div>
   )

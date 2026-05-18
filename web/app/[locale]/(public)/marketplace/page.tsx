@@ -147,7 +147,7 @@ export default async function MarketplacePage({
   const isAr = locale === 'ar'
 
   return (
-    <div className="page-glass">
+    <>
       <PageHero
         kicker={isAr ? 'متجر العدد · أكثر من ٢٢٠٠ بائع' : 'GEAR SHOP · 2,200+ VENDORS'}
         title={<>{t('heading1')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('headingEm')}</em>{t('heading2')}</>}
@@ -158,7 +158,7 @@ export default async function MarketplacePage({
           { label: isAr ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: isAr ? 'متجر العدة البحرية' : 'MARITIME GEAR SHOP', mod: 'issue' },
         ]}
       />
-
+      <div className="page-glass">
       {/* ── Category pills + filter bar (Client Component) ────────────────── */}
       <MarketplaceFilters locale={locale} resultCount={products.length} />
 
@@ -183,6 +183,7 @@ export default async function MarketplacePage({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
