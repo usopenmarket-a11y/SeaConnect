@@ -118,6 +118,7 @@ interface AvailabilityCalendarProps {
   region?: string
   yachtId?: string
   locale?: string
+  onDateSelect?: (isoDate: string) => void
 }
 
 type DayStatus = 'open' | 'limited' | 'hold' | 'booked'
@@ -162,10 +163,16 @@ export function AvailabilityCalendar({
   region = '',
   yachtId,
   locale = 'ar',
+  onDateSelect,
 }: AvailabilityCalendarProps): React.ReactElement {
   const tCal = useTranslations('calendar')
   const [month, setMonth] = React.useState(4) // May = idx 4
-  const [selected, setSelected] = React.useState(12)
+  const [selected, setSelected] = React.useState(1)
+
+  // Reset selected day to 1 whenever the month changes
+  React.useEffect(() => {
+    setSelected(1)
+  }, [month])
 
   // Generate month names using Intl — no hardcoded arrays
   const intlLocale = locale === 'ar' ? 'ar-EG' : 'en-US'
@@ -229,8 +236,13 @@ export function AvailabilityCalendar({
   const seed = (boat?.id ?? 'x').charCodeAt(0)
   const boatPrice = boat?.price ?? 3800
   const days: CalDay[] = []
-  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month]
-  const startOffset = 3 // May 1, 2026 is a Friday
+  // Use Date API for correct leap-year-aware days-in-month
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  // Compute how many empty cells before day 1 given the calendar starts on Friday.
+  // weekdayOrder = [5,6,0,1,2,3,4] (Fri=0 in our grid).
+  // JS getDay(): 0=Sun,1=Mon,...,6=Sat.
+  const firstDayOfMonth = new Date(year, month, 1).getDay()
+  const startOffset = (firstDayOfMonth - 5 + 7) % 7
 
   for (let i = 0; i < 42; i++) {
     const day = i - startOffset + 1
@@ -274,8 +286,8 @@ export function AvailabilityCalendar({
     region === 'luxor' ? { temp: 32, wind: 8 } :
     { temp: 27, wind: 12 }
 
-  // Determine starting day-of-week for selected date (May 1 = Friday = 5)
-  const selectedDow = (5 + selected - 1) % 7
+  // Determine starting day-of-week for the selected date in the current month
+  const selectedDow = new Date(year, month, selected).getDay()
   const forecastWeekdays = getForecastWeekdays(selectedDow)
 
   const forecast: ForecastDay[] = Array.from({ length: 7 }, (_, i) => {
@@ -351,7 +363,15 @@ export function AvailabilityCalendar({
                 <button
                   key={i}
                   className={`cd ${d.status}${isSel ? ' sel' : ''}`}
-                  onClick={() => d.status !== 'booked' && d.day != null && setSelected(d.day)}
+                  onClick={() => {
+                    if (d.status !== 'booked' && d.day != null) {
+                      setSelected(d.day)
+                      if (onDateSelect) {
+                        const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`
+                        onDateSelect(isoDate)
+                      }
+                    }
+                  }}
                   disabled={d.status === 'booked'}
                   aria-label={`${d.day} ${months[month]}`}
                   aria-pressed={isSel}

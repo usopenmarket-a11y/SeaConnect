@@ -16,8 +16,9 @@
  */
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import QRCode from 'qrcode'
 
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { useAuth } from '@/lib/auth'
@@ -699,6 +700,19 @@ function Step4Confirmation({
   const router = useRouter()
   const t = useTranslations('booking.checkout')
 
+  // QR code generation
+  const [qrDataUrl, setQrDataUrl] = React.useState<string>('')
+  React.useEffect(() => {
+    const payload = JSON.stringify({
+      ref: bookingRef,
+      pax: trip.numPassengers,
+      exp: Math.floor(Date.now() / 1000 + 86400 * 30),
+    })
+    QRCode.toDataURL(payload, { errorCorrectionLevel: 'M' })
+      .then((url) => setQrDataUrl(url))
+      .catch(() => {/* silently ignore — placeholder shown when empty */})
+  }, [bookingRef, trip.numPassengers])
+
   const paymentLabel =
     paymentMethod === 'FAWRY'
       ? t('payment.fawryConfirmLabel')
@@ -919,6 +933,24 @@ function Step4Confirmation({
           </button>
         </div>
       </div>
+
+      {/* QR Code ticket */}
+      <div style={{ marginTop: 32, textAlign: 'center' }}>
+        <div className="mono" style={{ fontSize: 10, letterSpacing: '0.12em', color: 'var(--muted)', marginBottom: 12 }}>
+          {t('qr.title')}
+        </div>
+        {qrDataUrl ? (
+          <img src={qrDataUrl} alt={t('qr.alt')} width={180} height={180} style={{ borderRadius: 8, border: '1px solid var(--rule)' }} />
+        ) : (
+          <div style={{ width: 180, height: 180, background: 'var(--rule)', borderRadius: 8, margin: '0 auto' }} />
+        )}
+        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--muted-2)' }}>
+          {t('qr.expiry', { days: 30 })}
+        </div>
+        <div style={{ marginTop: 6, fontSize: 11, color: 'var(--muted-2)' }}>
+          {t('qr.passengers', { count: trip.numPassengers })}
+        </div>
+      </div>
     </div>
   )
 }
@@ -934,8 +966,21 @@ interface InnerProps {
 
 function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
   const t = useTranslations('booking.checkout')
+
+  // Derive initial date from ?date= search param (must be >= today and valid ISO)
+  const initialDate = React.useMemo<string>(() => {
+    const param = searchParams.get('date')
+    if (!param) return todayIso()
+    // Validate: must be a valid date string and >= today
+    const parsed = new Date(param)
+    const today = new Date(todayIso())
+    if (isNaN(parsed.getTime())) return todayIso()
+    if (parsed < today) return todayIso()
+    return param
+  }, [searchParams])
 
   // Remote state
   const [yacht, setYacht] = React.useState<YachtDetail | null>(null)
@@ -952,7 +997,7 @@ function BookingWizardInner({ locale, yachtId }: InnerProps): React.ReactElement
 
   // Step 1 — Trip Details
   const [trip, setTrip] = React.useState<TripDetails>({
-    date: todayIso(),
+    date: initialDate,
     numPassengers: 1,
     departureTime: '06:00',
     returnTime: '16:00',
@@ -1341,7 +1386,9 @@ interface PageProps {
 export function BookingFormPage({ params: { locale, id } }: PageProps): React.ReactElement {
   return (
     <AuthGuard locale={locale}>
-      <BookingWizardInner locale={locale} yachtId={id} />
+      <React.Suspense fallback={null}>
+        <BookingWizardInner locale={locale} yachtId={id} />
+      </React.Suspense>
     </AuthGuard>
   )
 }

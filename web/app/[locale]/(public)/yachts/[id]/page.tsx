@@ -17,7 +17,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
-import { AvailabilityCalendar } from '@/components/weather/AvailabilityCalendar'
+import { AvailabilityCalendarWithBooking } from '@/components/weather/AvailabilityCalendarWithBooking'
 
 // ── Types (matching API spec) ─────────────────────────────────────────────────
 
@@ -392,7 +392,7 @@ export default async function YachtDetailPage({
           </div>
 
           {/* Availability calendar + Weather forecast (Client Component island) */}
-          <AvailabilityCalendar
+          <AvailabilityCalendarWithBooking
             boat={{
               id: yacht.id,
               price: priceNum,
@@ -402,6 +402,7 @@ export default async function YachtDetailPage({
             }}
             region={(yacht.departure_port?.region?.name_en ?? 'hurghada').toLowerCase()}
             yachtId={yacht.id}
+            locale={locale}
           />
 
           {/* Reviews */}
