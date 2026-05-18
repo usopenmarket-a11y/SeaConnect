@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import { PageHero } from '@/components/layout/PageHero'
 import { useAuth } from '@/lib/auth'
 import { getAccessToken } from '@/lib/api'
 
@@ -103,20 +104,20 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
     }
   }
 
+  const isAr = locale === 'ar'
+
   return (
-    <div className="page-glass" dir="rtl">
-      {/* Header */}
-      <div style={{ padding: '40px 48px 24px', borderBottom: '2px solid var(--ink)' }}>
-        <div className="mono" style={{ fontSize: 11, letterSpacing: '0.1em', color: 'var(--muted)', marginBottom: 8 }}>
-          § TOURNAMENTS · FISHING CALENDAR 2026
-        </div>
-        <h1 className="display" style={{ fontSize: 72, lineHeight: 0.95, letterSpacing: '-0.02em', fontWeight: 700 }}>
-          {t('title')} <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>{t('titleEm')}</em>.
-        </h1>
-        <p style={{ fontSize: 16, color: 'var(--ink-2)', maxWidth: '52ch', marginTop: 14 }}>
-          {t('subtitle')}
-        </p>
-      </div>
+    <div className="page-glass" dir={isAr ? 'rtl' : 'ltr'}>
+      <PageHero
+        kicker={isAr ? 'البطولات · تقويم الصيد ٢٠٢٦' : 'TOURNAMENTS · FISHING CALENDAR 2026'}
+        title={<>{t('title')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('titleEm')}</em>.</>}
+        subtitle={t('subtitle')}
+        bar={[
+          { label: isAr ? 'البطولات هذا العام' : 'Events this year', value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, color: 'var(--clay)' }}>{competitions.length}</span>, mod: 'count' },
+          { label: isAr ? 'السواحل المشمولة' : 'Coasts covered', value: isAr ? 'البحر الأحمر · المتوسط · النيل' : 'Red Sea · Mediterranean · Nile' },
+          { label: isAr ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: isAr ? 'تقويم الصيد' : 'FISHING CALENDAR', mod: 'issue' },
+        ]}
+      />
 
       {/* Competition list */}
       <div className="section" style={{ background: 'var(--foam)' }}>

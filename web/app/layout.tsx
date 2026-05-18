@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { SeaScene } from '@/components/layout/SeaScene'
 import '@/globals.css'
+import '@/styles-v2.css'
 
 export const metadata: Metadata = {
   title: {

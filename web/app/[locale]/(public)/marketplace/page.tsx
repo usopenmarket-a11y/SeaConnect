@@ -15,6 +15,7 @@ import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { ProductCard, type Product } from '@/components/marketplace/ProductCard'
 import { MarketplaceFilters } from '@/components/marketplace/MarketplaceFilters'
+import { PageHero } from '@/components/layout/PageHero'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -147,49 +148,16 @@ export default async function MarketplacePage({
 
   return (
     <div className="page-glass">
-      {/* ── Editorial header ───────────────────────────────────────────────── */}
-      <div
-        style={{
-          padding: '40px 48px 24px',
-          borderBottom: '2px solid var(--ink)',
-        }}
-        data-screen-label="marketplace-header"
-      >
-        <div
-          className="mono"
-          style={{
-            fontSize: 11,
-            letterSpacing: '0.1em',
-            color: 'var(--muted)',
-            marginBottom: 8,
-          }}
-        >
-          § GEAR MARKETPLACE · 2,200+ VENDORS
-        </div>
-        <h1
-          className="display"
-          style={{
-            fontSize: 72,
-            lineHeight: 0.95,
-            letterSpacing: '-0.02em',
-            fontWeight: 700,
-          }}
-        >
-          {isAr ? (
-            <>
-              {t('heading1')}{' '}
-              <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>{t('headingEm')}</em>{' '}
-              {t('heading2')}
-            </>
-          ) : (
-            <>
-              {t('heading1')}{' '}
-              <em style={{ fontStyle: 'italic', color: 'var(--clay)' }}>{t('headingEm')}</em>
-              {t('heading2')}
-            </>
-          )}
-        </h1>
-      </div>
+      <PageHero
+        kicker={isAr ? 'متجر العدد · أكثر من ٢٢٠٠ بائع' : 'GEAR SHOP · 2,200+ VENDORS'}
+        title={<>{t('heading1')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('headingEm')}</em>{t('heading2')}</>}
+        subtitle={isAr ? 'من Shimano و Daiwa، إلى الحرفيين المحليين في الإسكندرية ودمياط.' : 'From Shimano and Daiwa, to local makers in Alexandria and Damietta.'}
+        bar={[
+          { label: isAr ? 'إجمالي المنتجات' : 'Total products', value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, color: 'var(--clay)' }}>{products.length}</span>, mod: 'count' },
+          { label: isAr ? 'بائع موثّق' : 'Verified vendors', value: isAr ? '٢٢٠٠+ بائع' : '2,200+ vendors' },
+          { label: isAr ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: isAr ? 'متجر العدة البحرية' : 'MARITIME GEAR SHOP', mod: 'issue' },
+        ]}
+      />
 
       {/* ── Category pills + filter bar (Client Component) ────────────────── */}
       <MarketplaceFilters locale={locale} resultCount={products.length} />

@@ -313,10 +313,13 @@ export function Nav({ locale }: NavProps): React.ReactElement {
 
           <Link
             href={otherLocalePath}
-            className="lang"
+            className="lang-switch"
             aria-label={t('langAriaLabel')}
+            style={{ textDecoration: 'none' }}
           >
-            {locale === 'ar' ? 'AR / EN' : 'EN / AR'}
+            <span className={`lang-opt${locale === 'ar' ? ' on' : ''}`}>ع</span>
+            <span className="lang-sep" aria-hidden="true">·</span>
+            <span className={`lang-opt${locale === 'en' ? ' on' : ''}`}>EN</span>
           </Link>
           <Link
             href={`/${locale}/owner/new-listing`}

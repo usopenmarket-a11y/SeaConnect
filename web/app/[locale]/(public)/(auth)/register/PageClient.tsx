@@ -177,15 +177,36 @@ export function RegisterPage({
     return !!(touched[f] && fieldErrors[f])
   }
 
+  const isAr = locale === 'ar'
+
   return (
-    <div className="auth-outer">
+    <div className="auth-shell">
+      {/* ── Art panel ── */}
+      <div className="auth-art">
+        <div className="auth-art-content">
+          <div className="auth-art-brand">{isAr ? 'سي كونكت' : 'SeaConnect'}</div>
+          <div className="auth-art-quote">
+            {isAr
+              ? '«البحر لا يكذب — ولا يكذب من يبحر فيه».'
+              : '"The sea never lies — and neither do those who sail it."'}
+          </div>
+          <div className="auth-art-stamp">
+            {isAr ? 'البحر الأحمر · ٢٠٢٦' : 'RED SEA · 2026'}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Form panel ── */}
+      <div className="auth-card-wrap">
       <div className="auth-card" style={{ maxWidth: 500 }}>
 
-        {/* ── Logo ── */}
-        <div className="auth-logo">
-          <span className="mark" aria-hidden="true">س</span>
-          سي كونكت
-          <span className="en-tag">/ SeaConnect</span>
+        {/* ── Lang row ── */}
+        <div className="auth-lang-row">
+          <Link href={`/${locale === 'ar' ? 'en' : 'ar'}/register`} className="lang-switch" style={{ textDecoration: 'none' }}>
+            <span className={`lang-opt${locale === 'ar' ? ' on' : ''}`}>ع</span>
+            <span className="lang-sep">·</span>
+            <span className={`lang-opt${locale === 'en' ? ' on' : ''}`}>EN</span>
+          </Link>
         </div>
 
         {/* ── Eyebrow + Title ── */}
@@ -605,6 +626,7 @@ export function RegisterPage({
           </Link>
         </div>
 
+      </div>
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
