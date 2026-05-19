@@ -158,10 +158,10 @@ export function Nav({ locale }: NavProps): React.ReactElement {
         data-screen-label="nav"
         data-scrolled={scrolledPastHero ? 'true' : 'false'}
       >
-        {/* Logo */}
+        {/* Logo — brand name in locale language only */}
         <Link href={`/${locale}`} className="nav-logo" aria-label={t('logoAriaLabel')}>
-          <span className="mark" aria-hidden="true">س</span>
-          سي كونكت / SeaConnect
+          <span className="mark" aria-hidden="true">{locale === 'ar' ? 'س' : 'S'}</span>
+          {locale === 'ar' ? 'سي كونكت' : 'SeaConnect'}
         </Link>
 
         {/* Primary links */}
