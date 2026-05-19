@@ -2331,6 +2331,72 @@ html[dir="ltr"] body { direction: ltr; }
    NEXT.JS APP COMPONENT STYLES — not in design's styles.css
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* ── Marketplace / Yacht filter bars ── */
+.marketplace-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 48px;
+  background: var(--sand);
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+}
+.mfb-count {
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.mfb-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+[dir="rtl"] .filter-label { font-family: var(--ff-sans); letter-spacing: 0.02em; text-transform: none; font-size: 12px; }
+.filter-input,
+.filter-select {
+  border: 1px solid var(--rule-strong);
+  background: var(--foam);
+  padding: 6px 10px;
+  font-family: var(--ff-sans);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.filter-input:focus,
+.filter-select:focus { border-color: var(--ink); }
+.filter-select { appearance: none; padding-inline-end: 24px; cursor: pointer; }
+.mfb-actions { display: flex; gap: 8px; }
+
+/* Yacht filter bar (same style, different class) */
+.yacht-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 48px;
+  background: var(--foam);
+  border-top: 1px solid var(--rule);
+  border-bottom: 2px solid var(--rule);
+  flex-wrap: wrap;
+}
+.yacht-filter-bar .filter-group { gap: 8px; }
+
 /* ── Mobile nav drawer (hidden by default, shown via JS class) ── */
 .nav-drawer-overlay {
   display: none; position: fixed; inset: 0;

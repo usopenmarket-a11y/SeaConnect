@@ -60,7 +60,7 @@ export function YachtFilters({ locale }: YachtFiltersProps): React.ReactElement 
 
   return (
     <div
-      className="yacht-filters"
+      className="yacht-filter-bar"
       dir={locale === 'ar' ? 'rtl' : 'ltr'}
       data-screen-label="yacht-filters"
     >

@@ -15,6 +15,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
 import { PageHero } from '@/components/layout/PageHero'
 import { YachtPillTabs } from '@/components/yachts/YachtPillTabs'
+import { YachtFilters } from '@/components/yachts/YachtFilters'
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
 
@@ -225,6 +226,11 @@ export default async function YachtsPage({
       {/* Sticky pill tabs — matches StickyRail > PillTabs from design */}
       <div className="sticky-rail">
         <YachtPillTabs locale={locale} />
+      </div>
+
+      {/* Advanced filters below pill tabs */}
+      <div className="page-glass">
+        <YachtFilters locale={locale} />
       </div>
 
       {/* Boat grid */}
