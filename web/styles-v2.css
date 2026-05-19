@@ -2522,3 +2522,1018 @@ html[dir="ltr"] body { direction: ltr; }
   background: linear-gradient(to right, var(--clay), var(--brass));
   transform-origin: left; transition: transform 0.05s linear;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   WEATHER PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Outer page wrapper — sits above the animated sea canvas */
+.weather-layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 0 32px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Page header row */
+.weather-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 40px;
+}
+.weather-page-header .eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.weather-page-header h1 {
+  font-family: var(--ff-display);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.weather-page-header .subtitle {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+/* Port location tabs */
+.location-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  background: oklch(1 0 0 / 0.60);
+  backdrop-filter: blur(6px);
+  flex-wrap: wrap;
+}
+.loc-tab {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px 10px;
+  background: none;
+  border: none;
+  border-inline-end: 1px solid var(--rule);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  color: var(--ink-2);
+}
+.loc-tab:last-child { border-inline-end: 0; }
+.loc-tab:hover { background: var(--sand); }
+.loc-tab.active {
+  background: var(--sea);
+  color: var(--foam);
+}
+.loc-tab-ar {
+  font-family: var(--ff-sans);
+  font-size: 14px;
+  font-weight: 600;
+}
+.loc-tab-en {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* Main weather card */
+.weather-main-card {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 0;
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.weather-main-card.safe    { border-inline-start: 4px solid oklch(0.50 0.14 150); }
+.weather-main-card.caution { border-inline-start: 4px solid oklch(0.65 0.17 70);  }
+.weather-main-card.danger  { border-inline-start: 4px solid oklch(0.52 0.20 25);  }
+
+.weather-main-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 20px;
+  background: oklch(0.97 0.008 210 / 0.55);
+  border-inline-end: 1px solid var(--rule);
+  text-align: center;
+}
+.weather-icon-large {
+  font-size: 56px;
+  line-height: 1;
+}
+.weather-temp-big {
+  font-family: var(--ff-display);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+.weather-location-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* Weather status badge (safe / caution / danger) */
+.weather-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 2px;
+  font-family: var(--ff-sans);
+  font-size: 13px;
+  font-weight: 600;
+}
+.weather-status-badge.safe    { background: oklch(0.92 0.10 150); color: oklch(0.28 0.12 150); }
+.weather-status-badge.caution { background: oklch(0.94 0.12 75);  color: oklch(0.34 0.12 55);  }
+.weather-status-badge.danger  { background: oklch(0.93 0.12 25);  color: oklch(0.42 0.18 25);  }
+
+/* 8-stat grid on the right half of the main card */
+.weather-main-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+}
+.wstat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 22px 12px;
+  border-inline-end: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+  transition: background 0.15s;
+}
+.wstat:nth-child(4n)  { border-inline-end: 0; }
+.wstat:nth-child(n+5) { border-bottom: 0; }
+.wstat:hover { background: var(--sand); }
+.wstat-icon  { font-size: 22px; line-height: 1; }
+.wstat-val   {
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.wstat-unit  {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  padding-bottom: 3px;
+}
+.wstat-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
+  max-width: 90px;
+  text-align: center;
+}
+
+/* Forecast tab strip */
+.forecast-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--rule);
+}
+.forecast-tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  font-family: var(--ff-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: color 0.15s, border-color 0.15s;
+}
+.forecast-tab:hover   { color: var(--ink); }
+.forecast-tab.active  { color: var(--ink); border-bottom-color: var(--clay); }
+
+/* Hourly scroll strip */
+.hourly-strip {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+.hourly-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 20px;
+  border-inline-end: 1px solid var(--rule);
+  min-width: 80px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.hourly-item:last-child { border-inline-end: 0; }
+.hourly-item:hover { background: var(--sand); }
+.hourly-time {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  direction: ltr;
+}
+.hourly-icon  { font-size: 24px; line-height: 1; }
+.hourly-temp  {
+  font-family: var(--ff-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.hourly-wind  {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  direction: ltr;
+}
+
+/* 7-day forecast list */
+.forecast-list {
+  display: flex;
+  flex-direction: column;
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.forecast-list-row {
+  display: grid;
+  grid-template-columns: 100px 48px 90px 1fr 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--rule);
+  transition: background 0.15s;
+}
+.forecast-list-row:last-child { border-bottom: 0; }
+.forecast-list-row:hover { background: var(--sand); }
+.forecast-list-row.unsafe-row { opacity: 0.75; }
+
+.forecast-day-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.forecast-day-ar {
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.forecast-day-en {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.forecast-list-icon { font-size: 28px; text-align: center; }
+.forecast-temps-col {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.forecast-high {
+  font-family: var(--ff-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--clay);
+}
+.forecast-low {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  color: var(--muted);
+}
+.forecast-wind-col,
+.forecast-wave-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.forecast-wind-val,
+.forecast-wave-val {
+  font-family: var(--ff-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  direction: ltr;
+}
+.forecast-wind-label,
+.forecast-wave-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.forecast-safe-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 2px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.forecast-safe-pill.safe   { background: oklch(0.92 0.10 150); color: oklch(0.28 0.12 150); }
+.forecast-safe-pill.unsafe { background: oklch(0.93 0.12 25);  color: oklch(0.42 0.18 25);  }
+
+/* Marine advisory section */
+.marine-advisory {
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.advisory-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.advisory-title {
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.advisory-meta {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.advisory-body {
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.advisory-body-en {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 8px;
+  direction: ltr;
+  text-align: start;
+}
+
+/* ── Weather mobile overrides ───────────────── */
+@media (max-width: 768px) {
+  .weather-layout { padding: 0 16px 60px; gap: 18px; }
+  .weather-page-header { flex-direction: column; gap: 14px; padding-top: 24px; }
+  .weather-page-header h1 { font-size: 32px; }
+  .weather-main-card { grid-template-columns: 1fr; }
+  .weather-main-left { border-inline-end: 0; border-bottom: 1px solid var(--rule); }
+  .weather-main-grid { grid-template-columns: repeat(2, 1fr); }
+  .wstat:nth-child(4n)  { border-inline-end: 1px solid var(--rule); }
+  .wstat:nth-child(2n)  { border-inline-end: 0; }
+  .wstat:nth-child(n+5) { border-bottom: 1px solid var(--rule); }
+  .wstat:nth-last-child(-n+2) { border-bottom: 0; }
+  .location-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .loc-tab { min-width: 90px; padding: 10px 8px; }
+  .forecast-list-row {
+    grid-template-columns: 70px 36px 70px 1fr;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+  .forecast-wind-col,
+  .forecast-wave-col { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEARCH PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Two-column layout: sidebar + main */
+.search-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 120px);
+  border-top: 1px solid var(--rule);
+}
+
+/* Sidebar */
+.search-sidebar {
+  padding: 32px 24px;
+  border-inline-end: 1px solid var(--rule);
+  background: oklch(1 0 0 / 0.60);
+  backdrop-filter: blur(6px);
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+.search-sidebar-title {
+  font-family: var(--ff-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.search-sidebar-title span {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Sidebar filter group — vertical stacked groups */
+.search-sidebar .filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.filter-group-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+[dir="rtl"] .filter-group-label {
+  font-family: var(--ff-sans);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+/* Chip buttons used for region / sort / tab filters */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.filter-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--foam);
+  font-family: var(--ff-sans);
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.filter-chip:hover  { background: var(--sand); border-color: var(--rule-strong); }
+.filter-chip.active {
+  background: var(--sea);
+  border-color: var(--sea);
+  color: var(--foam);
+}
+
+/* Main results area */
+.search-main {
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Search bar row */
+.search-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.search-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-input-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  font-size: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: oklch(1 0 0 / 0.80);
+  backdrop-filter: blur(4px);
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+[dir="rtl"] .search-input { padding: 12px 40px 12px 16px; }
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus {
+  border-color: var(--sea);
+  box-shadow: 0 0 0 3px oklch(0.38 0.08 220 / 0.12);
+}
+
+/* Results meta line */
+.search-results-meta {
+  font-family: var(--ff-sans);
+  font-size: 14px;
+  color: var(--ink-2);
+  min-height: 20px;
+}
+
+/* Results grid — 3-col for yachts/gear cards */
+.search-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+/* Empty state */
+.search-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 32px;
+  color: var(--ink-2);
+}
+
+/* ── Search mobile overrides ─────────────────── */
+@media (max-width: 900px) {
+  .search-layout { grid-template-columns: 1fr; }
+  .search-sidebar {
+    position: static;
+    max-height: none;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--rule);
+    padding: 20px 16px;
+  }
+  .search-main { padding: 20px 16px; }
+  .search-results-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+}
+@media (max-width: 540px) {
+  .search-results-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FISHING GUIDE PAGE
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Outer page wrapper */
+.fishing-guide-layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 0 32px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Page header */
+.fishing-guide-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-top: 40px;
+}
+.fishing-guide-header .eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.fishing-guide-header h1 {
+  font-family: var(--ff-display);
+  font-size: 44px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.fishing-guide-header .subtitle {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+/* Region selector — three region tabs */
+.region-selector {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  background: oklch(1 0 0 / 0.60);
+  backdrop-filter: blur(6px);
+}
+.region-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  border-inline-end: 1px solid var(--rule);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  color: var(--ink-2);
+}
+.region-btn:last-child { border-inline-end: 0; }
+.region-btn:hover { background: var(--sand); }
+.region-btn.active { background: var(--sea); color: var(--foam); }
+.region-btn-ar {
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  font-weight: 600;
+}
+.region-btn-en {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* Month strip */
+.month-strip-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.month-strip-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.month-strip {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  background: oklch(1 0 0 / 0.60);
+  backdrop-filter: blur(6px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.month-strip::-webkit-scrollbar { display: none; }
+.month-btn {
+  flex: 1;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: none;
+  border: none;
+  border-inline-end: 1px solid var(--rule);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  color: var(--ink-2);
+}
+.month-btn:last-child { border-inline-end: 0; }
+.month-btn:hover  { background: var(--sand); }
+.month-btn.active { background: var(--clay); color: var(--foam); }
+.month-ar {
+  font-family: var(--ff-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+.month-en {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* Season summary bar */
+.season-summary {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 20px 28px;
+}
+.season-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-inline: 24px;
+}
+.season-num {
+  font-family: var(--ff-display);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+}
+.season-label {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.season-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--rule);
+}
+.season-month-label {
+  margin-inline-start: auto;
+  text-align: end;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.season-month-ar {
+  font-family: var(--ff-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.season-month-en {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  direction: ltr;
+  text-align: start;
+}
+
+/* Species grid */
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.species-card {
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  border-top-width: 3px;
+}
+.species-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px oklch(0.20 0.045 235 / 0.10);
+  border-color: var(--rule-strong);
+}
+.species-card.peak    { border-top-color: var(--clay); }
+.species-card.good    { border-top-color: oklch(0.50 0.14 150); }
+.species-card.off     { border-top-color: var(--rule); opacity: 0.75; }
+
+.species-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.species-icon { font-size: 32px; line-height: 1; }
+.species-season-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.species-season-badge.peak { background: oklch(0.94 0.10 50); color: oklch(0.38 0.14 40); }
+.species-season-badge.good { background: oklch(0.92 0.10 150); color: oklch(0.28 0.12 150); }
+.species-season-badge.off  { background: var(--sand-2); color: var(--muted); }
+
+.species-name {
+  font-family: var(--ff-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.species-name-en {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.species-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+.sinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sinfo-label {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.sinfo-val {
+  font-family: var(--ff-sans);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.sinfo-val.mono { font-family: var(--ff-mono); direction: ltr; font-size: 11px; }
+
+.difficulty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-family: var(--ff-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.difficulty-tag.easy { color: oklch(0.35 0.14 150); }
+.difficulty-tag.hard { color: oklch(0.45 0.18 25); }
+.difficulty-tag.med  { color: oklch(0.48 0.15 75); }
+
+/* Fishing tips */
+.fishing-tips {
+  background: oklch(1 0 0 / 0.72);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.fishing-tips-eyebrow {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.tip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tip-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.tip-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.tip-ar {
+  font-family: var(--ff-sans);
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.tip-en {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  direction: ltr;
+  text-align: start;
+}
+
+/* CTA banner */
+.fishing-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: var(--sea);
+  border-radius: 2px;
+  padding: 28px 32px;
+  color: var(--foam);
+}
+.fishing-cta-title {
+  font-family: var(--ff-display);
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.fishing-cta-sub {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  opacity: 0.80;
+}
+
+/* ── Fishing guide mobile overrides ─────────── */
+@media (max-width: 900px) {
+  .fishing-guide-layout { padding: 0 16px 60px; gap: 18px; }
+  .fishing-guide-header { flex-direction: column; gap: 14px; padding-top: 24px; }
+  .fishing-guide-header h1 { font-size: 32px; }
+  .species-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .season-summary { padding: 16px; gap: 0; overflow-x: auto; }
+  .season-stat { padding-inline: 16px; }
+  .region-selector { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .fishing-cta { flex-direction: column; align-items: flex-start; gap: 16px; }
+}
+@media (max-width: 540px) {
+  .species-grid { grid-template-columns: 1fr; }
+  .month-btn { min-width: 50px; padding: 8px 4px; }
+}
