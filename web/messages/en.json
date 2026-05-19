@@ -199,6 +199,11 @@
   },
   "yachts": {
     "title": "Available Yachts",
+    "tabAll": "All types",
+    "tabLuxury": "Luxury yachts",
+    "tabFishing": "Fishing boats",
+    "tabFelucca": "Nile feluccas",
+    "tabFamily": "Family boats",
     "filters": {
       "label": "Filter Results",
       "type": "Boat Type",

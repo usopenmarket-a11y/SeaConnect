@@ -199,6 +199,11 @@
   },
   "yachts": {
     "title": "القوارب المتاحة",
+    "tabAll": "كل الأنواع",
+    "tabLuxury": "يخوت فاخرة",
+    "tabFishing": "قوارب صيد",
+    "tabFelucca": "فلوكات نيلية",
+    "tabFamily": "قوارب عائلية",
     "filters": {
       "label": "تصفية النتائج",
       "type": "نوع القارب",

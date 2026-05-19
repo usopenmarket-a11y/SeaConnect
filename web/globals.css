@@ -1213,6 +1213,14 @@ img { display: block; max-width: 100%; }
   color: var(--sand);
   border-color: var(--ink);
 }
+.pill-tabs .pill .pill-count {
+  margin-inline-start: 6px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  opacity: 0.65;
+  letter-spacing: 0;
+}
+.pill-tabs .pill.active .pill-count { opacity: 0.8; }
 
 /* ── tweaks panel ──────────────────────────────── */
 .tweaks-panel {

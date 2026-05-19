@@ -13,8 +13,8 @@ import * as React from 'react'
 import type { Metadata } from 'next'
 import { getTranslations, setRequestLocale } from 'next-intl/server'
 import { BoatCard, type BoatCardData } from '@/components/boats/BoatCard'
-import { YachtFilters } from '@/components/yachts/YachtFilters'
 import { PageHero } from '@/components/layout/PageHero'
+import { YachtPillTabs } from '@/components/yachts/YachtPillTabs'
 
 // ── Metadata ─────────────────────────────────────────────────────────────────
 
@@ -164,16 +164,6 @@ async function fetchYachts(locale: string, filters: YachtFilterParams): Promise<
   }
 }
 
-// ── Region filter tabs ────────────────────────────────────────────────────────
-
-const REGION_TYPES = [
-  'كل الأنواع',
-  'يخوت فاخرة',
-  'قوارب صيد',
-  'فلوكات نيلية',
-  'قوارب عائلية',
-]
-
 // ── Page component ────────────────────────────────────────────────────────────
 
 interface YachtsPageProps {
@@ -199,40 +189,46 @@ export default async function YachtsPage({
 
   const totalCount = boats.length
 
+  const isAr = locale === 'ar'
+
   return (
     <>
-      {/* PageHero sits outside page-glass so it renders directly over the canvas */}
+      {/* PageHero — directly over canvas, matches BoatsPage() from Design/altpages.jsx */}
       <PageHero
-        kicker={locale === 'ar' ? `كل القوارب · ${totalCount} معتمد` : `ALL VESSELS · ${totalCount} VERIFIED`}
-        title={locale === 'ar'
+        kicker={isAr ? `كل القوارب · ${totalCount} معتمد` : `ALL VESSELS · ${totalCount} VERIFIED`}
+        title={isAr
           ? <>كل <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>القوارب</em>.</>
           : <>Every <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>vessel</em>.</>
         }
-        subtitle={locale === 'ar'
+        subtitle={isAr
           ? 'من اليخوت الفاخرة إلى الفلوكات النيلية التقليدية، كل قارب موثّق وفنياً مفحوص.'
           : 'From luxury yachts to traditional Nile feluccas — every boat documented and inspected.'
         }
         bar={[
-          { label: locale === 'ar' ? 'إجمالي القوارب' : 'Total vessels', value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, color: 'var(--clay)' }}>{totalCount}</span>, mod: 'count' },
-          { label: locale === 'ar' ? 'السواحل المشمولة' : 'Coasts covered', value: locale === 'ar' ? 'البحر الأحمر · المتوسط · النيل' : 'Red Sea · Mediterranean · Nile' },
-          { label: locale === 'ar' ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: locale === 'ar' ? 'منصة مصر البحرية' : "EGYPT'S MARITIME PLATFORM", mod: 'issue' },
+          {
+            label: isAr ? 'إجمالي القوارب' : 'verified boats',
+            value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, letterSpacing: '-0.02em' }}>{totalCount}</span>,
+            mod: 'count',
+          },
+          {
+            label: isAr ? 'منصة مصر البحرية' : "EGYPT'S MARITIME LEISURE PLATFORM",
+            value: isAr ? `كل القوارب · ${totalCount} معتمد` : `ALL VESSELS · ${totalCount} VERIFIED`,
+          },
+          {
+            label: isAr ? 'العدد' : 'Issue',
+            value: isAr ? '٠١ · ربيع ٢٠٢٦' : '01 · Spring 2026',
+            mod: 'issue',
+          },
         ]}
       />
-      <div className="page-glass">
-      {/* Advanced filters — Client Component (pushes params to URL) */}
-      <YachtFilters locale={locale} />
 
-      {/* Type filter tabs */}
-      <div className="pill-tabs" data-screen-label="type-tabs">
-        {REGION_TYPES.map((type, i) => (
-          <button key={i} className={`pill${i === 0 ? ' active' : ''}`}>
-            {type}
-          </button>
-        ))}
+      {/* Sticky pill tabs — matches StickyRail > PillTabs from design */}
+      <div className="sticky-rail">
+        <YachtPillTabs locale={locale} />
       </div>
 
       {/* Boat grid */}
-      <div className="section" data-screen-label="yachts-grid">
+      <div className="section page-glass" data-screen-label="yachts-grid">
         {boats.length === 0 ? (
           <p style={{ textAlign: 'center', padding: '64px 0', color: 'var(--muted)' }}>
             {t('empty')}
@@ -244,7 +240,6 @@ export default async function YachtsPage({
             ))}
           </div>
         )}
-      </div>
       </div>
     </>
   )
