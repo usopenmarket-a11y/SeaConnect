@@ -1700,6 +1700,22 @@ html[dir="ltr"] body { direction: ltr; }
 }
 .btn-decline:hover { background: var(--sand); }
 
+/* Booking request / order customer avatar pill */
+.brq-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--clay);
+  color: var(--foam);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--ff-display);
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 .payout-card {
   background: var(--ink);
   color: var(--sand);

@@ -144,7 +144,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
           </Link>
         ))}
         <Link
-          href={`/${locale}/owner/new-listing`}
+          href={`/${locale}/owner/yachts/new`}
           className="nav-drawer-link"
           onClick={() => setDrawerOpen(false)}
         >
@@ -240,7 +240,7 @@ export function Nav({ locale }: NavProps): React.ReactElement {
             <span className={`lang-opt${locale === 'en' ? ' on' : ''}`}>EN</span>
           </Link>
           <Link
-            href={`/${locale}/owner/new-listing`}
+            href={`/${locale}/owner/yachts/new`}
             className="btn btn-ghost"
             style={{ padding: '8px 14px', fontSize: 13 }}
           >
