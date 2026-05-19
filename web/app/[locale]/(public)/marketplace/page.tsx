@@ -153,14 +153,27 @@ export default async function MarketplacePage({
         title={<>{t('heading1')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('headingEm')}</em>{t('heading2')}</>}
         subtitle={isAr ? 'من Shimano و Daiwa، إلى الحرفيين المحليين في الإسكندرية ودمياط.' : 'From Shimano and Daiwa, to local makers in Alexandria and Damietta.'}
         bar={[
-          { label: isAr ? 'إجمالي المنتجات' : 'Total products', value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, color: 'var(--clay)' }}>{products.length}</span>, mod: 'count' },
-          { label: isAr ? 'بائع موثّق' : 'Verified vendors', value: isAr ? '٢٢٠٠+ بائع' : '2,200+ vendors' },
-          { label: isAr ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: isAr ? 'متجر العدة البحرية' : 'MARITIME GEAR SHOP', mod: 'issue' },
+          {
+            label: isAr ? 'بائع موثّق' : 'verified vendors',
+            value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, letterSpacing: '-0.02em' }}>2,200</span>,
+            mod: 'count',
+          },
+          {
+            label: isAr ? 'منصة مصر البحرية' : "EGYPT'S MARITIME LEISURE PLATFORM",
+            value: isAr ? 'متجر العدد · أكثر من ٢٢٠٠ بائع' : 'GEAR SHOP · 2,200+ VENDORS',
+          },
+          {
+            label: isAr ? 'العدد' : 'Issue',
+            value: isAr ? '٠١ · ربيع ٢٠٢٦' : '01 · Spring 2026',
+            mod: 'issue',
+          },
         ]}
       />
+      {/* Sticky pill tabs — matches StickyRail > PillTabs from design */}
+      <div className="sticky-rail">
+        <MarketplaceFilters locale={locale} resultCount={products.length} />
+      </div>
       <div className="page-glass">
-      {/* ── Category pills + filter bar (Client Component) ────────────────── */}
-      <MarketplaceFilters locale={locale} resultCount={products.length} />
 
       {/* ── Product grid ───────────────────────────────────────────────────── */}
       <div className="section" data-screen-label="products-grid">

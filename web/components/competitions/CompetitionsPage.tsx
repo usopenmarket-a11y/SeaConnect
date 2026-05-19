@@ -110,12 +110,23 @@ export function CompetitionsPage({ competitions, locale }: Props): React.ReactEl
     <div dir={isAr ? 'rtl' : 'ltr'}>
       <PageHero
         kicker={isAr ? 'البطولات · تقويم الصيد ٢٠٢٦' : 'TOURNAMENTS · FISHING CALENDAR 2026'}
-        title={<>{t('title')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('titleEm')}</em>.</>}
+        title={<>{t('title')} <em style={{ fontStyle: 'italic', color: 'oklch(0.92 0.07 60)' }}>{t('titleEm')}</em></>}
         subtitle={t('subtitle')}
         bar={[
-          { label: isAr ? 'البطولات هذا العام' : 'Events this year', value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, color: 'var(--clay)' }}>{competitions.length}</span>, mod: 'count' },
-          { label: isAr ? 'السواحل المشمولة' : 'Coasts covered', value: isAr ? 'البحر الأحمر · المتوسط · النيل' : 'Red Sea · Mediterranean · Nile' },
-          { label: isAr ? 'العدد · ربيع ٢٠٢٦' : 'ISSUE · SPRING 2026', value: isAr ? 'تقويم الصيد' : 'FISHING CALENDAR', mod: 'issue' },
+          {
+            label: isAr ? 'بطولة هذا العام' : 'events this year',
+            value: <span className="num" style={{ fontFamily: 'var(--ff-display)', fontSize: 44, fontWeight: 700, letterSpacing: '-0.02em' }}>{competitions.length || 48}</span>,
+            mod: 'count',
+          },
+          {
+            label: isAr ? 'منصة مصر البحرية' : "EGYPT'S MARITIME LEISURE PLATFORM",
+            value: isAr ? 'البطولات · تقويم الصيد ٢٠٢٦' : 'TOURNAMENTS · FISHING CALENDAR 2026',
+          },
+          {
+            label: isAr ? 'العدد' : 'Issue',
+            value: isAr ? '٠١ · ربيع ٢٠٢٦' : '01 · Spring 2026',
+            mod: 'issue',
+          },
         ]}
       />
       <div className="page-glass">
