@@ -190,122 +190,40 @@ export function Nav({ locale }: NavProps): React.ReactElement {
           <span />
         </button>
 
-        {/* Right side: bell, cart badge, lang toggle, list-your-boat ghost btn, avatar */}
+        {/* Right side — matches Design/shared.jsx Nav() nav-right */}
         <div className="nav-right">
-          {/* Notification bell — only shown when authenticated */}
-          {isAuthenticated && (
-            <Link
-              href={`/${locale}/notifications`}
-              aria-label={tNotif('navBellAriaLabel', { count: notifUnreadCount })}
-              style={{
-                position: 'relative',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 36,
-                height: 36,
-                textDecoration: 'none',
-                color: 'var(--ink)',
-              }}
-            >
-              {/* Bell SVG icon */}
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              {/* Unread count badge */}
-              {notifUnreadCount > 0 && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    insetInlineEnd: 0,
-                    minWidth: 16,
-                    height: 16,
-                    borderRadius: 8,
-                    background: 'var(--clay)',
-                    color: '#fff',
-                    fontFamily: 'var(--ff-mono)',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 3px',
-                    lineHeight: 1,
-                  }}
-                >
-                  {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
-                </span>
-              )}
-            </Link>
-          )}
+          {/* Notification bell — always visible, badge only when unread */}
+          <Link
+            href={`/${locale}/notifications`}
+            className="nav-cart"
+            aria-label={tNotif('navBellAriaLabel', { count: notifUnreadCount })}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            {notifUnreadCount > 0 && (
+              <span className="badge num" aria-label={t('cartItems', { count: notifUnreadCount })}>
+                {notifUnreadCount > 99 ? '99+' : notifUnreadCount}
+              </span>
+            )}
+          </Link>
 
-          {/* Cart icon with item count badge */}
+          {/* Cart icon — always visible, badge shows item count */}
           <Link
             href={`/${locale}/cart`}
+            className="nav-cart"
             aria-label={t('cartAriaLabel')}
-            style={{
-              position: 'relative',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 36,
-              height: 36,
-              textDecoration: 'none',
-              color: 'var(--ink)',
-            }}
           >
-            {/* Cart SVG icon */}
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 6 H6 L8 16 H18 L20 8 H7" />
+              <circle cx="9" cy="20" r="1.2" />
+              <circle cx="17" cy="20" r="1.2" />
             </svg>
-            {/* Badge — only shown when cart has items */}
             {cartCount > 0 && (
-              <span
-                aria-label={t('cartItems', { count: cartCount })}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  insetInlineEnd: 0,
-                  minWidth: 16,
-                  height: 16,
-                  borderRadius: 8,
-                  background: 'var(--clay)',
-                  color: '#fff',
-                  fontFamily: 'var(--ff-mono)',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: '0 3px',
-                  lineHeight: 1,
-                }}
-              >
+              <span className="badge num" aria-label={t('cartItems', { count: cartCount })}>
                 {cartCount > 99 ? '99+' : cartCount}
               </span>
             )}
